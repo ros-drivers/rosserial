@@ -226,18 +226,25 @@ class ArrayDataType(PrimitiveDataType):
         c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
             f.write('    unsigned char %s_length;\n' % self.name)
-            f.write('    %s * %s;\n' % (self.type, self.size))
+            f.write('    %s st_%s;\n' % (self.type, self.name)) # static instance for copy
+            f.write('    %s * %s;\n' % (self.type, self.name))
         else:
             f.write('    %s %s[%d];\n' % (self.type, self.name, self.size))
     
     def serialize(self, f):
         c = self.cls(self.name+"[i]", self.type, self.bytes)
         if self.size == None:
-            pass
+            # serialize length
+            f.write('  *(outbuffer + offset++) = %s_length;\n' % self.name)
+            f.write('  *(outbuffer + offset++) = 0;\n')
+            f.write('  *(outbuffer + offset++) = 0;\n')
+            f.write('  *(outbuffer + offset++) = 0;\n')
+            f.write('  for( unsigned char i = 0; i < %s_length; i++){\n' % self.name)
+            c.serialize(f)
+            f.write('  }\n')
         else:
             f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
             f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
-            #f.write('     *(outbuffer + offset++) = *%s_val;\n' % self.name)
             c.serialize(f)            
             f.write('  }\n')
         
@@ -245,11 +252,22 @@ class ArrayDataType(PrimitiveDataType):
         c = self.cls(self.name+"[i]", self.type, self.bytes)
         if self.size == None:
             # deserialize length
-            f.write('   %s_length = *(outbuffer + offset++);\n' % self.name)
-            f.write('   offset += 3;\n' % self.name)
-            # point at array
-            f.write('   this->%s = outbuffer + offset;\n' % self.name)
-            f.write('   offset += %s_length;\n' % self.name)
+            f.write('  unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
+            f.write('  if(%s_lengthT > %s_length){\n' % (self.name, self.name))
+            f.write('    this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
+            f.write('    for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
+            f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))            
+            f.write('    }\n')
+            f.write('  }\n')
+            f.write('  offset += 3;\n')
+            f.write('  %s_length = %s_lengthT;\n' % (self.name, self.name))
+            # copy to array
+            f.write('  for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
+            c.deserialize(f)            
+            f.write('  }\n')
+            #f.write('  this->%s = (%s *)(inbuffer + offset);\n' % (self.name,self.type))
+            #f.write('  offset += %s_length;\n' % self.name)
+
         else:
             f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
             f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
@@ -302,7 +320,7 @@ class Message:
                 type_name = type_name[0:type_name.find('[')]
             
 
-            print type_name+"("+name+")",
+            print str(type_package)+"::"+type_name+"("+name+")",
             if type_array:  
                 print "[Array:"+str(type_array_size)+"]", 
 
@@ -312,6 +330,8 @@ class Message:
                 cls = PrimitiveDataType
                 code_type = type_name
                 size = 0
+                if type_package:
+                    cls = MessageDataType                    
                 if type_name == 'float64':
                     cls = Float64DataType   
                     code_type = 'float'
@@ -335,10 +355,11 @@ class Message:
                     self.data.append( MessageDataType(name, 'std_msgs::Header', 0) )
                     if "std_msgs" not in self.includes:
                         self.includes.append("std_msgs")
-                elif type_package == None:
-                    type_package = package  
-                    if type_name not in self.depends:
-                        self.depends.append(type_name)
+                else:
+                    if type_package == None or type_package == package:
+                        type_package = package  
+                        if type_name not in self.depends:
+                            self.depends.append(type_name)
                     if type_package != package and type_package not in self.includes:
                         self.includes.append(type_package)
                     if type_array:
@@ -383,7 +404,7 @@ class Message:
         f.write('  int offset = 0;\n')
         for d in self.data:
             d.deserialize(f)
-        f.write('  return 0;\n');
+        f.write('  return offset;\n');
         f.write('};\n')      
         f.write('\n')  
 
