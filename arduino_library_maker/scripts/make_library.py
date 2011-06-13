@@ -125,7 +125,9 @@ class Float64DataType(PrimitiveDataType):
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('  long * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
-        f.write('  long exp_%s = (((*val_%s)>>23)&255)-127+1023;\n' % (cn,cn))
+        f.write('  long exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
+        f.write('  if(exp_%s != 0)\n' % cn)
+        f.write('    exp_%s += 1023-127;\n' % cn)
         f.write('  long sig_%s = *val_%s;\n' % (cn,cn))
         f.write('  *(outbuffer + offset++) = 0;\n') # 29 blank bits
         f.write('  *(outbuffer + offset++) = 0;\n')
@@ -139,17 +141,17 @@ class Float64DataType(PrimitiveDataType):
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('  long * val_%s = (long*) &(this->%s);\n' % (cn,self.name))
-        f.write('  *val_%s = 0;\n' % cn)
+        f.write('  unsigned long * val_%s = (unsigned long*) &(this->%s);\n' % (cn,self.name))
         f.write('  offset += 3;\n') # 29 blank bits
-        f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
+        f.write('  *val_%s = ((unsigned long)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
         f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
         f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
         f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
-        f.write('  long exp_%s = ((long)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
+        f.write('  unsigned long exp_%s = ((unsigned long)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
         f.write('  exp_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
-        f.write('  *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0x10)<<24;\n' % cn)
+        f.write('  if(exp_%s !=0)\n' % cn)
+        f.write('    *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
+        f.write('  if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (cn,cn))
 
 
 class Int64DataType(PrimitiveDataType):
