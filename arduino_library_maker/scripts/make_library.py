@@ -42,7 +42,6 @@ import os, sys, subprocess
 
 # TODO 
 #   duration
-#   arrays
 
 ros_types = {
 	'bool'  :   ('bool',           1),
@@ -54,8 +53,6 @@ ros_types = {
 	'uint16':   ('unsigned int',   2),
 	'int32':    ('long',           4),
 	'uint32':   ('unsigned long',  4),
-#	'int64':    ('long',           0),
-#	'uint64':   ('unsigned long',  0),
 	'float32':  ('float',          4)
 }
 
@@ -255,13 +252,8 @@ class ArrayDataType(PrimitiveDataType):
             c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
             f.write('  unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
-            #f.write('  if(%s_lengthT > %s_length){\n' % (self.name, self.name))
             f.write('  if(%s_lengthT > %s_length)\n' % (self.name, self.name))
             f.write('    this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
-            #f.write('    for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
-            #f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))            
-            #f.write('    }\n')
-            #f.write('  }\n')
             f.write('  offset += 3;\n')
             f.write('  %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
@@ -269,14 +261,11 @@ class ArrayDataType(PrimitiveDataType):
             c.deserialize(f)
             f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))                     
             f.write('  }\n')
-            #f.write('  this->%s = (%s *)(inbuffer + offset);\n' % (self.name,self.type))
-            #f.write('  offset += %s_length;\n' % self.name)
 
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
             f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
             f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
-            #f.write('     *%s_val = *(inbuffer + offset++);\n' % self.name)
             c.deserialize(f)            
             f.write('  }\n')
 
@@ -325,9 +314,9 @@ class Message:
                 type_name = type_name[0:type_name.find('[')]
             
 
-            print str(type_package)+"::"+type_name+"("+name+")",
-            if type_array:  
-                print "[Array:"+str(type_array_size)+"]", 
+            #print str(type_package)+"::"+type_name+"("+name+")",
+            #if type_array:  
+            #    print "[Array:"+str(type_array_size)+"]", 
 
             # convert to C/Arduino type if primitive, expand name otherwise
             try:
@@ -372,7 +361,7 @@ class Message:
                         self.data.append( ArrayDataType(name, type_package + "::" + type_name, size, cls, type_array_size) )
                     else:
                         self.data.append( MessageDataType(name, type_package + "::" + type_name, 0) )
-        print ""
+        #print ""
 
     def make_declaration(self, f):
         """ Outputs declaration of this message class to f. """
@@ -425,23 +414,25 @@ class ArduinoLibraryMaker:
         """ Initialize by finding location and all messages in this package. """
         self.name = package
         self.includes = list()
+        print "\nExporting " + package + ":", 
 
         # find directory for this package
         proc = subprocess.Popen(["rospack","find",msg_package], stdout=subprocess.PIPE)
         self.directory = proc.communicate()[0].rstrip() + "/msg"
-        
+
         # find the messages in this package
         self.messages = dict()
         for f in os.listdir(self.directory):
             if f.endswith(".msg"):
                 # add to list of messages
-                print "Adding %s with:" % f[0:-4],
+                print "%s," % f[0:-4],
                 definition = open(self.directory + "/" + f).readlines()
                 new_msg = Message(f[0:-4], self.name, definition) 
                 self.messages[new_msg.name] = new_msg
                 for i in new_msg.includes:
                     if not i in self.includes:
                         self.includes.append(i)
+        print "\n"
         
     # generating functions
     def make_header(self, f):
@@ -515,6 +506,8 @@ if __name__=="__main__":
     path = sys.argv[1]
     if path[-1] == "/":
         path = path[0:-1]
+    path += "/libraries"
+    print "\nExporting to %s" % path
 
     # make libraries
     packages = sys.argv[2:]
