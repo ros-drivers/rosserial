@@ -37,6 +37,7 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 import roslib; roslib.load_manifest("serial_node")
 import rospy
 
+import thread
 from serial import *
 import StringIO
 
@@ -104,6 +105,7 @@ class SerialNode:
     
     def __init__(self, port=None, baud=57600):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
+        self.mutex = thread.allocate_lock()
         rospy.init_node("serial_node")
 
         if port == None:
@@ -132,7 +134,8 @@ class SerialNode:
                 if self.port.read() == '\xff':
                     mode += 1
             elif mode == MODE_SECOND_FF:
-                if self.port.read() == '\xff':
+                x = self.port.read()
+                if x == '\xff':
                     topic = ord(self.port.read())
                     if topic == 0:
                         # parse a topic
@@ -148,33 +151,46 @@ class SerialNode:
                         print l2
                         topic_type = self.port.read(l2)            
                         print topic_type
-                        # TODO: add checksum?
+                        # checksum?
+                        #chk = self.port.read()
                         if topic_id < 128:
                             self.publishers[topic_id] = Publisher(topic_name, topic_type)
                         else:
                             self.subscribers[topic_name] = [topic_id, Subscriber(topic_name, topic_type, self)]
-                    else:
+                    else:   
+                        chk   = topic
                         ttype = ord(self.port.read())
-                        bytes = ord(self.port.read())
-                        msg   = self.port.read(bytes)   
-                        try:
-                            self.publishers[topic].publish(msg)
-                        except KeyError:
-                            rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
-                else:   
-                    print "failed packet"
+                        chk   += ttype
+                        bytes = ord(self.port.read())<<8
+                        chk   += bytes >> 8
+                        bytes += ord(self.port.read())
+                        chk   += bytes&255                        
+                        msg   = self.port.read(bytes-1)
+                        chk   += sum([ord(x) for x in msg] )
+                        chk   += ord(self.port.read())   
+                        if chk%256 == 255:
+                            try:
+                                self.publishers[topic].publish(msg)
+                            except KeyError:
+                                rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
+                        else:
+                            rospy.logerr("Failed checksum")
+                else:       
+                    rospy.loginfo("Failed packet")
                 mode = MODE_FIRST_FF
             
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
-        self.port.write('\xff\xff')
-        self.port.write(chr(self.subscribers[topic][0]))
-        self.port.write('\x00')
-        self.port.write(chr(len(msg)>>8))
-        self.port.write(chr(len(msg)&255))
-        self.port.write(msg)
-        # TODO: add checksum?
-        
+        with self.mutex:
+            length = 1 + len(msg)
+            checksum = 255 - ( (self.subscribers[topic][0] + (length>>8) + (length&255) + sum([ord(x) for x in msg]))%256 )
+            self.port.write('\xff\xff')
+            self.port.write(chr(self.subscribers[topic][0]))
+            self.port.write('\x00')
+            self.port.write(chr(length>>8))
+            self.port.write(chr(length&255))
+            self.port.write(msg)
+            self.port.write(chr(checksum))
 
 if __name__=="__main__":
     SerialNode("/dev/ttyUSB0")

@@ -121,13 +121,13 @@ void ros::NodeHandle::negotiateTopics()
     {
       // send publisher information
       makeHeader();
-      Serial.write( (unsigned char) 0 );
-      Serial.write( strlen(publishers[i]->topic_) + strlen(publishers[i]->msg_->getType()) + 3 );
-      Serial.write( publishers[i]->id_ );  
-      Serial.write( strlen(publishers[i]->topic_) );
-      Serial.print( publishers[i]->topic_ );
-      Serial.write( strlen(publishers[i]->msg_->getType()) );
-      Serial.print( publishers[i]->msg_->getType() );
+      WRITE( (unsigned char) 0 );
+      WRITE( strlen(publishers[i]->topic_) + strlen(publishers[i]->msg_->getType()) + 3 );
+      WRITE( publishers[i]->id_ );  
+      WRITE( strlen(publishers[i]->topic_) );
+      PRINT( publishers[i]->topic_ );
+      WRITE( strlen(publishers[i]->msg_->getType()) );
+      PRINT( publishers[i]->msg_->getType() );
     }
   }
   for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -136,13 +136,13 @@ void ros::NodeHandle::negotiateTopics()
     {
       // send subscriber information
       makeHeader();
-      Serial.write( (unsigned char) 0 );
-      Serial.write( strlen(subscribers[i]->topic_) + strlen(subscribers[i]->msg_->getType()) + 3 );
-      Serial.write( subscribers[i]->id_ );  
-      Serial.write( strlen(subscribers[i]->topic_) );
-      Serial.print( subscribers[i]->topic_ );
-      Serial.write( strlen(subscribers[i]->msg_->getType()) );
-      Serial.print( subscribers[i]->msg_->getType() );
+      WRITE( (unsigned char) 0 );
+      WRITE( strlen(subscribers[i]->topic_) + strlen(subscribers[i]->msg_->getType()) + 3 );
+      WRITE( subscribers[i]->id_ );  
+      WRITE( strlen(subscribers[i]->topic_) );
+      PRINT( subscribers[i]->topic_ );
+      WRITE( strlen(subscribers[i]->msg_->getType()) );
+      PRINT( subscribers[i]->msg_->getType() );
     }
   }
   configured_ = true;
@@ -150,29 +150,32 @@ void ros::NodeHandle::negotiateTopics()
 
 int ros::NodeHandle::publish(int id, Msg * msg)
 {
-  int l = msg->serialize(message_out);
+  int l = msg->serialize(message_out) + 1;
+  int chk = id + 0 + (l>>8) + (l&255);
   makeHeader();
-  Serial.write(id);
-  Serial.write( (unsigned char) 0 );
-  Serial.write(l);
-  int i;
-  for( i = 0; i<l; i++)
+  WRITE(id);
+  WRITE( (unsigned char) 0 );
+  WRITE( (unsigned char) l>>8);
+  WRITE( (unsigned char) l&255);
+  for(int i = 0; i<l-1; i++)
   {
-    Serial.write(message_out[i]);
+    WRITE(message_out[i]);
+    chk += message_out[i];
   }
+  WRITE( 255 - (chk%256) );
   return 1;
 }
 
 inline void ros::NodeHandle::makeHeader()
 {
-  Serial.write(0xff);
-  Serial.write(0xff);
+  WRITE(0xff);
+  WRITE(0xff);
 }
 
 void ros::NodeHandle::initNode()
 {
   // initialize publisher and subscriber lists
-  int i;
+  int i;;
   for(i = 0; i < MAX_PUBLISHERS; i++)
   {
     publishers[i] = 0;
@@ -195,18 +198,22 @@ void ros::NodeHandle::spinOnce()
     int data = Serial.read();
     if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
       message_in[index_++] = data;
+      checksum_ += data;
       bytes_--;
       if(bytes_ == 0)                   /* is message complete? if so, pass along */
       {
         if(topic_ == 0)
         {
           negotiateTopics();
-          Serial.flush();
+          FLUSH;
         }
         else
         {
-          if(subscribers[topic_-128])
-            subscribers[topic_-128]->cb_( message_in );
+          checksum_ = checksum_ % 256;
+          if( checksum_ == 255){
+              if(subscribers[topic_-128])
+                subscribers[topic_-128]->cb_( message_in );
+          }
         }
         mode_ = 0;
       }
@@ -214,9 +221,9 @@ void ros::NodeHandle::spinOnce()
       if(data == 0xff)
         mode_++;
     }else if( mode_ == MODE_SECOND_FF ){
-      if(data == 0xff)
+      if(data == 0xff){
         mode_++;
-      else
+      }else
         mode_ = MODE_FIRST_FF;
     }else if( mode_ == MODE_TOPIC ){    /* this is topic name */
       topic_ = data;
@@ -224,15 +231,19 @@ void ros::NodeHandle::spinOnce()
         mode_++;
       else
         mode_ = MODE_FIRST_FF;
+      checksum_ = data;
     }else if( mode_ == MODE_TYPE ){     /* this is the message type (topic or service) */
       mode_++;
+      checksum_ += data;
     }else if( mode_ == MODE_SIZE_H ){   /* top half of message size */
       bytes_ = data<<8;
       mode_++;
+      checksum_ += data;
     }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
       bytes_ += data;
       index_ = 0;
       mode_++;
+      checksum_ += data;
     }
   }
 }
