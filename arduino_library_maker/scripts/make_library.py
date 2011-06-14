@@ -151,7 +151,7 @@ class Float64DataType(PrimitiveDataType):
         f.write('  exp_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
         f.write('  if(exp_%s !=0)\n' % cn)
         f.write('    *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('  if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (cn,cn))
+        f.write('  if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
 
 
 class Int64DataType(PrimitiveDataType):
@@ -251,26 +251,29 @@ class ArrayDataType(PrimitiveDataType):
             f.write('  }\n')
         
     def deserialize(self, f):
-        c = self.cls(self.name+"[i]", self.type, self.bytes)
         if self.size == None:
+            c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
             f.write('  unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
-            f.write('  if(%s_lengthT > %s_length){\n' % (self.name, self.name))
+            #f.write('  if(%s_lengthT > %s_length){\n' % (self.name, self.name))
+            f.write('  if(%s_lengthT > %s_length)\n' % (self.name, self.name))
             f.write('    this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
-            f.write('    for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
-            f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))            
-            f.write('    }\n')
-            f.write('  }\n')
+            #f.write('    for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
+            #f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))            
+            #f.write('    }\n')
+            #f.write('  }\n')
             f.write('  offset += 3;\n')
             f.write('  %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
             f.write('  for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
-            c.deserialize(f)            
+            c.deserialize(f)
+            f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))                     
             f.write('  }\n')
             #f.write('  this->%s = (%s *)(inbuffer + offset);\n' % (self.name,self.type))
             #f.write('  offset += %s_length;\n' % self.name)
 
         else:
+            c = self.cls(self.name+"[i]", self.type, self.bytes)
             f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
             f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
             #f.write('     *%s_val = *(inbuffer + offset++);\n' % self.name)
@@ -297,8 +300,8 @@ class Message:
         for line in definition:
             # prep work
             line = line.strip().rstrip()
-            if line.startswith("#"):
-                continue
+            if line.find("#") > -1:
+                line = line[0:line.find("#")]
             
             # find package/class name   
             l = line.split(" ")
@@ -360,6 +363,7 @@ class Message:
                 else:
                     if type_package == None or type_package == package:
                         type_package = package  
+                        cls = MessageDataType
                         if type_name not in self.depends:
                             self.depends.append(type_name)
                     if type_package != package and type_package not in self.includes:
