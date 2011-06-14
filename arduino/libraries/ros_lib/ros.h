@@ -115,7 +115,6 @@ namespace ros
       void spinOnce();
 
       bool configured_;
-      int checksum_;
 
     private:
       void makeHeader();
@@ -126,6 +125,7 @@ namespace ros
       int bytes_;
       int topic_;
       int index_;
+      int checksum_;
 
       unsigned char message_in[BUFFER_SIZE];
       unsigned char message_out[BUFFER_SIZE];
