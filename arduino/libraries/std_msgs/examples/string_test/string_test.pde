@@ -1,5 +1,6 @@
 /* 
- * rosserial::std_msgs::String Test 
+ * rosserial::std_msgs::String Test
+ * Prints "hello world!"
  */
 
 #include <ros.h>
@@ -10,7 +11,7 @@ ros::NodeHandle nh;
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
-unsigned char hello[12] = "hello world";
+unsigned char hello[13] = "hello world!";
 
 void setup()
 {
