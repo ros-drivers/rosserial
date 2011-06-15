@@ -45,16 +45,6 @@
 
 #define BUFFER_SIZE         512
 
-/* 
- * Redefine these if needed
- *  WRITE: write a single byte
- *  PRINT: print a string
- *  FLUSH: flush buffer
- */
-#define WRITE               Serial.write
-#define PRINT               Serial.print
-#define FLUSH               Serial.flush()
-
 namespace ros
 {
   class NodeHandle;

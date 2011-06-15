@@ -37,7 +37,7 @@
  */
 
 #include "ros.h"
-#include "WProgram.h"
+#include "serial_fx.h"
 
 #define MODE_FIRST_FF       0
 #define MODE_SECOND_FF      1
@@ -121,13 +121,17 @@ void ros::NodeHandle::negotiateTopics()
     {
       // send publisher information
       makeHeader();
-      WRITE( (unsigned char) 0 );
-      WRITE( strlen(publishers[i]->topic_) + strlen(publishers[i]->msg_->getType()) + 3 );
-      WRITE( publishers[i]->id_ );  
-      WRITE( strlen(publishers[i]->topic_) );
-      PRINT( publishers[i]->topic_ );
-      WRITE( strlen(publishers[i]->msg_->getType()) );
-      PRINT( publishers[i]->msg_->getType() );
+      fx_putc( (unsigned char) 0 );
+      fx_putc( strlen(publishers[i]->topic_) + strlen(publishers[i]->msg_->getType()) + 3 );
+      fx_putc( publishers[i]->id_ );  
+      fx_putc( strlen(publishers[i]->topic_) );
+      const char * c = publishers[i]->topic_;
+      while( *c )
+        fx_putc( *c++ );
+      fx_putc( strlen(publishers[i]->msg_->getType()) );    
+      c = publishers[i]->msg_->getType();
+      while( *c )
+        fx_putc( *c++ );
     }
   }
   for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -136,13 +140,17 @@ void ros::NodeHandle::negotiateTopics()
     {
       // send subscriber information
       makeHeader();
-      WRITE( (unsigned char) 0 );
-      WRITE( strlen(subscribers[i]->topic_) + strlen(subscribers[i]->msg_->getType()) + 3 );
-      WRITE( subscribers[i]->id_ );  
-      WRITE( strlen(subscribers[i]->topic_) );
-      PRINT( subscribers[i]->topic_ );
-      WRITE( strlen(subscribers[i]->msg_->getType()) );
-      PRINT( subscribers[i]->msg_->getType() );
+      fx_putc( (unsigned char) 0 );
+      fx_putc( strlen(subscribers[i]->topic_) + strlen(subscribers[i]->msg_->getType()) + 3 );
+      fx_putc( subscribers[i]->id_ );  
+      fx_putc( strlen(subscribers[i]->topic_) );
+      const char * c = subscribers[i]->topic_;
+      while( *c )
+        fx_putc( *c++ );
+      fx_putc( strlen(subscribers[i]->msg_->getType()) );
+      c = subscribers[i]->msg_->getType();
+      while( *c )
+        fx_putc( *c++ );
     }
   }
   configured_ = true;
@@ -153,23 +161,23 @@ int ros::NodeHandle::publish(int id, Msg * msg)
   int l = msg->serialize(message_out) + 1;
   int chk = id + 0 + (l>>8) + (l&255);
   makeHeader();
-  WRITE(id);
-  WRITE( (unsigned char) 0 );
-  WRITE( (unsigned char) l>>8);
-  WRITE( (unsigned char) l&255);
+  fx_putc(id);
+  fx_putc( (unsigned char) 0 );
+  fx_putc( (unsigned char) l>>8);
+  fx_putc( (unsigned char) l&255);
   for(int i = 0; i<l-1; i++)
   {
-    WRITE(message_out[i]);
+    fx_putc(message_out[i]);
     chk += message_out[i];
   }
-  WRITE( 255 - (chk%256) );
+  fx_putc( 255 - (chk%256) );
   return 1;
 }
 
 inline void ros::NodeHandle::makeHeader()
 {
-  WRITE(0xff);
-  WRITE(0xff);
+  fx_putc(0xff);
+  fx_putc(0xff);
 }
 
 void ros::NodeHandle::initNode()
@@ -182,7 +190,7 @@ void ros::NodeHandle::initNode()
     subscribers[i] = 0;
   }
   // initialize serial
-  Serial.begin(57600);
+  fx_open();
   configured_ = false;
   mode_ = 0;
   bytes_ = 0;
@@ -193,9 +201,11 @@ void ros::NodeHandle::initNode()
 void ros::NodeHandle::spinOnce()
 {
   /* while available buffer, read data */
-  while( Serial.available() > 0 )
+  while( true )
   {  
-    int data = Serial.read();
+    int data = fx_getc();
+    if( data < 0 )
+      break;
     if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
       message_in[index_++] = data;
       checksum_ += data;
@@ -205,7 +215,6 @@ void ros::NodeHandle::spinOnce()
         if(topic_ == 0)
         {
           negotiateTopics();
-          FLUSH;
         }
         else
         {
