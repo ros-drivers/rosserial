@@ -1,15 +1,12 @@
 <package>
-  <description brief="rosserial_java">
-
-     rosserial_java
-
+  <description brief="A Java-based implementation of the ROS serial protocol. ">
+    A Java-based implementation of the ROS serial protocol. 
   </description>
   <author>Adam Stambler</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosserial_java</url>
   <depend package="rosjava"/>
-
 </package>
 
 
