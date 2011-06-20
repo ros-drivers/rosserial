@@ -1,7 +1,5 @@
 /* 
- * Button Example for Rosserial  
- * 
- *  
+ * Button Example for Rosserial
  */
 
 #include <ros.h>

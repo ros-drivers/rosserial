@@ -1,0 +1,9 @@
+<package>
+  <description brief="Libraries and examples for ROSserial usage on Arduino/AVR Platforms"/>
+  <author>Michael Ferguson, Adam Stambler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_arduino</url>
+</package>
+
+
