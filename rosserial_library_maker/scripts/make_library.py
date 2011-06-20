@@ -35,7 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("arduino_library_maker")
+import roslib; roslib.load_manifest("rosserial_library_maker")
 import rospy
 
 import os, sys, subprocess
@@ -67,6 +67,17 @@ def type_to_var(ty):
 
 #####################################################################
 # Data Types
+
+class EnumerationType:
+    """ For data values. """
+    
+    def __init__(self, name, ty, value):
+        self.name = name
+        self.type = ty
+        self.value = value
+    
+    def make_declaration(self, f):
+        f.write('    enum { %s = %s };\n' % (self.name, str(self.value)))    
 
 class PrimitiveDataType:
     """ Our datatype is a C/C++ primitive. """    
@@ -284,21 +295,31 @@ class Message:
         self.depends = list()       # other messages/classes in this package we depend on
 
         self.data = list()          # data types for code generation
+        self.enums = list()
 
         # parse definition
         for line in definition:
             # prep work
-            line = line.strip().rstrip()
+            line = line.strip().rstrip()    
+            value = None
             if line.find("#") > -1:
                 line = line[0:line.find("#")]
+            if line.find("=") > -1:
+                value = int(line[line.find("=")+1:])
+                line = line[0:line.find("=")]
             
             # find package/class name   
+            line = line.replace("\t", " ")
             l = line.split(" ")
             while "" in l:
                 l.remove("")
-            if len(l) != 2:
+            if len(l) < 2:
                 continue
-            ty, name = l
+            ty, name = l[0:2]
+            if value != None:
+                self.enums.append( EnumerationType(name, ty, value))            
+                continue
+
             try:
                 type_package, type_name = ty.split("/")
             except:
@@ -312,7 +333,7 @@ class Message:
                 except:
                     type_array_size = None
                 type_name = type_name[0:type_name.find('[')]
-            
+                
 
             #print str(type_package)+"::"+type_name+"("+name+")",
             #if type_array:  
@@ -373,6 +394,8 @@ class Message:
         f.write('    const char * getType(){ return type; };\n')
         for d in self.data:
             d.make_declaration(f)
+        for e in self.enums:
+            e.make_declaration(f)
         f.write('\n')
         f.write('   private:\n')
         f.write('    static const char * type;\n')
