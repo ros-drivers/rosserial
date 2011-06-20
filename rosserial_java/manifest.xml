@@ -1,0 +1,15 @@
+<package>
+  <description brief="rosserial_java">
+
+     rosserial_java
+
+  </description>
+  <author>Adam Stambler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_java</url>
+  <depend package="rosjava"/>
+
+</package>
+
+

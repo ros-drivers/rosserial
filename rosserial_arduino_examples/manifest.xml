@@ -1,0 +1,16 @@
+<package>
+  <description brief="rosserial_arduino_examples">
+
+     rosserial_arduino_examples
+
+  </description>
+  <author>Adam Stambler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_arduino_examples</url>
+  <depend package="rosserial_arduino"/>
+  
+
+</package>
+
+
