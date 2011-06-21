@@ -36,178 +36,21 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
 import roslib; roslib.load_manifest("rosserial_python")
 import rospy
+from rosserial_python import SerialClient
 
-import thread
-from serial import *
-import StringIO
-
-MODE_FIRST_FF = 0
-MODE_SECOND_FF = 1
-
-PKT_NEGOTIATION = 0
-PKT_TOPIC = 1
-PKT_SERVICE = 2
-
-class Publisher:
-    """ 
-        Prototype of a forwarding publisher.
-    """
-
-    def __init__(self, topic, message_type):
-        """ Create a new publisher. """ 
-        self.topic = topic
-        
-        # find message type
-        package, message = message_type.split('/')
-        try:
-            m = __import__( package +'.msg')
-        except:
-            roslib.load_manifest(package)
-            m = __import__( package +'.msg')
-        m2 = getattr(m, 'msg')
-        self.message = getattr(m2, message)
-        self.publisher = rospy.Publisher(topic, self.message)
-    
-    def publish(self, msg):
-        """ Publish a message """ 
-        m = self.message()
-        m.deserialize(msg)
-        self.publisher.publish(m)
-                         
-
-class Subscriber:
-    """ 
-        Prototype of a forwarding subscriber.
-    """
-
-    def __init__(self, topic, message_type, parent):
-        self.topic = topic
-        self.parent = parent
-        
-        # find message type
-        package, message = message_type.split('/')
-        try:
-            m = __import__( package +'.msg')
-        except:
-            roslib.load_manifest(package)
-            m = __import__( package +'.msg')
-        m2 = getattr(m, 'msg')
-        self.message = getattr(m2, message)
-        rospy.Subscriber(topic, self.message, self.callback)
-
-    def callback(self, msg):
-        """ Forward a message """
-        data_buffer = StringIO.StringIO()
-        msg.serialize(data_buffer)
-        self.parent.send(self.topic, data_buffer.getvalue())
-
-
-class SerialNode:
-    """
-        Prototype of node to connect to serial bus.
-    """
-    
-    def __init__(self, port=None, baud=57600):
-        """ Initialize node, connect to bus, attempt to negotiate topics. """
-        self.mutex = thread.allocate_lock()
-        rospy.init_node("serial_node")
-
-        if port == None:
-            # no port specified, listen for any new port?
-            pass
-        else:
-            # open a specific port
-            self.port = Serial(port, baud)
-                
-        self.publishers = dict()
-        self.subscribers = dict()
-        rospy.sleep(1.0) # TODO
-        self.requestTopics()
-        self.spin()
-
-    def requestTopics(self):
-        """ Determine topics to subscribe/publish. """
-        self.port.flushInput()
-        # request topic sync
-        self.port.write("\xff\xff\x00\x00\x00\x00\xff")
-
-    def spin(self):
-        """ Forward recieved messages to appropriate publisher. """
-        mode = MODE_FIRST_FF
-        while not rospy.is_shutdown():
-            if mode == MODE_FIRST_FF:
-                if self.port.read() == '\xff':
-                    mode += 1
-            elif mode == MODE_SECOND_FF:
-                x = self.port.read()
-                if x == '\xff':
-                    # packet type
-                    pkt_type = ord(self.port.read())
-                    checksum = pkt_type
-                    # topic id
-                    topic_id = ord(self.port.read())
-                    checksum += topic_id
-                    # message length (2 bytes)
-                    bytes = ord(self.port.read())       
-                    checksum += bytes
-                    temp = ord(self.port.read())
-                    bytes += temp<<8
-                    checksum += temp    
-                    # now handle packet payload
-                    if pkt_type == PKT_NEGOTIATION:
-                        # get topic
-                        if bytes > 0:
-                            l1 = ord(self.port.read())
-                            topic_name = self.port.read(l1)
-                            l2 = ord(self.port.read())
-                            topic_type = self.port.read(l2)
-                            checksum += l1 + l2
-                            checksum += sum( [ord(x) for x in topic_name] )
-                            checksum += sum( [ord(x) for x in topic_type] )
-                            checksum += ord(self.port.read())
-                            print topic_name, topic_type
-                            if checksum%256 == 255:
-                                try:
-                                    if topic_id < 128:
-                                        self.publishers[topic_id] = Publisher(topic_name, topic_type)
-                                    else:
-                                        self.subscribers[topic_name] = [topic_id, Subscriber(topic_name, topic_type, self)]
-                                except KeyError:
-                                    rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
-                            else:
-                                rospy.logerr("Topic Negotiation: failed checksum")
-                                print checksum%256
-                        else:
-                            self.topics = topic_id
-                    elif pkt_type == PKT_TOPIC: 
-                        # message
-                        msg = self.port.read(bytes-1)
-                        checksum += sum( [ord(x) for x in msg] )
-                        checksum += ord(self.port.read())
-                        if checksum%256 == 255:
-                            try:
-                                self.publishers[topic_id].publish(msg)
-                            except KeyError:
-                                rospy.loginfo("Tried to publish before configured, topic id %d" % topic_id)
-                        else:
-                            rospy.logerr("Failed checksum")
-                else:       
-                    rospy.loginfo("Failed packet")
-                mode = MODE_FIRST_FF
-            
-    def send(self, topic, msg):
-        """ Send a message on a particular topic to the device. """
-        with self.mutex:
-            length = len(msg)
-            checksum = 255 - ( (PKT_TOPIC + self.subscribers[topic][0] + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-            self.port.write('\xff\xff')
-            self.port.write(chr(PKT_TOPIC))
-            self.port.write(chr(self.subscribers[topic][0]))
-            self.port.write(chr(length&255))
-            self.port.write(chr(length>>8))
-            self.port.write(msg)
-            self.port.write(chr(checksum))
+import sys
 
 if __name__=="__main__":
-    SerialNode("/dev/ttyUSB0")
+	rospy.init_node("serial_node")
+	print "ROS Serial Python Node"
+	
+	port_name = '/dev/ttyUSB0'
+	if len(sys.argv) == 2 :
+		port_name  = sys.argv[1]
+	print "Connected on ", port_name
+	SerialClient(port_name)
+	
+	
+		
 
+	
