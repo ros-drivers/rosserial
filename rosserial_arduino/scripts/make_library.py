@@ -35,7 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("rosserial_library_maker")
+import roslib; roslib.load_manifest("rosserial_arduino")
 import rospy
 
 import os, sys, subprocess
