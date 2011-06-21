@@ -4,6 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosserial_arduino</url>
+  <depend package="rospy"/>
 </package>
 
 
