@@ -269,10 +269,7 @@ void ros::NodeHandle::spinOnce()
       checksum_ = data;
     }else if( mode_ == MODE_TOPIC ){    /* this is topic name */
       topic_ = data;
-      //if(topic_ > 127)
-        mode_++;
-      //else
-      //  mode_ = MODE_FIRST_FF;
+      mode_++;
     }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
       bytes_ = data;
       index_ = 0;
