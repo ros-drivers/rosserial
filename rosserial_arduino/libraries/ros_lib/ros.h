@@ -45,6 +45,10 @@
 
 #define BUFFER_SIZE         512
 
+#define PKT_NEGOTIATION     0
+#define PKT_TOPIC           1
+#define PKT_SERVICE         2
+
 namespace ros
 {
   class NodeHandle;
@@ -113,6 +117,7 @@ namespace ros
 
       int mode_;
       int bytes_;
+      int type_;
       int topic_;
       int index_;
       int checksum_;

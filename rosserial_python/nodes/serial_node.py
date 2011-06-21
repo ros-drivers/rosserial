@@ -34,7 +34,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("serial_node")
+import roslib; roslib.load_manifest("rosserial_python")
 import rospy
 
 import thread
@@ -43,6 +43,10 @@ import StringIO
 
 MODE_FIRST_FF = 0
 MODE_SECOND_FF = 1
+
+PKT_NEGOTIATION = 0
+PKT_TOPIC = 1
+PKT_SERVICE = 2
 
 class Publisher:
     """ 
@@ -117,6 +121,7 @@ class SerialNode:
                 
         self.publishers = dict()
         self.subscribers = dict()
+        rospy.sleep(1.0) # TODO
         self.requestTopics()
         self.spin()
 
@@ -124,7 +129,7 @@ class SerialNode:
         """ Determine topics to subscribe/publish. """
         self.port.flushInput()
         # request topic sync
-        self.port.write("\xff\xff\x00\x00\x00\x010")
+        self.port.write("\xff\xff\x00\x00\x00\x00\xff")
 
     def spin(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -136,43 +141,54 @@ class SerialNode:
             elif mode == MODE_SECOND_FF:
                 x = self.port.read()
                 if x == '\xff':
-                    topic = ord(self.port.read())
-                    if topic == 0:
-                        # parse a topic
-                        l = ord(self.port.read())
-                        print l
-                        topic_id = ord(self.port.read())
-                        print topic_id
-                        l1 = ord(self.port.read())
-                        print l1
-                        topic_name = self.port.read(l1)
-                        print topic_name            
-                        l2 = ord(self.port.read())
-                        print l2
-                        topic_type = self.port.read(l2)            
-                        print topic_type
-                        # checksum?
-                        #chk = self.port.read()
-                        if topic_id < 128:
-                            self.publishers[topic_id] = Publisher(topic_name, topic_type)
+                    # packet type
+                    pkt_type = ord(self.port.read())
+                    checksum = pkt_type
+                    # topic id
+                    topic_id = ord(self.port.read())
+                    checksum += topic_id
+                    # message length (2 bytes)
+                    bytes = ord(self.port.read())       
+                    checksum += bytes
+                    temp = ord(self.port.read())
+                    bytes += temp<<8
+                    checksum += temp    
+                    # now handle packet payload
+                    if pkt_type == PKT_NEGOTIATION:
+                        # get topic
+                        if bytes > 0:
+                            l1 = ord(self.port.read())
+                            topic_name = self.port.read(l1)
+                            l2 = ord(self.port.read())
+                            topic_type = self.port.read(l2)
+                            checksum += l1 + l2
+                            checksum += sum( [ord(x) for x in topic_name] )
+                            checksum += sum( [ord(x) for x in topic_type] )
+                            checksum += ord(self.port.read())
+                            print topic_name, topic_type
+                            if checksum%256 == 255:
+                                try:
+                                    if topic_id < 128:
+                                        self.publishers[topic_id] = Publisher(topic_name, topic_type)
+                                    else:
+                                        self.subscribers[topic_name] = [topic_id, Subscriber(topic_name, topic_type, self)]
+                                except KeyError:
+                                    rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
+                            else:
+                                rospy.logerr("Topic Negotiation: failed checksum")
+                                print checksum%256
                         else:
-                            self.subscribers[topic_name] = [topic_id, Subscriber(topic_name, topic_type, self)]
-                    else:   
-                        chk   = topic
-                        ttype = ord(self.port.read())
-                        chk   += ttype
-                        bytes = ord(self.port.read())<<8
-                        chk   += bytes >> 8
-                        bytes += ord(self.port.read())
-                        chk   += bytes&255                        
-                        msg   = self.port.read(bytes-1)
-                        chk   += sum([ord(x) for x in msg] )
-                        chk   += ord(self.port.read())   
-                        if chk%256 == 255:
+                            self.topics = topic_id
+                    elif pkt_type == PKT_TOPIC: 
+                        # message
+                        msg = self.port.read(bytes-1)
+                        checksum += sum( [ord(x) for x in msg] )
+                        checksum += ord(self.port.read())
+                        if checksum%256 == 255:
                             try:
-                                self.publishers[topic].publish(msg)
+                                self.publishers[topic_id].publish(msg)
                             except KeyError:
-                                rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
+                                rospy.loginfo("Tried to publish before configured, topic id %d" % topic_id)
                         else:
                             rospy.logerr("Failed checksum")
                 else:       
@@ -182,13 +198,13 @@ class SerialNode:
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
         with self.mutex:
-            length = 1 + len(msg)
-            checksum = 255 - ( (self.subscribers[topic][0] + (length>>8) + (length&255) + sum([ord(x) for x in msg]))%256 )
+            length = len(msg)
+            checksum = 255 - ( (PKT_TOPIC + self.subscribers[topic][0] + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
             self.port.write('\xff\xff')
+            self.port.write(chr(PKT_TOPIC))
             self.port.write(chr(self.subscribers[topic][0]))
-            self.port.write('\x00')
-            self.port.write(chr(length>>8))
             self.port.write(chr(length&255))
+            self.port.write(chr(length>>8))
             self.port.write(msg)
             self.port.write(chr(checksum))
 

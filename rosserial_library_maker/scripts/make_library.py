@@ -335,11 +335,6 @@ class Message:
                 except:
                     type_array_size = None
                 type_name = type_name[0:type_name.find('[')]
-                
-
-            #print str(type_package)+"::"+type_name+"("+name+")",
-            #if type_array:  
-            #    print "[Array:"+str(type_array_size)+"]", 
 
             # convert to C/Arduino type if primitive, expand name otherwise
             try:
