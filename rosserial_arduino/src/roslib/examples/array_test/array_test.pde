@@ -4,8 +4,8 @@
  */
 
 #include <ros.h>
-#include <std_msgs.h> /* have to include std_msgs.h to link against it */
-#include <geometry_msgs.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 
 bool set_; 
 

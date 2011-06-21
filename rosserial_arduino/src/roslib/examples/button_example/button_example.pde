@@ -3,7 +3,7 @@
  */
 
 #include <ros.h>
-#include <std_msgs.h>
+#include <std_msgs/Bool.h>
 
 ros::NodeHandle nh;
 

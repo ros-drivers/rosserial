@@ -4,7 +4,7 @@
  */
 
 #include <ros.h>
-#include <std_msgs.h>
+#include <std_msgs/String.h>
 
 ros::NodeHandle nh;
 
