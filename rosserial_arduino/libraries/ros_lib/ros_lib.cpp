@@ -265,11 +265,14 @@ void ros::NodeHandle::spinOnce()
         mode_ = MODE_FIRST_FF;
     }else if( mode_ == MODE_TYPE ){     /* this is the message type (topic or service) */
       type_ = data;
-      checksum_ = data;
       mode_++;
+      checksum_ = data;
     }else if( mode_ == MODE_TOPIC ){    /* this is topic name */
       topic_ = data;
-      mode_++;
+      //if(topic_ > 127)
+        mode_++;
+      //else
+      //  mode_ = MODE_FIRST_FF;
     }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
       bytes_ = data;
       index_ = 0;
@@ -290,7 +293,7 @@ void ros::NodeHandle::spinOnce()
             subscribers[topic_-128]->cb_( message_in );
         }
       }
-      mode_ = 0;
+      mode_ = MODE_FIRST_FF;
     }
   }
 }
