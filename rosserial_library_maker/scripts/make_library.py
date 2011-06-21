@@ -188,17 +188,19 @@ class StringDataType(PrimitiveDataType):
         f.write('    unsigned char * %s;\n' % self.name)
 
     def serialize(self, f):
-        f.write('  long * length_%s = (long *)(outbuffer + offset);\n' % self.name)
-        f.write('  *length_%s = strlen( (const char*) this->%s);\n' % (self.name,self.name))
+        cn = self.name.replace("[","").replace("]","")
+        f.write('  long * length_%s = (long *)(outbuffer + offset);\n' % cn)
+        f.write('  *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
         f.write('  offset += 4;\n')
-        f.write('  memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,self.name))
-        f.write('  offset += *length_%s;\n' % self.name)
+        f.write('  memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
+        f.write('  offset += *length_%s;\n' % cn)
 
     def deserialize(self, f):
-        f.write('  long * length_%s = (long *)(inbuffer + offset);\n' % self.name)
+        cn = self.name.replace("[","").replace("]","")
+        f.write('  long * length_%s = (long *)(inbuffer + offset);\n' % cn)
         f.write('  offset += 4;\n')
         f.write('  this->%s = (inbuffer + offset);\n' % self.name)
-        f.write('  offset += *length_%s;\n' % self.name)
+        f.write('  offset += *length_%s;\n' % cn)
 
 
 class TimeDataType(PrimitiveDataType):
