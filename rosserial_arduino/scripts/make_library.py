@@ -40,9 +40,6 @@ import rospy
 
 import os, sys, subprocess
 
-# TODO 
-#   duration
-
 ros_types = {
 	'bool'  :   ('bool',           1),
 	'byte'  :   ('byte',           1),
@@ -293,8 +290,7 @@ class Message:
 
         self.name = name            # name of message/class
         self.package = package      # package we reside in
-        self.includes = list()      # other packages we must include
-        self.depends = list()       # other messages/classes in this package we depend on
+        self.includes = list()      # other files we must include
 
         self.data = list()          # data types for code generation
         self.enums = list()
@@ -365,24 +361,34 @@ class Message:
             except:
                 if type_name == 'Header':
                     self.data.append( MessageDataType(name, 'std_msgs::Header', 0) )
-                    if "std_msgs" not in self.includes:
-                        self.includes.append("std_msgs")
+                    if "std_msgs/Header" not in self.includes:
+                        self.includes.append("std_msgs/Header")
                 else:
                     if type_package == None or type_package == package:
                         type_package = package  
                         cls = MessageDataType
-                        if type_name not in self.depends:
-                            self.depends.append(type_name)
-                    if type_package != package and type_package not in self.includes:
-                        self.includes.append(type_package)
+                        if self.package+"/"+type_name not in self.includes:
+                            self.includes.append(self.package+"/"+type_name)
+                    if type_package+"/"+type_name not in self.includes:
+                        self.includes.append(type_package+"/"+type_name)
                     if type_array:
                         self.data.append( ArrayDataType(name, type_package + "::" + type_name, size, cls, type_array_size) )
                     else:
                         self.data.append( MessageDataType(name, type_package + "::" + type_name, 0) )
         #print ""
 
-    def make_declaration(self, f):
-        """ Outputs declaration of this message class to f. """
+    def make_header(self, f):
+        f.write('#ifndef ros_%s_h\n' % self.name)
+        f.write('#define ros_%s_h\n' % self.name)
+        f.write('\n')
+        f.write('#include "WProgram.h"\n')
+        f.write('#include "ros.h"\n')
+        for i in self.includes:
+            f.write('#include "%s.h"\n' % i)
+        f.write('\n')
+        f.write('namespace %s\n' % self.package)
+        f.write('{\n')
+        f.write('\n')
         f.write('  class %s : public ros::Msg\n' % self.name)
         f.write('  {\n')
         f.write('   public:\n')
@@ -398,9 +404,16 @@ class Message:
         f.write('    static const char * type;\n')
         f.write('  };\n')
         f.write('\n')
+        f.write('}\n')
+        f.write('#endif')
 
-    def make_definition(self, f):
-        """ Outputs definition of this message class to f. """
+    def make_cpp(self, f):
+        f.write('#include "%s.h"\n' % (self.package+"/"+self.name))
+        f.write('\n')
+        f.write('namespace %s\n' % self.package)
+        f.write('{\n')
+        f.write('\n')
+
         # name
         f.write('const char * %s::type = "%s/%s";\n' % (self.name, self.package, self.name))
         f.write('\n')
@@ -422,7 +435,7 @@ class Message:
         f.write('  return offset;\n');
         f.write('};\n')      
         f.write('\n')  
-
+        f.write('}\n')
 
 #####################################################################
 # Core Library Maker
@@ -433,7 +446,6 @@ class ArduinoLibraryMaker:
     def __init__(self, package):
         """ Initialize by finding location and all messages in this package. """
         self.name = package
-        self.includes = list()
         print "\nExporting " + package + ":", 
 
         # find directory for this package
@@ -441,83 +453,30 @@ class ArduinoLibraryMaker:
         self.directory = proc.communicate()[0].rstrip() + "/msg"
 
         # find the messages in this package
-        self.messages = dict()
+        self.messages = list()
         for f in os.listdir(self.directory):
             if f.endswith(".msg"):
                 # add to list of messages
                 print "%s," % f[0:-4],
                 definition = open(self.directory + "/" + f).readlines()
-                new_msg = Message(f[0:-4], self.name, definition) 
-                self.messages[new_msg.name] = new_msg
-                for i in new_msg.includes:
-                    if not i in self.includes:
-                        self.includes.append(i)
+                self.messages.append( Message(f[0:-4], self.name, definition) )
         print "\n"
-        
-    # generating functions
-    def make_header(self, f):
-        f.write('#ifndef %s_h\n' % self.name)
-        f.write('#define %s_h\n' % self.name)
-        f.write('\n')
-        f.write('#include "WProgram.h"\n')
-        f.write('#include "ros.h"\n')
-        for i in self.includes:
-            f.write('#include "%s.h"\n' % i)
-        f.write('\n')
-        f.write('namespace %s\n' % self.name)
-        f.write('{\n')
-        f.write('\n')
-
-    def make_footer(self, f):
-        f.write('}\n')
-        f.write('#endif')
-
-    def make_cpp_header(self, f):
-        f.write('#include "%s.h"\n' % self.name)
-        f.write('\n')
-        f.write('namespace %s\n' % self.name)
-        f.write('{\n')
-        f.write('\n')
-
-    def make_cpp_footer(self, f):
-        f.write('}\n')
+     
 
     def generate(self, path_to_output):
         """ Generate header and source files for this package. """
-            
-        # TODO: make directory?
-        header = open(path_to_output + "/" + self.name + "/" + self.name + ".h", "w")
-        cpp = open(path_to_output + "/" + self.name + "/" + self.name + ".cpp", "w")
-
-        self.make_header(header)
-        self.make_cpp_header(cpp)
-
-        # check dependencies, re-order to satisfy
-        depends = 1
-        order = self.messages.keys()
-        while depends > 0:
-            depends = 0        
-            for msg in order:
-                for i in self.messages[msg].depends:
-                    k1 = order.index(i)
-                    k2 = order.index(msg)
-                    if k1 > k2:
-                        x = order[k1]
-                        order[k1] = order[k2]
-                        order[k2] = x
-                        depends += 1
 
         # generate for each message
-        for msg in order:
-            self.messages[msg].make_declaration(header)
-            self.messages[msg].make_definition(cpp) 
+        for msg in self.messages:
+            if not os.path.exists(path_to_output + "/" + self.name):
+                os.makedirs(path_to_output + "/" + self.name)
+            header = open(path_to_output + "/" + self.name + "/" + msg.name + ".h", "w")
+            msg.make_header(header)
+            header.close()
 
-        # finish up
-        self.make_footer(header)
-        self.make_cpp_footer(cpp)
-        
-        header.close()
-        cpp.close()
+            cpp = open(path_to_output + "/" + msg.name  + ".cpp", "w")
+            msg.make_cpp(cpp) 
+            cpp.close()
 
     
 if __name__=="__main__":
@@ -526,7 +485,7 @@ if __name__=="__main__":
     path = sys.argv[1]
     if path[-1] == "/":
         path = path[0:-1]
-    path += "/libraries"
+    #path += "/libraries"
     print "\nExporting to %s" % path
 
     # make libraries
