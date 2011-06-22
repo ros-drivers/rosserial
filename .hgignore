@@ -1,0 +1,3 @@
+rosserial_arduino/build
+rosserial_arduino/libraries
+./*.pyc
