@@ -474,7 +474,7 @@ class ArduinoLibraryMaker:
             msg.make_header(header)
             header.close()
 
-            cpp = open(path_to_output + "/" + msg.name  + ".cpp", "w")
+            cpp = open(path_to_output + "/" + self.name + "_" + msg.name  + ".cpp", "w")
             msg.make_cpp(cpp) 
             cpp.close()
 

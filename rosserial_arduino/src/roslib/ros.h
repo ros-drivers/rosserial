@@ -48,6 +48,7 @@
 #define PKT_NEGOTIATION     0
 #define PKT_TOPIC           1
 #define PKT_SERVICE         2
+#define PKT_TIME            10
 
 namespace ros
 {
