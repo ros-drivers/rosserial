@@ -127,7 +127,7 @@ class SerialClient:
         self.subscribers = dict()
         rospy.sleep(1.0) # TODO
         self.requestTopics()
-        self.spin()
+
 
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
@@ -135,7 +135,8 @@ class SerialClient:
         # request topic sync
         self.port.write("\xff\xff\x00\x00\x00\x00\xff")
 
-    def spin(self):
+	
+    def run(self):
         """ Forward recieved messages to appropriate publisher. """
         mode = MODE_FIRST_FF
         while not rospy.is_shutdown():

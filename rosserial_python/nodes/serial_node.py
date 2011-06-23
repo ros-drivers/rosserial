@@ -48,9 +48,6 @@ if __name__=="__main__":
 	if len(sys.argv) == 2 :
 		port_name  = sys.argv[1]
 	print "Connected on ", port_name
-	SerialClient(port_name)
-	
-	
-		
+	client = SerialClient(port_name)
+	client.run()
 
-	
