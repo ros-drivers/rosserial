@@ -36,3 +36,7 @@ add_custom_target( make_libraries ALL
     WORKING_DIRECTORY ../
 )
 
+add_custom_target( make_time ALL
+    COMMAND cp -r src/ros_time/* libraries/ros_lib/
+    WORKING_DIRECTORY ../
+)
