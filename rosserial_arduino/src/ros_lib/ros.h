@@ -129,9 +129,9 @@ namespace ros
 
 }
 
-#define ROS_CALLBACK( fn, ty, message ) \ 
+#define ROS_CALLBACK( fn, ty, message )\
 ty message; \
-void fn (unsigned char *data){ \
+void fn (unsigned char *data){\
     message.deserialize(data); 
 
 #endif
