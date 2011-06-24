@@ -41,12 +41,15 @@ import thread
 from serial import *
 import StringIO
 
+from std_msgs.msg import Time
+
 MODE_FIRST_FF = 0
 MODE_SECOND_FF = 1
 
 PKT_NEGOTIATION = 0
 PKT_TOPIC = 1
 PKT_SERVICE = 2
+PKT_TIME = 10
 
 class Publisher:
     """ 
@@ -122,19 +125,16 @@ class SerialClient:
             # open a specific port
             self.port = Serial(port, baud)
             
-                
         self.publishers = dict()
         self.subscribers = dict()
         rospy.sleep(1.0) # TODO
         self.requestTopics()
-
 
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
         self.port.flushInput()
         # request topic sync
         self.port.write("\xff\xff\x00\x00\x00\x00\xff")
-
 	
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -184,7 +184,24 @@ class SerialClient:
                                 print checksum%256
                         else:
                             self.topics = topic_id
-                    elif pkt_type == PKT_TOPIC: 
+                    elif pkt_type == PKT_TIME: 
+                        print "sync!"
+                        t = Time()
+                        t.data = rospy.Time.now()
+                        data_buffer = StringIO.StringIO()
+                        t.serialize(data_buffer)
+                        msg = data_buffer.getvalue()
+                        length = len(msg)
+                        checksum = 255 - ( (PKT_TIME + 0 + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
+                        self.port.write('\xff\xff')
+                        self.port.write(chr(PKT_TIME))
+                        self.port.write(chr(0))
+                        self.port.write(chr(length&255))
+                        self.port.write(chr(length>>8))
+                        self.port.write(msg)
+                        self.port.write(chr(checksum))
+                                        
+                    elif pkt_type == PKT_TOPIC:    
                         # message
                         msg = self.port.read(bytes-1)
                         checksum += sum( [ord(x) for x in msg] )

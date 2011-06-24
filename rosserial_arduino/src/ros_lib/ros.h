@@ -101,6 +101,10 @@ namespace ros
       void negotiateTopics();
       int publish(int id, Msg * msg);
 
+      /* synchronize time with host */
+      void requestSyncTime();
+      void syncTime(unsigned char * data);
+
       /* Start serial, initialize buffers */
       void initNode();
 

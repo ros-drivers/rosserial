@@ -12,12 +12,12 @@ void fx_open(){
 }
 
 
- int fx_putc(char c) {
+int fx_putc(char c) {
     Serial.write(c);
     return 0;
 }
  
- int fx_getc(){
+int fx_getc(){
     return Serial.read();
 }
 

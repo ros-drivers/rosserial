@@ -36,41 +36,49 @@
  * Author: Michael Ferguson
  */
 
-#ifndef ros_time_h_included
-#define ros_time_h_included
-
-#include <ros.h>
 #include <ros/duration.h>
-#include <math.h>
 
 namespace ros
 {
-  void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);
-
-  class Time
+  void normalizeSecNSecSigned(long &sec, long &nsec)
   {
-    public:
-      unsigned long sec, nsec;
+    long nsec_part = nsec;
+    long sec_part = sec;
+     
+    while (nsec_part > 1000000000L)
+    {
+      nsec_part -= 1000000000L;
+      ++sec_part;
+    }
+    while (nsec_part < 0)
+    {
+      nsec_part += 1000000000L;
+      --sec_part;
+    }
+    sec = sec_part;
+    nsec = nsec_part;
+  }
 
-      Time() : sec(0), nsec(0) {}
-      Time(unsigned long _sec, unsigned long _nsec) : sec(_sec), nsec(_nsec)
-      {
-        normalizeSecNSec(sec, nsec);  
-      } 
-        
-      double toSec() const { return (double)sec + 1e-9*(double)nsec; };
-      void fromSec(double t) { sec = (unsigned long) floor(t); nsec = (unsigned long) round((t-sec) * 1e9); };
+  Duration& Duration::operator+=(const Duration &rhs)
+  {
+    sec += rhs.sec;
+    nsec += rhs.nsec;
+    normalizeSecNSecSigned(sec, nsec);
+    return *this;
+  }
 
-      unsigned long toNsec() { return (unsigned long)sec*1000000000ull + (unsigned long)nsec; };
-      Time& fromNSec(long t);
+  Duration& Duration::operator-=(const Duration &rhs){
+    sec += -rhs.sec;
+    nsec += -rhs.nsec;
+    normalizeSecNSecSigned(sec, nsec);
+    return *this;
+  }
 
-      Time& operator +=(const Duration &rhs);
-      Time& operator -=(const Duration &rhs);
-
-      static Time now();
-      static void setNow( Time & new_now);
-  };
+  Duration& Duration::operator*=(double scale){
+    sec *= scale;
+    nsec *= scale;
+    normalizeSecNSecSigned(sec, nsec);
+    return *this;
+  }
 
 }
-
-#endif

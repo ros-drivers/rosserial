@@ -37,7 +37,7 @@
  */
 
 #include <ros/time.h>
-//#include <ros/duration.h>
+#include <time_fx.h>
 
 namespace ros
 {
@@ -48,15 +48,46 @@ namespace ros
     nsec = nsec_part;
   }
 
-  void Time::fromNSec(long t)
+  Time& Time::fromNSec(long t)
   {
-    
+    sec = t / 1000000000;
+    nsec = t % 1000000000;
+    normalizeSecNSec(sec, nsec);
+    return *this;
   }
 
-  Time current_time;
+  Time& Time::operator +=(const Duration &rhs)
+  {
+    sec += rhs.sec;
+    nsec += rhs.nsec;
+    normalizeSecNSec(sec, nsec);
+    return *this; 
+  }
+
+  Time& Time::operator -=(const Duration &rhs){
+    sec += -rhs.sec;
+    nsec += -rhs.nsec;
+    normalizeSecNSec(sec, nsec);
+    return *this;
+  }
+
+  static unsigned long sec_offset, nsec_offset;
+  static Time current_time;
+
   Time Time::now(){
-    // TODO: update now
+    unsigned long ms = millis();
+    current_time.sec = ms/1000 + sec_offset;
+    current_time.nsec = (ms%1000)*1000000UL + nsec_offset;
+    normalizeSecNSec(current_time.sec, current_time.nsec);
     return current_time;
+  }
+
+  void Time::setNow( Time & new_now )
+  {
+    unsigned long ms = millis();
+    sec_offset = new_now.sec - ms/1000 - 1;
+    nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
+    normalizeSecNSec(sec_offset, nsec_offset);
   }
 
 }

@@ -57,18 +57,10 @@ namespace ros
         normalizeSecNSecSigned(sec, nsec);
       }
 
-      Duration operator+(const Duration &rhs) const;
-      Duration operator-(const Duration &rhs) const;
-      Duration operator-() const;
-      Duration operator*(double scale) const;
       Duration& operator+=(const Duration &rhs);
       Duration& operator-=(const Duration &rhs);
-      Duration& operator*=(const Duration &rhs);
-      Duration operator+(const Duration &rhs) const;
-      Duration operator+(const Duration &rhs) const;
-      Duration operator+(const Duration &rhs) const;
-      Duration operator+(const Duration &rhs) const;
-
+      Duration& operator*=(double scale);
+      
   };
 
 }

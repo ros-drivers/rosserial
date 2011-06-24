@@ -38,6 +38,7 @@
 
 #include "ros.h"
 #include "serial_fx.h"
+#include "ros/time.h"
 
 #define MODE_FIRST_FF       0
 #define MODE_SECOND_FF      1
@@ -199,6 +200,41 @@ void ros::NodeHandle::negotiateTopics()
   configured_ = true;
 }
 
+static unsigned long rt_time;
+void ros::NodeHandle::requestSyncTime()
+{
+  makeHeader();
+  fx_putc( (unsigned char) PKT_TIME ); 
+  fx_putc( (unsigned char) 0 );
+  fx_putc( (unsigned char) 0);
+  fx_putc( (unsigned char) 0);
+  fx_putc( (unsigned char) 255 );
+  rt_time = millis();
+}
+
+void ros::NodeHandle::syncTime( unsigned char * data )
+{
+  ros::Time t;
+  unsigned long offset = millis() - rt_time;
+
+  t.sec = ((unsigned long) (*(data + 0)));
+  t.sec |= ((unsigned long) (*(data + 1))) << 8;
+  t.sec |= ((unsigned long) (*(data + 2))) << 16;
+  t.sec |= ((unsigned long) (*(data + 3))) << 24;
+
+  t.nsec = ((unsigned long) (*(data + 4)));
+  t.nsec |= ((unsigned long) (*(data + 5))) << 8;
+  t.nsec |= ((unsigned long) (*(data + 6))) << 16;
+  t.nsec |= ((unsigned long) (*(data + 7))) << 24;
+  
+  t.sec += offset/1000;
+  t.nsec += (offset%1000)*1000000UL;
+
+  //ros::normalizeSecNSec(t.sec, t.nsec);
+
+  ros::Time::setNow(t);
+}
+
 int ros::NodeHandle::publish(int id, Msg * msg)
 {
   int l = msg->serialize(message_out) + 1;
@@ -223,6 +259,7 @@ inline void ros::NodeHandle::makeHeader()
   fx_putc(0xff);
 }
 
+static unsigned int time_count;
 void ros::NodeHandle::initNode()
 {
   // initialize publisher and subscriber lists
@@ -239,6 +276,7 @@ void ros::NodeHandle::initNode()
   bytes_ = 0;
   index_ = 0;
   topic_ = 0;
+  time_count = 0;
 }
 
 void ros::NodeHandle::spinOnce()
@@ -283,6 +321,11 @@ void ros::NodeHandle::spinOnce()
       if( (checksum_%256) == 255){
         if(type_ == PKT_NEGOTIATION){
           negotiateTopics();
+          time_count = 0;
+        }
+        else if(type_ == PKT_TIME)
+        {
+          syncTime(message_in);
         }
         else
         {
@@ -293,5 +336,10 @@ void ros::NodeHandle::spinOnce()
       mode_ = MODE_FIRST_FF;
     }
   }
+   
+  // occasionally sync time
+  if( time_count%5000 == 0 )
+    requestSyncTime();
+  time_count++;
 }
 
