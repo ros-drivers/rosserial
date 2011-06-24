@@ -74,7 +74,7 @@ class EnumerationType:
         self.value = value
     
     def make_declaration(self, f):
-        f.write('    enum { %s = %s };\n' % (self.name, str(self.value)))    
+        f.write('      enum { %s = %s };\n' % (self.name, str(self.value)))    
 
 class PrimitiveDataType:
     """ Our datatype is a C/C++ primitive. """    
@@ -85,119 +85,119 @@ class PrimitiveDataType:
         self.bytes = bytes
 
     def make_declaration(self, f):
-        f.write('    %s %s;\n' % (self.type, self.name) )
+        f.write('      %s %s;\n' % (self.type, self.name) )
 
     def serialize(self, f):
         #create a clean name
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
-        f.write('  union {\n')
-        f.write('    %s real;\n' % self.type)
-        f.write('    %s base;\n' % type_to_var(self.bytes))
-        f.write('  } u_%s;\n' % cn)
-        f.write('  u_%s.real = this->%s;\n' % (cn,self.name))
+        f.write('      union {\n')
+        f.write('        %s real;\n' % self.type)
+        f.write('        %s base;\n' % type_to_var(self.bytes))
+        f.write('      } u_%s;\n' % cn)
+        f.write('      u_%s.real = this->%s;\n' % (cn,self.name))
         for i in range(self.bytes):
-            f.write('  *(outbuffer + offset + %d) = (u_%s.base >> (8 * %d)) & 0xFF;\n' % (i, cn, i) )
-        f.write('  offset += sizeof(this->%s);\n' % self.name)
+            f.write('      *(outbuffer + offset + %d) = (u_%s.base >> (8 * %d)) & 0xFF;\n' % (i, cn, i) )
+        f.write('      offset += sizeof(this->%s);\n' % self.name)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
-        f.write('  union {\n')
-        f.write('    %s real;\n' % self.type)
-        f.write('    %s base;\n' % type_to_var(self.bytes))
-        f.write('  } u_%s;\n' % cn)
-        f.write('  u_%s.base = 0;\n' % cn)
+        f.write('      union {\n')
+        f.write('        %s real;\n' % self.type)
+        f.write('        %s base;\n' % type_to_var(self.bytes))
+        f.write('      } u_%s;\n' % cn)
+        f.write('      u_%s.base = 0;\n' % cn)
         for i in range(self.bytes):
-            f.write('  u_%s.base |= ((typeof(u_%s.base)) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,cn,i,i) )
-        f.write('  this->%s = u_%s.real;\n' % (self.name, cn) )
-        f.write('  offset += sizeof(this->%s);\n' % self.name)
+            f.write('      u_%s.base |= ((typeof(u_%s.base)) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,cn,i,i) )
+        f.write('      this->%s = u_%s.real;\n' % (self.name, cn) )
+        f.write('      offset += sizeof(this->%s);\n' % self.name)
 
 
 class MessageDataType(PrimitiveDataType):
     """ For when our data type is another message. """
     def serialize(self, f):
-        f.write('  offset += this->%s.serialize(outbuffer + offset);\n' % self.name)
+        f.write('      offset += this->%s.serialize(outbuffer + offset);\n' % self.name)
 
     def deserialize(self, f):
-        f.write('  offset += this->%s.deserialize(inbuffer + offset);\n' % self.name)
+        f.write('      offset += this->%s.deserialize(inbuffer + offset);\n' % self.name)
 
 
 class Float64DataType(PrimitiveDataType):
     """ AVR C/C++ has no native 64-bit support, we automatically convert to 32-bit float. """
         
     def make_declaration(self, f):
-        f.write('    float %s;\n' % self.name )
+        f.write('      float %s;\n' % self.name )
     
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('  long * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
-        f.write('  long exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
-        f.write('  if(exp_%s != 0)\n' % cn)
-        f.write('    exp_%s += 1023-127;\n' % cn)
-        f.write('  long sig_%s = *val_%s;\n' % (cn,cn))
-        f.write('  *(outbuffer + offset++) = 0;\n') # 29 blank bits
-        f.write('  *(outbuffer + offset++) = 0;\n')
-        f.write('  *(outbuffer + offset++) = 0;\n')
-        f.write('  *(outbuffer + offset++) = (sig_%s<<5) & 0xff;\n' % cn)
-        f.write('  *(outbuffer + offset++) = (sig_%s>>3) & 0xff;\n' % cn)
-        f.write('  *(outbuffer + offset++) = (sig_%s>>11) & 0xff;\n' % cn)
-        f.write('  *(outbuffer + offset++) = ((exp_%s<<4) & 0xF0) | ((sig_%s>>19)&0x0F);\n' % (cn,cn))
-        f.write('  *(outbuffer + offset++) = (exp_%s>>4) & 0x7F;\n' % cn)
-        f.write('  if(this->%s < 0) *(outbuffer + offset -1) |= 0x80;\n' % self.name)
+        f.write('      long * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
+        f.write('      long exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
+        f.write('      if(exp_%s != 0)\n' % cn)
+        f.write('        exp_%s += 1023-127;\n' % cn)
+        f.write('      long sig_%s = *val_%s;\n' % (cn,cn))
+        f.write('      *(outbuffer + offset++) = 0;\n') # 29 blank bits
+        f.write('      *(outbuffer + offset++) = 0;\n')
+        f.write('      *(outbuffer + offset++) = 0;\n')
+        f.write('      *(outbuffer + offset++) = (sig_%s<<5) & 0xff;\n' % cn)
+        f.write('      *(outbuffer + offset++) = (sig_%s>>3) & 0xff;\n' % cn)
+        f.write('      *(outbuffer + offset++) = (sig_%s>>11) & 0xff;\n' % cn)
+        f.write('      *(outbuffer + offset++) = ((exp_%s<<4) & 0xF0) | ((sig_%s>>19)&0x0F);\n' % (cn,cn))
+        f.write('      *(outbuffer + offset++) = (exp_%s>>4) & 0x7F;\n' % cn)
+        f.write('      if(this->%s < 0) *(outbuffer + offset -1) |= 0x80;\n' % self.name)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('  unsigned long * val_%s = (unsigned long*) &(this->%s);\n' % (cn,self.name))
-        f.write('  offset += 3;\n') # 29 blank bits
-        f.write('  *val_%s = ((unsigned long)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
-        f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
-        f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
-        f.write('  *val_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
-        f.write('  unsigned long exp_%s = ((unsigned long)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
-        f.write('  exp_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
-        f.write('  if(exp_%s !=0)\n' % cn)
-        f.write('    *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('  if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
+        f.write('      unsigned long * val_%s = (unsigned long*) &(this->%s);\n' % (cn,self.name))
+        f.write('      offset += 3;\n') # 29 blank bits
+        f.write('      *val_%s = ((unsigned long)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
+        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
+        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
+        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
+        f.write('      unsigned long exp_%s = ((unsigned long)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
+        f.write('      exp_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
+        f.write('      if(exp_%s !=0)\n' % cn)
+        f.write('        *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
+        f.write('      if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
 
 
 class Int64DataType(PrimitiveDataType):
     """ AVR C/C++ has no native 64-bit support. """
 
     def make_declaration(self, f):
-        f.write('    long %s;\n' % self.name )
+        f.write('      long %s;\n' % self.name )
     
     def serialize(self, f):
         for i in range(4):
-            f.write('  *(outbuffer + offset++) = (%s >> (8 * %d)) & 0xFF;\n' % (self.name, i) )
+            f.write('      *(outbuffer + offset++) = (%s >> (8 * %d)) & 0xFF;\n' % (self.name, i) )
         for i in range(4):
-            f.write('  *(outbuffer + offset++) = (%s > 0) ? 0: 255;\n' % self.name )
+            f.write('      *(outbuffer + offset++) = (%s > 0) ? 0: 255;\n' % self.name )
 
     def deserialize(self, f):
-        f.write('  %s = 0;\n' % self.name)
+        f.write('      %s = 0;\n' % self.name)
         for i in range(4):
-            f.write('  %s += ((long)(*(inbuffer + offset++))) >> (8 * %d);\n' % (self.name, i))
-        f.write('  offset += 4;\n')
+            f.write('      %s += ((long)(*(inbuffer + offset++))) >> (8 * %d);\n' % (self.name, i))
+        f.write('      offset += 4;\n')
 
     
 class StringDataType(PrimitiveDataType):
     """ Need to convert to unsigned char *. """
 
     def make_declaration(self, f):
-        f.write('    unsigned char * %s;\n' % self.name)
+        f.write('      unsigned char * %s;\n' % self.name)
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('  long * length_%s = (long *)(outbuffer + offset);\n' % cn)
-        f.write('  *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
-        f.write('  offset += 4;\n')
-        f.write('  memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
-        f.write('  offset += *length_%s;\n' % cn)
+        f.write('      long * length_%s = (long *)(outbuffer + offset);\n' % cn)
+        f.write('      *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
+        f.write('      offset += 4;\n')
+        f.write('      memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
+        f.write('      offset += *length_%s;\n' % cn)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('  long * length_%s = (long *)(inbuffer + offset);\n' % cn)
-        f.write('  offset += 4;\n')
-        f.write('  this->%s = (inbuffer + offset);\n' % self.name)
-        f.write('  offset += *length_%s;\n' % cn)
+        f.write('      long * length_%s = (long *)(inbuffer + offset);\n' % cn)
+        f.write('      offset += 4;\n')
+        f.write('      this->%s = (inbuffer + offset);\n' % self.name)
+        f.write('      offset += *length_%s;\n' % cn)
 
 
 class TimeDataType(PrimitiveDataType):
@@ -209,7 +209,7 @@ class TimeDataType(PrimitiveDataType):
         self.nsec = PrimitiveDataType(name+'.nsec','unsigned long',4)
 
     def make_declaration(self, f):
-        f.write('    %s %s;\n' % (self.type, self.name))
+        f.write('      %s %s;\n' % (self.type, self.name))
 
     def serialize(self, f):
         self.sec.serialize(f)
@@ -232,50 +232,49 @@ class ArrayDataType(PrimitiveDataType):
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
-            f.write('    unsigned char %s_length;\n' % self.name)
-            f.write('    %s st_%s;\n' % (self.type, self.name)) # static instance for copy
-            f.write('    %s * %s;\n' % (self.type, self.name))
+            f.write('      unsigned char %s_length;\n' % self.name)
+            f.write('      %s st_%s;\n' % (self.type, self.name)) # static instance for copy
+            f.write('      %s * %s;\n' % (self.type, self.name))
         else:
-            f.write('    %s %s[%d];\n' % (self.type, self.name, self.size))
+            f.write('      %s %s[%d];\n' % (self.type, self.name, self.size))
     
     def serialize(self, f):
         c = self.cls(self.name+"[i]", self.type, self.bytes)
         if self.size == None:
             # serialize length
-            f.write('  *(outbuffer + offset++) = %s_length;\n' % self.name)
-            f.write('  *(outbuffer + offset++) = 0;\n')
-            f.write('  *(outbuffer + offset++) = 0;\n')
-            f.write('  *(outbuffer + offset++) = 0;\n')
-            f.write('  for( unsigned char i = 0; i < %s_length; i++){\n' % self.name)
+            f.write('      *(outbuffer + offset++) = %s_length;\n' % self.name)
+            f.write('      *(outbuffer + offset++) = 0;\n')
+            f.write('      *(outbuffer + offset++) = 0;\n')
+            f.write('      *(outbuffer + offset++) = 0;\n')
+            f.write('      for( unsigned char i = 0; i < %s_length; i++){\n' % self.name)
             c.serialize(f)
-            f.write('  }\n')
+            f.write('      }\n')
         else:
-            f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
-            f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
+            f.write('      for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)            
-            f.write('  }\n')
+            f.write('      }\n')
         
     def deserialize(self, f):
         if self.size == None:
             c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
-            f.write('  unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
-            f.write('  if(%s_lengthT > %s_length)\n' % (self.name, self.name))
-            f.write('    this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
-            f.write('  offset += 3;\n')
-            f.write('  %s_length = %s_lengthT;\n' % (self.name, self.name))
+            f.write('      unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
+            f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
+            f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
+            f.write('      offset += 3;\n')
+            f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
-            f.write('  for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
+            f.write('      for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
             c.deserialize(f)
-            f.write('      memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))                     
-            f.write('  }\n')
-
+            f.write('        memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))                     
+            f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            f.write('  unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
-            f.write('  for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
+            f.write('      for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)            
-            f.write('  }\n')
+            f.write('      }\n')
 
 
 #####################################################################
@@ -397,29 +396,34 @@ class Message:
         f.write('\n')
         f.write('  class %s : public ros::Msg\n' % self.name)
         f.write('  {\n')
-        f.write('   public:\n')
+        f.write('    public:\n')
 
-        # serializer
-        f.write('   virtual int serialize(unsigned char *outbuffer){\n')
-        f.write('  int offset = 0;\n')
-        for d in self.data:
-            d.serialize(f)
-        f.write('  return offset;\n');
-        f.write('}\n')
-        f.write('\n')
-
-        # deserializer
-        f.write('  virtual int deserialize(unsigned char *inbuffer){\n')
-        f.write('  int offset = 0;\n')
-        for d in self.data:
-            d.deserialize(f)
-        f.write('  return offset;\n');
-        f.write('};\n')         
-        f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
         for d in self.data:
             d.make_declaration(f)
         for e in self.enums:
             e.make_declaration(f)
+
+        # serializer   
+        f.write('\n')
+        f.write('    virtual int serialize(unsigned char *outbuffer)\n')
+        f.write('    {\n')
+        f.write('      int offset = 0;\n')
+        for d in self.data:
+            d.serialize(f)
+        f.write('      return offset;\n');
+        f.write('    }\n')
+        f.write('\n')
+
+        # deserializer
+        f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
+        f.write('    {\n')
+        f.write('      int offset = 0;\n')
+        for d in self.data:
+            d.deserialize(f)
+        f.write('     return offset;\n');
+        f.write('    }\n')         
+        f.write('\n')
+        f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
         f.write('\n')
         f.write('  };\n')
         f.write('\n')
