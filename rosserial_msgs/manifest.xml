@@ -1,0 +1,14 @@
+<package>
+  <description brief="rosserial_msgs">
+
+     rosserial_msgs
+
+  </description>
+  <author>Michael Ferguson</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_msgs</url>
+
+</package>
+
+

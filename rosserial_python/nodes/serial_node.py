@@ -41,13 +41,16 @@ from rosserial_python import SerialClient
 import sys
 
 if __name__=="__main__":
-	rospy.init_node("serial_node")
-	print "ROS Serial Python Node"
-	
-	port_name = '/dev/ttyUSB0'
-	if len(sys.argv) == 2 :
-		port_name  = sys.argv[1]
-	print "Connected on ", port_name
-	client = SerialClient(port_name)
-	client.run()
+    rospy.init_node("serial_node")
+    print "ROS Serial Python Node"
+    
+    port_name = '/dev/ttyUSB0'
+    if len(sys.argv) == 2 :
+        port_name  = sys.argv[1]
+    print "Connected on ", port_name
+    client = SerialClient(port_name)
+    try:
+        client.run()
+    except KeyboardInterrupt:
+        pass
 

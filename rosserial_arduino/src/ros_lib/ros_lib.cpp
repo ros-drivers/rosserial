@@ -40,10 +40,13 @@
 #include "serial_fx.h"
 #include "ros/time.h"
 
+#include "std_msgs/Time.h"
+#include "rosserial_msgs/TopicInfo.h"
+
 #define MODE_FIRST_FF       0
 #define MODE_SECOND_FF      1
-#define MODE_TYPE           2   // waiting for topic type
-#define MODE_TOPIC          3   // waiting for topic id
+#define MODE_TOPIC_L        2   // waiting for topic id
+#define MODE_TOPIC_H        3
 #define MODE_SIZE_L         4   // waiting for message size
 #define MODE_SIZE_H         5   
 #define MODE_MESSAGE        6
@@ -90,7 +93,7 @@ bool ros::NodeHandle::advertise(Publisher & p)
     if(publishers[i] == 0) // empty slot
     {
       publishers[i] = &p;
-      p.id_ = i+1;
+      p.id_ = i+100+MAX_SUBSCRIBERS;
       p.nh_ = this;
       return true;
     }
@@ -106,7 +109,7 @@ bool ros::NodeHandle::subscribe(Subscriber & s)
     if(subscribers[i] == 0) // empty slot
     {
       subscribers[i] = &s;
-      s.id_ = i+128;
+      s.id_ = i+100;
       s.nh_ = this;
       return true;
     }
@@ -116,85 +119,26 @@ bool ros::NodeHandle::subscribe(Subscriber & s)
 
 void ros::NodeHandle::negotiateTopics()
 {
+  rosserial_msgs::TopicInfo ti; 
   int i;
   for(i = 0; i < MAX_PUBLISHERS; i++)
   {
     if(publishers[i] != 0) // non-empty slot
     {
-      int checksum = PKT_NEGOTIATION;
-      // send publisher information
-      makeHeader();                             // header
-      fx_putc((unsigned char)PKT_NEGOTIATION);  // type
-      // topic id
-      int val = publishers[i]->id_;             // id
-      fx_putc( (unsigned char) val );
-      checksum += val; 
-      // send packet length
-      val = strlen(publishers[i]->topic_) + strlen(publishers[i]->msg_->getType()) + 2;
-      fx_putc( (unsigned char) val&255 );       // packet length
-      checksum += val&255; 
-      fx_putc( (unsigned char) val>>8 );
-      checksum += val>>8; 
-      // send topic name
-      val = strlen(publishers[i]->topic_);
-      fx_putc( (unsigned char) val );           // name length
-      checksum += val;
-      const char * c = publishers[i]->topic_;   // name
-      while( *c ){
-        fx_putc( *c );
-        checksum += *c++;
-      }
-      // send topic type
-      val = strlen(publishers[i]->msg_->getType());
-      fx_putc( (unsigned char) val );           // type length  
-      checksum += val;
-      c = publishers[i]->msg_->getType();       // type
-      while( *c ){
-        fx_putc( *c );
-        checksum += *c++;
-      }
-      // checksum
-      fx_putc( 255 - (checksum%256) );
+      ti.topic_id = publishers[i]->id_;
+      ti.topic_name = (unsigned char *) publishers[i]->topic_;
+      ti.message_type = (unsigned char *) publishers[i]->msg_->getType();
+      publish( TOPIC_PUBLISHERS, &ti );
     }
   }
   for(i = 0; i < MAX_SUBSCRIBERS; i++)
   {
     if(subscribers[i] != 0) // non-empty slot
     {
-      int checksum = PKT_NEGOTIATION;
-      // send subscriber information
-      makeHeader();                              // header
-      fx_putc((unsigned char)PKT_NEGOTIATION);   // type
-      // topic id
-      int val = subscribers[i]->id_;             // id
-      fx_putc( (unsigned char) val );
-      checksum += val; 
-      // send packet length
-      val = strlen(subscribers[i]->topic_) + strlen(subscribers[i]->msg_->getType()) + 2;
-      fx_putc( (unsigned char) val&255 );       // packet length
-      checksum += val&255;
-      fx_putc( (unsigned char) val>>8 );
-      checksum += val>>8; 
-      // send topic name
-      val = strlen(subscribers[i]->topic_);
-      fx_putc( (unsigned char) val );            // name length
-      checksum += val;
-      const char * c = subscribers[i]->topic_;   // name
-      while( *c ){
-        fx_putc( *c );
-        checksum += *c++;
-      }
-      // send topic type
-      val = strlen(subscribers[i]->msg_->getType());
-      fx_putc( (unsigned char) val );            // type length 
-      checksum += val;  
-      c = subscribers[i]->msg_->getType();       // type
-      while( *c ){
-        fx_putc( *c );
-        checksum += *c++;
-      }
-      // checksum
-      fx_putc( 255 - (checksum%256) );
+      ti.topic_id = subscribers[i]->id_;
+      ti.topic_name = (unsigned char *) subscribers[i]->topic_;
+      ti.message_type = (unsigned char *) subscribers[i]->msg_->getType();
+      publish( TOPIC_SUBSCRIBERS, &ti );
     }
   }
   configured_ = true;
@@ -203,60 +147,41 @@ void ros::NodeHandle::negotiateTopics()
 static unsigned long rt_time;
 void ros::NodeHandle::requestSyncTime()
 {
-  makeHeader();
-  fx_putc( (unsigned char) PKT_TIME ); 
-  fx_putc( (unsigned char) 0 );
-  fx_putc( (unsigned char) 0);
-  fx_putc( (unsigned char) 0);
-  fx_putc( (unsigned char) 255 );
+  std_msgs::Time t;
+  publish( TOPIC_TIME, &t);
   rt_time = millis();
 }
 
 void ros::NodeHandle::syncTime( unsigned char * data )
 {
-  ros::Time t;
+  std_msgs::Time t;
   unsigned long offset = millis() - rt_time;
 
-  t.sec = ((unsigned long) (*(data + 0)));
-  t.sec |= ((unsigned long) (*(data + 1))) << 8;
-  t.sec |= ((unsigned long) (*(data + 2))) << 16;
-  t.sec |= ((unsigned long) (*(data + 3))) << 24;
+  t.deserialize(data);
 
-  t.nsec = ((unsigned long) (*(data + 4)));
-  t.nsec |= ((unsigned long) (*(data + 5))) << 8;
-  t.nsec |= ((unsigned long) (*(data + 6))) << 16;
-  t.nsec |= ((unsigned long) (*(data + 7))) << 24;
-  
-  t.sec += offset/1000;
-  t.nsec += (offset%1000)*1000000UL;
+  t.data.sec += offset/1000;
+  t.data.nsec += (offset%1000)*1000000UL;
 
-  //ros::normalizeSecNSec(t.sec, t.nsec);
-
-  ros::Time::setNow(t);
+  ros::Time::setNow(t.data);
 }
 
 int ros::NodeHandle::publish(int id, Msg * msg)
 {
-  int l = msg->serialize(message_out) + 1;
-  int chk = PKT_TOPIC + id + (l&255) + (l>>8);
-  makeHeader();
-  fx_putc( (unsigned char) PKT_TOPIC ); 
-  fx_putc(id);
+  int l = msg->serialize(message_out);
+  int chk = (id&255) + (id>>8) + (l&255) + (l>>8);
+  fx_putc(0xff);
+  fx_putc(0xff);
+  fx_putc( (unsigned char) id&255);
+  fx_putc( (unsigned char) id>>8);
   fx_putc( (unsigned char) l&255);
   fx_putc( (unsigned char) l>>8);
-  for(int i = 0; i<l-1; i++)
+  for(int i = 0; i<l; i++)
   {
     fx_putc(message_out[i]);
     chk += message_out[i];
   }
   fx_putc( 255 - (chk%256) );
   return 1;
-}
-
-inline void ros::NodeHandle::makeHeader()
-{
-  fx_putc(0xff);
-  fx_putc(0xff);
 }
 
 static unsigned int time_count;
@@ -276,7 +201,6 @@ void ros::NodeHandle::initNode()
   bytes_ = 0;
   index_ = 0;
   topic_ = 0;
-  time_count = 0;
 }
 
 void ros::NodeHandle::spinOnce()
@@ -301,12 +225,12 @@ void ros::NodeHandle::spinOnce()
         mode_++;
       }else
         mode_ = MODE_FIRST_FF;
-    }else if( mode_ == MODE_TYPE ){     /* this is the message type (topic or service) */
-      type_ = data;
+    }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
+      topic_ = data; 
       mode_++;
-      checksum_ = data;
-    }else if( mode_ == MODE_TOPIC ){    /* this is topic name */
-      topic_ = data;
+      checksum_ = data;                 // first byte included in checksum
+    }else if( mode_ == MODE_TOPIC_H ){  /* top half of topic id */
+      topic_ += data<<8;
       mode_++;
     }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
       bytes_ = data;
@@ -319,18 +243,18 @@ void ros::NodeHandle::spinOnce()
         mode_ = MODE_CHECKSUM;
     }else if( mode_ == MODE_CHECKSUM ){ /* do checksum */
       if( (checksum_%256) == 255){
-        if(type_ == PKT_NEGOTIATION){
+        if(topic_ == TOPIC_NEGOTIATION){
           negotiateTopics();
           time_count = 0;
         }
-        else if(type_ == PKT_TIME)
+        else if(topic_ == TOPIC_TIME)
         {
           syncTime(message_in);
         }
         else
         {
-          if(subscribers[topic_-128])
-            subscribers[topic_-128]->cb_( message_in );
+          if(subscribers[topic_-100])
+            subscribers[topic_-100]->cb_( message_in );
         }
       }
       mode_ = MODE_FIRST_FF;

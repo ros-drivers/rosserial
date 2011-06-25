@@ -42,14 +42,14 @@ from serial import *
 import StringIO
 
 from std_msgs.msg import Time
+from rosserial_msgs.msg import *
 
 MODE_FIRST_FF = 0
 MODE_SECOND_FF = 1
 
-PKT_NEGOTIATION = 0
-PKT_TOPIC = 1
-PKT_SERVICE = 2
-PKT_TIME = 10
+TOPIC_PUBLISHERS = 0
+TOPIC_SUBSCRIBERS = 1
+TOPIC_TIME = 10
 
 class Publisher:
     """ 
@@ -102,8 +102,7 @@ class Subscriber:
         """ Forward a message """
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
-        self.parent.send(self.topic, data_buffer.getvalue())
-
+        self.parent.send(self.subscribers[self.topic][0], data_buffer.getvalue())
 
 
 class SerialClient:
@@ -146,88 +145,74 @@ class SerialClient:
             elif mode == MODE_SECOND_FF:
                 x = self.port.read()
                 if x == '\xff':
-                    # packet type
-                    pkt_type = ord(self.port.read())
-                    checksum = pkt_type
-                    # topic id
+                    # topic id (2 bytes)
                     topic_id = ord(self.port.read())
-                    checksum += topic_id
+                    checksum = topic_id
+                    temp = ord(self.port.read())
+                    checksum += temp
+                    topic_id += temp<<8
                     # message length (2 bytes)
                     bytes = ord(self.port.read())       
                     checksum += bytes
                     temp = ord(self.port.read())
                     bytes += temp<<8
                     checksum += temp    
-                    # now handle packet payload
-                    if pkt_type == PKT_NEGOTIATION:
-                        # get topic
-                        if bytes > 0:
-                            l1 = ord(self.port.read())
-                            topic_name = self.port.read(l1)
-                            l2 = ord(self.port.read())
-                            topic_type = self.port.read(l2)
-                            checksum += l1 + l2
-                            checksum += sum( [ord(x) for x in topic_name] )
-                            checksum += sum( [ord(x) for x in topic_type] )
-                            checksum += ord(self.port.read())
-                            print topic_name, topic_type
-                            if checksum%256 == 255:
-                                try:
-                                    if topic_id < 128:
-                                        self.publishers[topic_id] = Publisher(topic_name, topic_type)
-                                    else:
-                                        self.subscribers[topic_name] = [topic_id, Subscriber(topic_name, topic_type, self)]
-                                except KeyError:
-                                    rospy.loginfo("Tried to publish before configured, topic id %d" % topic)
-                            else:
-                                rospy.logerr("Topic Negotiation: failed checksum")
-                                print checksum%256
-                        else:
-                            self.topics = topic_id
-                    elif pkt_type == PKT_TIME: 
-                        print "sync!"
-                        t = Time()
-                        t.data = rospy.Time.now()
-                        data_buffer = StringIO.StringIO()
-                        t.serialize(data_buffer)
-                        msg = data_buffer.getvalue()
-                        length = len(msg)
-                        checksum = 255 - ( (PKT_TIME + 0 + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-                        self.port.write('\xff\xff')
-                        self.port.write(chr(PKT_TIME))
-                        self.port.write(chr(0))
-                        self.port.write(chr(length&255))
-                        self.port.write(chr(length>>8))
-                        self.port.write(msg)
-                        self.port.write(chr(checksum))
-                                        
-                    elif pkt_type == PKT_TOPIC:    
-                        # message
-                        msg = self.port.read(bytes-1)
-                        checksum += sum( [ord(x) for x in msg] )
-                        checksum += ord(self.port.read())
-                        if checksum%256 == 255:
+                    # message
+                    msg = self.port.read(bytes)
+                    checksum += sum( [ord(x) for x in msg] )
+                    checksum += ord( self.port.read() )
+                    # checksum                    
+                    if checksum%256 == 255:
+                        if topic_id == TOPIC_PUBLISHERS:
+                            try:
+                                m = TopicInfo()
+                                m.deserialize(msg)
+                                self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
+                            except:
+                                rospy.logerr("Failed to parse publisher.")
+
+                        elif topic_id == TOPIC_SUBSCRIBERS:
+                            try:
+                                m = TopicInfo()
+                                m.deserialize(msg)
+                                self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
+                            except:
+                                rospy.logerr("Failed to parse subscriber.")
+
+                        elif topic_id == TOPIC_TIME:
+                            t = Time()
+                            t.data = rospy.Time.now()
+                            data_buffer = StringIO.StringIO()
+                            t.serialize(data_buffer)
+                            self.send( TOPIC_TIME, data_buffer.getvalue() )
+
+                        elif topic_id >= 100: # TOPIC
                             try:
                                 self.publishers[topic_id].publish(msg)
                             except KeyError:
-                                rospy.loginfo("Tried to publish before configured, topic id %d" % topic_id)
+                                rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
+
                         else:
-                            rospy.logerr("Failed checksum")
-                else:       
+                            rospy.logerr("Unrecognized command topic!")
+                        
+                    else: # end if checksum == 255
+                        rospy.logerr("Failed checksum")
+
+                else: # end if 0xff
                     rospy.loginfo("Failed packet")
+
                 mode = MODE_FIRST_FF
             
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
         with self.mutex:
             length = len(msg)
-            checksum = 255 - ( (PKT_TOPIC + self.subscribers[topic][0] + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
+            checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
             self.port.write('\xff\xff')
-            self.port.write(chr(PKT_TOPIC))
-            self.port.write(chr(self.subscribers[topic][0]))
+            self.port.write(chr(topic&255))
+            self.port.write(chr(topic>>8))
             self.port.write(chr(length&255))
             self.port.write(chr(length>>8))
             self.port.write(msg)
             self.port.write(chr(checksum))
-
 

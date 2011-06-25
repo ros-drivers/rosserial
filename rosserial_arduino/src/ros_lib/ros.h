@@ -45,10 +45,11 @@
 
 #define BUFFER_SIZE         512
 
-#define PKT_NEGOTIATION     0
-#define PKT_TOPIC           1
-#define PKT_SERVICE         2
-#define PKT_TIME            10
+#define TOPIC_NEGOTIATION   0
+#define TOPIC_PUBLISHERS    0
+#define TOPIC_SUBSCRIBERS   1
+// services?
+#define TOPIC_TIME          10
 
 namespace ros
 {
@@ -122,7 +123,6 @@ namespace ros
 
       int mode_;
       int bytes_;
-      int type_;
       int topic_;
       int index_;
       int checksum_;

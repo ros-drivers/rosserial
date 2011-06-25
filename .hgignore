@@ -1,3 +1,6 @@
 rosserial_arduino/build
 rosserial_arduino/libraries
+rosserial_msgs/build
+rosserial_msgs/msg_gen
+rosserial_msgs/src
 ./*.pyc

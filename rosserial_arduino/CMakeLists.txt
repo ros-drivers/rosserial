@@ -32,7 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 file(MAKE_DIRECTORY libraries/ros_lib)
 add_custom_target( make_libraries ALL
     COMMAND cp -r src/ros_lib/* libraries/ros_lib/
-    COMMAND ./scripts/make_library.py libraries/ros_lib std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs 
+    COMMAND ./scripts/make_library.py libraries/ros_lib std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs rosserial_msgs
     WORKING_DIRECTORY ../
 )
 
