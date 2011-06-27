@@ -42,12 +42,12 @@ import sys
 
 if __name__=="__main__":
     rospy.init_node("serial_node")
-    print "ROS Serial Python Node"
+    rospy.loginfo("ROS Serial Python Node")
     
     port_name = '/dev/ttyUSB0'
     if len(sys.argv) == 2 :
         port_name  = sys.argv[1]
-    print "Connected on ", port_name
+    rospy.loginfo("Connected on %s" % port_name)
     client = SerialClient(port_name)
     try:
         client.run()
