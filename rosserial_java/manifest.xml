@@ -7,6 +7,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosserial_java</url>
   <depend package="rosjava"/>
+  <depend package="rosserial_msgs"/>
+  <depend package="std_msgs"/> 
+  
+  
 </package>
 
 
