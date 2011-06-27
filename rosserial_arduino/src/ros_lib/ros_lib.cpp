@@ -53,7 +53,6 @@
 #define MODE_CHECKSUM       7
 
 
-
 /* 
  * Publishers 
  */
@@ -205,8 +204,15 @@ void ros::NodeHandle::initNode()
   topic_ = 0;
 }
 
+static unsigned long last_sync_time;
+static unsigned long last_receive_time;
 void ros::NodeHandle::spinOnce()
 {
+  /* restart if timed-out */
+  if((millis() - last_receive_time) > 500){
+    mode_ == MODE_FIRST_FF;
+  }
+
   /* while available buffer, read data */
   while( true )
   {  
@@ -220,8 +226,10 @@ void ros::NodeHandle::spinOnce()
       if(bytes_ == 0)                   /* is message complete? if so, checksum */
         mode_ = MODE_CHECKSUM;
     }else if( mode_ == MODE_FIRST_FF ){
-      if(data == 0xff)
+      if(data == 0xff){
         mode_++;
+        last_receive_time = millis();
+      }
     }else if( mode_ == MODE_SECOND_FF ){
       if(data == 0xff){
         mode_++;
@@ -263,9 +271,10 @@ void ros::NodeHandle::spinOnce()
     }
   }
    
-  // occasionally sync time
-if( configured_ && ((millis()-last_sync_time) > 10000))
+  /* occasionally sync time */
+  if( configured_ && ((millis()-last_sync_time) > 10000)){
     requestSyncTime();
 	last_sync_time = millis();
+  }
 }
 
