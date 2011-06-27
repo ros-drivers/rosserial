@@ -168,6 +168,8 @@ class SerialClient:
                                 m = TopicInfo()
                                 m.deserialize(msg)
                                 self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
+                                rospy.loginfo("Setup Publisher on %s"%m.topic_name)
+
                             except:
                                 rospy.logerr("Failed to parse publisher.")
 
@@ -176,6 +178,8 @@ class SerialClient:
                                 m = TopicInfo()
                                 m.deserialize(msg)
                                 self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
+                                rospy.loginfo("Setup Subscriber on %s"%m.topic_name)
+
                             except:
                                 rospy.logerr("Failed to parse subscriber.")
 
