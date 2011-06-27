@@ -194,6 +194,8 @@ function(GENERATE_ARDUINO_FIRMWARE TARGET_NAME)
 
     setup_arduino_compiler(${INPUT_BOARD})
     setup_arduino_core(CORE_LIB ${INPUT_BOARD})
+	
+	set(ALL_SRCS ${INPUT_SRCS} ${CORE_SRCS})
 
     #setup_arduino_sketch(SKETCH_SRCS ${INPUT_SKETCHES})
 
@@ -203,6 +205,7 @@ function(GENERATE_ARDUINO_FIRMWARE TARGET_NAME)
 
     
     list(APPEND ALL_LIBS ${CORE_LIB} ${INPUT_LIBS})
+    message(STATUS "ALL LIBS ARE : ${ALL_LIBS}")
     
     setup_arduino_target(${TARGET_NAME} "${ALL_SRCS}" "${ALL_LIBS}")
     
@@ -277,6 +280,7 @@ endmacro()
 function(setup_arduino_core VAR_NAME BOARD_ID)
     set(CORE_LIB_NAME ${BOARD_ID}_CORE)
     set(BOARD_CORE ${${BOARD_ID}.build.core})
+    set(${VAR_NAME} ${CORE_LIB_NAME} PARENT_SCOPE)
     if(BOARD_CORE AND NOT TARGET ${CORE_LIB_NAME})
         set(BOARD_CORE_PATH ${ARDUINO_CORES_PATH}/${BOARD_CORE})
         find_sources(CORE_SRCS ${BOARD_CORE_PATH})
@@ -284,6 +288,7 @@ function(setup_arduino_core VAR_NAME BOARD_ID)
         set(${VAR_NAME} ${CORE_LIB_NAME} PARENT_SCOPE)
     endif()
 endfunction()
+
 
 # find_arduino_libraries(VAR_NAME SRCS)
 #

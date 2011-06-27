@@ -126,7 +126,8 @@ namespace ros
       int topic_;
       int index_;
       int checksum_;
-
+	
+	  unsigned long last_sync_time;
       unsigned char message_in[BUFFER_SIZE];
       unsigned char message_out[BUFFER_SIZE];
   };

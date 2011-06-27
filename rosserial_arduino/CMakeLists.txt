@@ -35,8 +35,3 @@ add_custom_target( make_libraries ALL
     COMMAND ./scripts/make_library.py libraries/ros_lib std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs rosserial_msgs
     WORKING_DIRECTORY ../
 )
-
-add_custom_target( make_time ALL
-    COMMAND cp -r src/ros_time/* libraries/ros_lib/
-    WORKING_DIRECTORY ../
-)

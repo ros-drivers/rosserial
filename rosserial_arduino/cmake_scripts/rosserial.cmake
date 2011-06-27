@@ -21,7 +21,9 @@ if(ROSSERIAL_CUSTOM_SERIAL)
      set(ROS_SRCS ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp)
 endif()
 
-set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp)
+set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp
+						 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
+						 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
 
 			  
 foreach(msg ${ROS_MSGS_USED})
@@ -32,4 +34,8 @@ LIST(GET MSG_LIST 1 MSG_TYPE)
 message(STATUS "The message pkg  ${MSG_PKG}  type: ${MSG_TYPE} is being generated")
 execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src/ros_lib ${MSG_PKG})
 endforeach(msg)
+
+add_custom_target(clean 
+    COMMAND rm -rf *.hex *.eep CMakeCache.txt cmake_install.cmake CMakeFiles *.a
+)
 

@@ -52,6 +52,8 @@
 #define MODE_MESSAGE        6
 #define MODE_CHECKSUM       7
 
+
+
 /* 
  * Publishers 
  */
@@ -184,7 +186,7 @@ int ros::NodeHandle::publish(int id, Msg * msg)
   return 1;
 }
 
-static unsigned int time_count;
+
 void ros::NodeHandle::initNode()
 {
   // initialize publisher and subscriber lists
@@ -245,7 +247,7 @@ void ros::NodeHandle::spinOnce()
       if( (checksum_%256) == 255){
         if(topic_ == TOPIC_NEGOTIATION){
           negotiateTopics();
-          time_count = 0;
+          last_sync_time = 0;
         }
         else if(topic_ == TOPIC_TIME)
         {
@@ -262,8 +264,8 @@ void ros::NodeHandle::spinOnce()
   }
    
   // occasionally sync time
-  if( time_count%5000 == 0 )
+if( configured_ && ((millis()-last_sync_time) > 10000))
     requestSyncTime();
-  time_count++;
+	last_sync_time = millis();
 }
 
