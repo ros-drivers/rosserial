@@ -102,7 +102,7 @@ class Subscriber:
         """ Forward a message """
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
-        self.parent.send(self.subscribers[self.topic][0], data_buffer.getvalue())
+        self.parent.send(self.parent.subscribers[self.topic][0], data_buffer.getvalue())
 
 
 class SerialClient:
@@ -168,7 +168,7 @@ class SerialClient:
                                 m = TopicInfo()
                                 m.deserialize(msg)
                                 self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
-                                rospy.loginfo("Setup Publisher on %s"%m.topic_name)
+                                rospy.loginfo("Setup Publisher on %s [%s]" % (m.topic_name, m.message_type) )
 
                             except:
                                 rospy.logerr("Failed to parse publisher.")
@@ -178,8 +178,7 @@ class SerialClient:
                                 m = TopicInfo()
                                 m.deserialize(msg)
                                 self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
-                                rospy.loginfo("Setup Subscriber on %s"%m.topic_name)
-
+                                rospy.loginfo("Setup Subscriber on %s [%s]" % (m.topic_name, m.message_type))
                             except:
                                 rospy.logerr("Failed to parse subscriber.")
 
