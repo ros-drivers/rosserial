@@ -51,6 +51,8 @@
 // services?
 #define TOPIC_TIME          10
 
+#define SYNC_SECONDS        5
+
 namespace ros
 {
   class NodeHandle;

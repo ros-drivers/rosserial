@@ -153,6 +153,9 @@ void ros::NodeHandle::requestSyncTime()
   rt_time = millis();
 }
 
+static unsigned long last_sync_time;
+static unsigned long last_sync_receive_time;
+static unsigned long last_msg_receive_time;
 void ros::NodeHandle::syncTime( unsigned char * data )
 {
   std_msgs::Time t;
@@ -164,6 +167,7 @@ void ros::NodeHandle::syncTime( unsigned char * data )
   t.data.nsec += (offset%1000)*1000000UL;
 
   ros::Time::setNow(t.data);
+  last_sync_receive_time = millis();
 }
 
 int ros::NodeHandle::publish(int id, Msg * msg)
@@ -197,13 +201,14 @@ void ros::NodeHandle::initNode()
   topic_ = 0;
 }
 
-static unsigned long last_sync_time;
-static unsigned long last_receive_time;
 void ros::NodeHandle::spinOnce()
 {
   /* restart if timed-out */
-  if((millis() - last_receive_time) > 500){
+  if((millis() - last_msg_receive_time) > 500){
     mode_ == MODE_FIRST_FF;
+    if((millis() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+      configured_ = false;
+    }
   }
 
   /* while available buffer, read data */
@@ -221,7 +226,7 @@ void ros::NodeHandle::spinOnce()
     }else if( mode_ == MODE_FIRST_FF ){
       if(data == 0xff){
         mode_++;
-        last_receive_time = millis();
+        last_msg_receive_time = millis();
       }
     }else if( mode_ == MODE_SECOND_FF ){
       if(data == 0xff){
@@ -265,7 +270,7 @@ void ros::NodeHandle::spinOnce()
   }
    
   /* occasionally sync time */
-  if( configured_ && ((millis()-last_sync_time) > 10000)){
+  if( configured_ && ((millis()-last_sync_time) > (SYNC_SECONDS*1000) )){
     requestSyncTime();
 	last_sync_time = millis();
   }

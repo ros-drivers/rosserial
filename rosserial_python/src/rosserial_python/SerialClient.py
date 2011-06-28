@@ -110,9 +110,12 @@ class SerialClient:
         Prototype of rosserial python client to connect to serial bus.
     """
     
-    def __init__(self, port=None, baud=57600):
+    def __init__(self, port=None, baud=57600, timeout=5.0):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
+
+        self.lastsync = rospy.Time.now()
+        self.timeout = timeout
 
         if port== None:
             # no port specified, listen for any new port?
@@ -122,7 +125,7 @@ class SerialClient:
 			self.port=port
         else:
             # open a specific port
-            self.port = Serial(port, baud)
+            self.port = Serial(port, baud, timeout=self.timeout*0.5)
             
         self.publishers = dict()
         self.subscribers = dict()
@@ -135,32 +138,47 @@ class SerialClient:
         # request topic sync
         self.port.write("\xff\xff\x00\x00\x00\x00\xff")
 	
+    def read(self, x=1):
+        """ Read a number of bytes, with error and timing wrappers. """
+        while True:
+            try:
+                d = self.port.read(x)
+            except KeyboardInterrupt:   
+                return None
+            if d == "": 
+                rospy.logerr("Read timed out, retrying...")
+                if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 2.2):
+                    rospy.logerr("Lost sync with device, restarting...")
+                    self.requestTopics()
+            else:
+                return d
+
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         mode = MODE_FIRST_FF
         while not rospy.is_shutdown():
             if mode == MODE_FIRST_FF:
-                if self.port.read() == '\xff':
+                if self.read() == '\xff':
                     mode += 1
             elif mode == MODE_SECOND_FF:
-                x = self.port.read()
+                x = self.read()
                 if x == '\xff':
                     # topic id (2 bytes)
-                    topic_id = ord(self.port.read())
+                    topic_id = ord(self.read())
                     checksum = topic_id
-                    temp = ord(self.port.read())
+                    temp = ord(self.read())
                     checksum += temp
                     topic_id += temp<<8
                     # message length (2 bytes)
-                    bytes = ord(self.port.read())       
+                    bytes = ord(self.read())       
                     checksum += bytes
-                    temp = ord(self.port.read())
+                    temp = ord(self.read())
                     bytes += temp<<8
                     checksum += temp    
                     # message
-                    msg = self.port.read(bytes)
+                    msg = self.read(bytes)
                     checksum += sum( [ord(x) for x in msg] )
-                    checksum += ord( self.port.read() )
+                    checksum += ord( self.read() )
                     # checksum                    
                     if checksum%256 == 255:
                         if topic_id == TOPIC_PUBLISHERS:
@@ -188,6 +206,7 @@ class SerialClient:
                             data_buffer = StringIO.StringIO()
                             t.serialize(data_buffer)
                             self.send( TOPIC_TIME, data_buffer.getvalue() )
+                            self.lastsync = rospy.Time.now()
 
                         elif topic_id >= 100: # TOPIC
                             try:
