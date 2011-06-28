@@ -188,13 +188,6 @@ int ros::NodeHandle::publish(int id, Msg * msg)
 
 void ros::NodeHandle::initNode()
 {
-  // initialize publisher and subscriber lists
-  int i;;
-  for(i = 0; i < MAX_PUBLISHERS; i++)
-  {
-    publishers[i] = 0;
-    subscribers[i] = 0;
-  }
   // initialize serial
   fx_open();
   configured_ = false;
