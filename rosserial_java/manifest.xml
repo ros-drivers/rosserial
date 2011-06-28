@@ -8,9 +8,9 @@
   <url>http://ros.org/wiki/rosserial_java</url>
   <depend package="rosjava"/>
   <depend package="rosserial_msgs"/>
-  <depend package="std_msgs"/> 
-  
-  
+
+  <!-- depend on some std msgs so that you can use them with the 
+	serial node -->
 </package>
 
 

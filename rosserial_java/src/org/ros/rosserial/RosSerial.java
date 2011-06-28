@@ -114,8 +114,9 @@ public class RosSerial implements Runnable{
 	}
 	
 	private boolean addTopic(String topic, String topic_type, int id, boolean Publisher){
+		if ( topic.equals(topic_lookup.get(id)) ) return true;
 		System.out.println("Adding topic " + topic + " of type " + topic_type +" : " + id);
-		
+
 		try{
 			Class msg_class = loadMsgClass(topic_type);
 			msg_classes.put(id, msg_class);
@@ -124,11 +125,11 @@ public class RosSerial implements Runnable{
 			topic_lookup.put(id, topic);
 			
 			if (Publisher){
-				Publisher pub = node.createPublisher(topic, msg_class);
+				Publisher pub = node.createPublisher(topic, topic_type);
 				publishers.put(id,pub);
 			}
 			else{
-				Subscriber sub = node.createSubscriber(topic, new MessageListenerRosSerial(this, id), msg_class );
+				Subscriber sub = node.createSubscriber(topic, topic_type, new MessageListenerRosSerial(this, id));
 			}	
 			return true;
 		}
@@ -217,7 +218,7 @@ public class RosSerial implements Runnable{
 							org.ros.message.Time t = node.getCurrentTime();
 							org.ros.message.std_msgs.Time t_msg = new org.ros.message.std_msgs.Time();
 							t_msg.data = t;
-							send(10,t_msg);
+							send(TOPIC_TIME,t_msg);
 							break;
 						default:
       						Message msg = (Message) msg_classes.get(topic_id).newInstance();
