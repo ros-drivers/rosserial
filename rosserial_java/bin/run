@@ -1,0 +1,24 @@
+#! /usr/bin/env python
+
+import roslib;
+import os
+import sys
+pkg = 'rosserial_java'
+
+pkg_path = roslib.packages.get_pkg_dir(pkg)
+
+rosprops = open(pkg_path+'/ros.properties', 'r').read().split('\n')
+
+rcp = ''
+for line in rosprops:
+	if 'ros.classpath=' in line:
+		rcp = line[len('ros.classpath='):]
+
+rcp = rcp.replace( '\\' , '')
+
+rcp = rcp+ ":"+pkg_path + '/build:/usr/share/java/RXTXcomm.jar'
+
+cmd = 'exec java -classpath %s org.ros.RosRun org.ros.rosserial.SerialNode'%rcp 
+os.system(cmd)
+
+

@@ -96,7 +96,7 @@ public class SerialNode implements NodeMain {
 		  System.out.println("Starting RosSerial node");
 	      node = new DefaultNode("rosserial_node", configuration);
 
-			String portName = "/dev/ttyUSB0";
+			String portName = "/dev/ttyUSB1";
 			SerialPort port= createSerialPort(portName);
 		
 			port.setSerialPortParams(57600,    
