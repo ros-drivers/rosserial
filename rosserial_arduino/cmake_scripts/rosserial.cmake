@@ -32,7 +32,7 @@ LIST(GET MSG_LIST 0 MSG_PKG)
 LIST(GET MSG_LIST 1 MSG_TYPE)
 
 message(STATUS "The message pkg  ${MSG_PKG}  type: ${MSG_TYPE} is being generated")
-execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src/ros_lib ${MSG_PKG})
+execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src ${MSG_PKG})
 endforeach(msg)
 
 add_custom_target(clean 

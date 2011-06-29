@@ -475,7 +475,7 @@ if __name__=="__main__":
     path = sys.argv[1]
     if path[-1] == "/":
         path = path[0:-1]
-    #path += "/libraries"
+    path += "/ros_lib"
     print "\nExporting to %s" % path
 
     # make libraries
