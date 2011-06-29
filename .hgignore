@@ -7,3 +7,4 @@ rosserial_msgs/src
 rosserial_java/build
 rosserial_java/.*
 rosserial_java/ros.properties
+rosserial_python/build
