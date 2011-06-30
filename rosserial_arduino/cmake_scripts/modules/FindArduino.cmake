@@ -437,9 +437,9 @@ function(setup_arduino_upload BOARD_ID TARGET_NAME PORT)
                       ${ARDUINO_AVRDUDE_PROGRAM} 
                          -U flash:w:${TARGET_NAME}.hex:i
                          ${AVRDUDE_FLAGS}
-                         #-C ${ARDUINO_AVRDUDE_CONFIG_PATH}
+                         -C ${ARDUINO_AVRDUDE_CONFIG_PATH}
                          -p ${${BOARD_ID}.build.mcu}
-                         -c arduino #${${BOARD_ID}.upload.protocol}
+                         -c ${${BOARD_ID}.upload.protocol}
                          -b ${${BOARD_ID}.upload.speed}
                          -P ${PORT}
                      DEPENDS ${TARGET_NAME})

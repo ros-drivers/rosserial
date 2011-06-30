@@ -146,7 +146,6 @@ class SerialClient:
             except KeyboardInterrupt:   
                 return None
             if d == "": 
-                rospy.logerr("Read timed out, retrying...")
                 if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 2.2):
                     rospy.logerr("Lost sync with device, restarting...")
                     self.requestTopics()
