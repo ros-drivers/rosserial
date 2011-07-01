@@ -140,7 +140,7 @@ class SerialClient:
 	
     def read(self, x=1):
         """ Read a number of bytes, with error and timing wrappers. """
-        while True:
+        while not rospy.is_shutdown():
             try:
                 d = self.port.read(x)
             except KeyboardInterrupt:   
@@ -149,6 +149,7 @@ class SerialClient:
                 if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 2.2):
                     rospy.logerr("Lost sync with device, restarting...")
                     self.requestTopics()
+                    self.lastsync = rospy.Time.now()
             else:
                 return d
 
@@ -229,11 +230,6 @@ class SerialClient:
         with self.mutex:
             length = len(msg)
             checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-            self.port.write('\xff\xff')
-            self.port.write(chr(topic&255))
-            self.port.write(chr(topic>>8))
-            self.port.write(chr(length&255))
-            self.port.write(chr(length>>8))
-            self.port.write(msg)
-            self.port.write(chr(checksum))
-
+            data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
+            data = data + msg + chr(checksum)
+            self.port.write(data)
