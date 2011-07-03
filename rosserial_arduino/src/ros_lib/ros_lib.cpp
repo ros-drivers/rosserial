@@ -174,6 +174,12 @@ int ros::NodeHandle::publish(int id, Msg * msg)
 {
   int l = msg->serialize(message_out);
   int chk = (id&255) + (id>>8) + (l&255) + (l>>8);
+    for(int i = 0; i<l; i++)
+  {
+    chk += message_out[i];
+  }
+   chk = 255 - (chk%256);
+   
   fx_putc(0xff);
   fx_putc(0xff);
   fx_putc( (unsigned char) id&255);
@@ -183,9 +189,8 @@ int ros::NodeHandle::publish(int id, Msg * msg)
   for(int i = 0; i<l; i++)
   {
     fx_putc(message_out[i]);
-    chk += message_out[i];
   }
-  fx_putc( 255 - (chk%256) );
+  fx_putc(  chk);
   return 1;
 }
 
@@ -207,7 +212,7 @@ void ros::NodeHandle::spinOnce()
   if((millis() - last_msg_receive_time) > 500){
     mode_ == MODE_FIRST_FF;
     if((millis() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
-      configured_ = false;
+      //configured_ = false;
     }
   }
 
@@ -252,6 +257,7 @@ void ros::NodeHandle::spinOnce()
     }else if( mode_ == MODE_CHECKSUM ){ /* do checksum */
       if( (checksum_%256) == 255){
         if(topic_ == TOPIC_NEGOTIATION){
+		  requestSyncTime();
           negotiateTopics();
           last_sync_time = 0;
         }
@@ -270,7 +276,7 @@ void ros::NodeHandle::spinOnce()
   }
    
   /* occasionally sync time */
-  if( configured_ && ((millis()-last_sync_time) > (SYNC_SECONDS*1000) )){
+  if( configured_ && ((millis()-last_sync_time) > (SYNC_SECONDS*900) )){
     requestSyncTime();
 	last_sync_time = millis();
   }

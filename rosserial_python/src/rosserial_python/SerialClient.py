@@ -44,6 +44,8 @@ import StringIO
 from std_msgs.msg import Time
 from rosserial_msgs.msg import *
 
+import struct
+
 MODE_FIRST_FF = 0
 MODE_SECOND_FF = 1
 
@@ -121,12 +123,14 @@ class SerialClient:
             # no port specified, listen for any new port?
             pass
         elif hasattr(port, 'read'):
-			#assume its a filelike object
-			self.port=port
+            #assume its a filelike object
+            self.port=port
         else:
             # open a specific port
             self.port = Serial(port, baud, timeout=self.timeout*0.5)
-            
+        
+        self.port.timeout = 0.01 #edit the port timeout
+        
         self.publishers = dict()
         self.subscribers = dict()
         rospy.sleep(1.0) # TODO
@@ -137,93 +141,71 @@ class SerialClient:
         self.port.flushInput()
         # request topic sync
         self.port.write("\xff\xff\x00\x00\x00\x00\xff")
-	
-    def read(self, x=1):
-        """ Read a number of bytes, with error and timing wrappers. """
-        while not rospy.is_shutdown():
-            try:
-                d = self.port.read(x)
-            except KeyboardInterrupt:   
-                return None
-            if d == "": 
-                if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 2.2):
-                    rospy.logerr("Lost sync with device, restarting...")
-                    self.requestTopics()
-                    self.lastsync = rospy.Time.now()
-            else:
-                return d
+    
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
-        mode = MODE_FIRST_FF
+        data = ''
         while not rospy.is_shutdown():
-            if mode == MODE_FIRST_FF:
-                if self.read() == '\xff':
-                    mode += 1
-            elif mode == MODE_SECOND_FF:
-                x = self.read()
-                if x == '\xff':
-                    # topic id (2 bytes)
-                    topic_id = ord(self.read())
-                    checksum = topic_id
-                    temp = ord(self.read())
-                    checksum += temp
-                    topic_id += temp<<8
-                    # message length (2 bytes)
-                    bytes = ord(self.read())       
-                    checksum += bytes
-                    temp = ord(self.read())
-                    bytes += temp<<8
-                    checksum += temp    
-                    # message
-                    msg = self.read(bytes)
-                    checksum += sum( [ord(x) for x in msg] )
-                    checksum += ord( self.read() )
-                    # checksum                    
-                    if checksum%256 == 255:
-                        if topic_id == TOPIC_PUBLISHERS:
-                            try:
-                                m = TopicInfo()
-                                m.deserialize(msg)
-                                self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
-                                rospy.loginfo("Setup Publisher on %s [%s]" % (m.topic_name, m.message_type) )
+            if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
+                rospy.logerr("Lost sync with device, restarting...")
+                self.requestTopics()
+                self.lastsync = rospy.Time.now()    
+            
+            flag = self.port.read(1)
+            if (flag != '\xff'):
+                continue
+            elif (self.port.read(1) != '\xff'):
+                rospy.loginfo("Failed Packet Flags")
+                continue
+            # topic id (2 bytes)
+            header = self.port.read(4)
+            if (len(header) != 4):
+                #self.port.flushInput()
+                continue
+            
+            topic_id, msg_length = struct.unpack("<hh", header)
+            msg = self.port.read(msg_length)
+            if (len(msg) != msg_length):
+                rospy.loginfo("Packet Failed :  Failed to read msg data")
+                #self.port.flushInput()
+                continue
+            chk = self.port.read(1)
+            checksum = sum(map(ord,header) ) + sum(map(ord, msg)) + ord(chk)
 
-                            except:
-                                rospy.logerr("Failed to parse publisher.")
-
-                        elif topic_id == TOPIC_SUBSCRIBERS:
-                            try:
-                                m = TopicInfo()
-                                m.deserialize(msg)
-                                self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
-                                rospy.loginfo("Setup Subscriber on %s [%s]" % (m.topic_name, m.message_type))
-                            except:
-                                rospy.logerr("Failed to parse subscriber.")
-
-                        elif topic_id == TOPIC_TIME:
-                            t = Time()
-                            t.data = rospy.Time.now()
-                            data_buffer = StringIO.StringIO()
-                            t.serialize(data_buffer)
-                            self.send( TOPIC_TIME, data_buffer.getvalue() )
-                            self.lastsync = rospy.Time.now()
-
-                        elif topic_id >= 100: # TOPIC
-                            try:
-                                self.publishers[topic_id].publish(msg)
-                            except KeyError:
-                                rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
-
-                        else:
-                            rospy.logerr("Unrecognized command topic!")
-                        
-                    else: # end if checksum == 255
-                        rospy.logerr("Failed checksum")
-
-                else: # end if 0xff
-                    rospy.loginfo("Failed packet")
-
-                mode = MODE_FIRST_FF
+            if checksum%256 == 255:
+                if topic_id == TOPIC_PUBLISHERS:
+                    try:
+                        m = TopicInfo()
+                        m.deserialize(msg)
+                        self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
+                        rospy.loginfo("Setup Publisher on %s [%s]" % (m.topic_name, m.message_type) )
+                    except:
+                        rospy.logerr("Failed to parse publisher.")
+                elif topic_id == TOPIC_SUBSCRIBERS:
+                    try:
+                        m = TopicInfo()
+                        m.deserialize(msg)
+                        self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
+                        rospy.loginfo("Setup Subscriber on %s [%s]" % (m.topic_name, m.message_type))
+                    except:
+                        rospy.logerr("Failed to parse subscriber.")
+                elif topic_id == TOPIC_TIME:
+                    t = Time()
+                    t.data = rospy.Time.now()
+                    data_buffer = StringIO.StringIO()
+                    t.serialize(data_buffer)
+                    self.send( TOPIC_TIME, data_buffer.getvalue() )
+                    self.lastsync = rospy.Time.now()
+                elif topic_id >= 100: # TOPIC
+                    try:
+                        self.publishers[topic_id].publish(msg)
+                    except KeyError:
+                        rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
+                else:
+                    rospy.logerr("Unrecognized command topic!")
+                rospy.sleep(0.001)
+            
             
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """

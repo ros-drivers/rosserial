@@ -1,0 +1,21 @@
+<package>
+  <description brief="rosserial_xbee">
+
+     rosserial_xbee provides tools to do point to multipoint communication
+     between rosserial nodes connected to an xbee.  All of the nodes
+     communicate back to a master xbee connected to a computer running
+     ROS.  This software currently only works with Series 1 Xbees.
+     
+     This pkg includes python code from the python-xbee project:
+     http://code.google.com/p/python-xbee/
+     
+  </description>
+  <author>Adam Stambler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_xbee</url>
+  <depend package="rosserial_python"/>
+
+</package>
+
+
