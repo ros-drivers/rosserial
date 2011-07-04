@@ -14,6 +14,7 @@ sensor_msgs::Range range_msg;
 ros::Publisher pub_range( "range_data", &range_msg);
 
 const int analog_pin = 0;
+unsigned long range_timer;
 
 /*
  * getRange() - samples the analog input from the ranger
