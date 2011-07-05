@@ -1,9 +1,9 @@
 /* 
  * rosserial Clapper Example
  * 
- * This code is a very simple example of the kinds
- * of custom sensors that you can easily set up with rosserial
- * ardunio.  This code uses a microphone attached to 
+ * This code is a very simple example of the kinds of 
+ * custom sensors that you can easily set up with rosserial
+ * and Arduino.  This code uses a microphone attached to 
  * analog pin 5 detect two claps (2 loud sounds).
  * You can use this clapper, for example, to command a robot 
  * in the area to come do your bidding.
@@ -16,16 +16,13 @@
 ros::NodeHandle nh;
 
 std_msgs::Empty clap_msg;
-
-
 ros::Publisher p("clap", &clap_msg);
-
 
 enum clapper_state { clap1, clap_one_waiting,  pause, clap2};
 clapper_state clap;
 
 int volume_thresh = 200;  //a clap sound needs to be: 
-                       //abs(clap_volume) > average noise + volume_thresh
+                          //abs(clap_volume) > average noise + volume_thresh
 int mic_pin = 5;
 int adc_ave=0;
 
