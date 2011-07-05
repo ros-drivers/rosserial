@@ -1,8 +1,6 @@
 <package>
-  <description brief="rosserial_arduino_tutorials">
-
-     rosserial_arduino_tutorials
-
+  <description brief="Tutorial code for using rosserial with Arduino.">
+    Tutorial code for using rosserial with Arduino.
   </description>
   <author>Adam Stambler</author>
   <license>BSD</license>
