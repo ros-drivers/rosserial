@@ -472,6 +472,17 @@ class ArduinoLibraryMaker:
 if __name__=="__main__":
 
     # get path to arduino sketchbook
+    
+    if (len(sys.argv) <3):
+		print """
+make_library.py generates the Arduino rosserial library files.  It 
+requires the location of your arduino libraries folder and the name of 
+one or more packages for which you want to make libraries.  
+
+rosrun rosserial_arduino <libraries_path>  pkg_name [pkg2 pkg3 ...]
+		"""
+		exit()
+    
     path = sys.argv[1]
     if path[-1] == "/":
         path = path[0:-1]
