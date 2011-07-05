@@ -1,6 +1,5 @@
 /*
  * rosserial Publisher Example
- * 
  * Prints "hello world!"
  */
 
