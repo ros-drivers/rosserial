@@ -6,7 +6,6 @@
 #include <ros.h>
 #include <std_msgs/Empty.h>
 
-
 ros::NodeHandle nh;
 
 ROS_CALLBACK(messageCb, std_msgs::Empty, toggle_msg)
@@ -20,7 +19,6 @@ void setup()
   pinMode(13, OUTPUT);
   nh.initNode();
   nh.subscribe(sub);
-
 }
 
 void loop()
