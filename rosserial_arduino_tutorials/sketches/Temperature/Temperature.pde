@@ -1,13 +1,13 @@
 /*
-Temperature Sensor Example
-
-This tutorial demonstrates the usage of the
-Sparkfun TMP102 Digital Temperature Breakout board
-http://www.sparkfun.com/products/9418
-
-Source Code Based off of:
-http://wiring.org.co/learning/libraries/tmp102sparkfun.html
-*/
+ * rosserial Temperature Sensor Example
+ * 
+ * This tutorial demonstrates the usage of the
+ * Sparkfun TMP102 Digital Temperature Breakout board
+ * http://www.sparkfun.com/products/9418
+ * 
+ * Source Code Based off of:
+ * http://wiring.org.co/learning/libraries/tmp102sparkfun.html
+ */
 
 #include <WProgram.h>
 #include <Wire.h>

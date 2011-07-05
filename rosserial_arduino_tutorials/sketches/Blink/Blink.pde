@@ -1,6 +1,5 @@
 /* 
-
- Blink the Arduino LED
+ * rosserial Blinking LED example
  */
 
 #include <ros.h>

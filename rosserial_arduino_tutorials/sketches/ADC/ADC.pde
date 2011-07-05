@@ -1,5 +1,6 @@
 /* 
  * rosserial ADC Example
+ * 
  * This is a poor man's Oscilloscope.  It does not have the sampling 
  * rate or accuracy of a commerical scope, but it is great to get
  * an analog value into ROS in a pinch.

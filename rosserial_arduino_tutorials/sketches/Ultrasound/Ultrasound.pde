@@ -1,5 +1,5 @@
 /* 
- * Ultrasound Example for Rosserial  
+ * rosserial Ultrasound Example
  * 
  * This example is for the Maxbotix Ultrasound rangers.
  */
