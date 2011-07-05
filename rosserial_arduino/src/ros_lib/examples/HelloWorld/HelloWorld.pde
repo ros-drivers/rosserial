@@ -1,6 +1,5 @@
 /*
  * rosserial Publisher Example
- * 
  * Prints "hello world!"
  */
 
@@ -27,4 +26,3 @@ void loop()
   nh.spinOnce();
   delay(1000);
 }
-

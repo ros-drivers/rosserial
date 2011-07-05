@@ -1,6 +1,6 @@
 /* 
- * rosserial Blinking LED example
- * 
+ * rosserial Subscriber Example
+ * Blinks an LED on callback
  */
 
 #include <ros.h>
@@ -10,12 +10,10 @@
 ros::NodeHandle nh;
 
 ROS_CALLBACK(messageCb, std_msgs::Empty, toggle_msg)
-
   digitalWrite(13, HIGH-digitalRead(13));   // blink the led
 }
 
 ros::Subscriber sub("toggle_led", &toggle_msg, messageCb );
-
 
 void setup()
 { 
