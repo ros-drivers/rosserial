@@ -39,7 +39,7 @@ void setup(){
   nh.subscribe(sub);
   
   
-  servo.attach(0); //attach it to pin 0
+  servo.attach(9); //attach it to pin 0
   
 }
 
