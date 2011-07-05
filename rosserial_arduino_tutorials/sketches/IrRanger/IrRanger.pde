@@ -1,5 +1,5 @@
 /* 
- * IR Ranger Example for rosserial  
+ * rosserial IR Ranger Example  
  * 
  * This example is calibrated for the Sharp GP2D120XJ00F.
  */
