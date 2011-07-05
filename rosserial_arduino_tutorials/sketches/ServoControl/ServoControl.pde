@@ -19,28 +19,21 @@
 
 Servo servo;
 
-
-
 ROS_CALLBACK( servo_cb, std_msgs::UInt16, cmd_msg)
-  
-  servo.write(cmd_msg.data); //set servo angle, should be from 0-180
-  
+  servo.write(cmd_msg.data); //set servo angle, should be from 0-180  
   digitalWrite(13, HIGH-digitalRead(13));  //toggle led  
 }
 
 ros::NodeHandle nh;
 ros::Subscriber sub("servo", &cmd_msg, servo_cb);
 
-
 void setup(){
- 
   pinMode(13, OUTPUT);
+
   nh.initNode();
   nh.subscribe(sub);
   
-  
   servo.attach(9); //attach it to pin 0
-  
 }
 
 void loop(){
