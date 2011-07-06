@@ -9,6 +9,7 @@
   <depend package="rosjava"/>
   <depend package="rosserial_msgs"/>
 
+  <rosdep name="librxtx-java" />
   <!-- depend on some std msgs so that you can use them with the 
 	serial node -->
 </package>

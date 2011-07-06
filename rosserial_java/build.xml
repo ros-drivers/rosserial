@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="default" name="java">
+
+  <property file="ros.properties" />
+
+  <property name="build" location="build" />
+  <property name="dist" location="dist" />
+  <property name="javac-source" value="1.6" />
+  <property name="javac-target" value="1.6" />
+  <property name="debuglevel" value="source,lines,vars" />
+
+  <!-- location of directory where system jars are deployed -->
+  <property name="share" location="/usr/share/java" />
+
+  <property name="jar.rosserial_java" location="${dist}/rosserial_java.jar" />
+
+  <path id="classpath">
+    <pathelement location="${build}" />
+    <pathelement location="${share}/RXTXcomm.jar" />
+    <pathelement path="${ros.classpath}" />
+  </path>
+
+  <target name="default" depends="init, compile, jar" />
+
+  <target name="init">
+    <fail unless="ros.classpath" message="ros.properties is missing.  Please type 'rosmake' first "/>
+    <mkdir dir="${build}" />
+    <mkdir dir="${dist}" />
+  </target>
+
+  <target name="clean">
+    <delete dir="${build}" />
+    <delete dir="${dist}" />
+    <delete dir="${ros.test_results}" />
+  </target>
+
+  <target name="compile" depends="init">
+    <!-- copy all assets -->
+    <copy todir="${build}">
+      <fileset dir="src">
+        <exclude name="**/*.java" />
+      </fileset>
+    </copy>
+
+    <javac debug="true" debuglevel="${debuglevel}" destdir="${build}" source="${javac-source}"
+        target="${javac-target}" includeantruntime="false">
+      <classpath refid="classpath" />
+      <src path="src" />
+    </javac>
+  </target>
+
+  <target name="test" depends="compile" />
+
+  <target name="jar" depends="init, compile">
+    <jar destfile="${jar.rosserial_java}">
+      <fileset dir="${build}" />
+    </jar>
+  </target>
+</project>

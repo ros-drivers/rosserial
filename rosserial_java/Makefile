@@ -1,1 +1,1 @@
-include $(shell rospack find rosjava)/rosjava.mk
+include $(shell rospack find rosjava_bootstrap)/rosjava.mk
