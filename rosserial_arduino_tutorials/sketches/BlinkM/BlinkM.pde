@@ -18,10 +18,10 @@ extern "C" {
 }
 
 #include "BlinkM_funcs.h"
-const byte blinkm_addr = 0x09;
+const byte blinkm_addr = 0x09; //default blinkm address
 
 
-void blink( bool solid,  char color)
+void setLED( bool solid,  char color)
 {
 
        	if (solid)
@@ -30,7 +30,7 @@ void blink( bool solid,  char color)
 		{
 
 		case 'w':  // white
-                BlinkM_stopScript( blinkm_addr );
+			BlinkM_stopScript( blinkm_addr );
 			BlinkM_fadeToRGB( blinkm_addr, 0xff,0xff,0xff);  
 			break;
 			
@@ -80,7 +80,7 @@ void blink( bool solid,  char color)
                         BlinkM_stopScript( blinkm_addr );
 			BlinkM_playScript( blinkm_addr, 3,0,0 );
 			break;
-		case 'w':  // Blink Red
+		case 'w':  // Blink white
                         BlinkM_stopScript( blinkm_addr );
 			BlinkM_playScript( blinkm_addr, 2,0,0 );
 			break;
@@ -119,19 +119,19 @@ void blink( bool solid,  char color)
 }
 
 ROS_CALLBACK(light_cb, std_msgs::String, light_cmd)
-        
-        bool solid;
+
+        bool solid =false;
         char color; 
         if (strlen( (const char* ) light_cmd.data) ==2 ){
           solid  = (light_cmd.data[0] == 'S') || (light_cmd.data[0] == 's');
           color = light_cmd.data[1];
         }
         else{
-          solid=  true;
+          solid=  false;
           color = light_cmd.data[0];
         } 
         
-	blink(solid, color);
+	setLED(solid, color);
 }
 
 
@@ -148,14 +148,12 @@ void setup()
 	BlinkM_beginWithPower();
 	delay(100);
 	BlinkM_stopScript(blinkm_addr);  // turn off startup script
-	blink(false, 0);
+	setLED(false, 0); //turn off the led
         
         nh.initNode();
         nh.subscribe(sub);
 
 }
-
-
 
 void loop()
 {
