@@ -53,6 +53,22 @@ TOPIC_PUBLISHERS = 0
 TOPIC_SUBSCRIBERS = 1
 TOPIC_TIME = 10
 
+
+def load_pkg_module(package):
+    #check if its in the python path
+    in_path = False
+    for entry in sys.path:
+        if package in entry:
+            in_path = True
+    if not in_path:
+        roslib.load_manifest(package)
+    try:
+        m = __import__( package +'.msg')
+    except:
+        rospy.logerr( "Cannot import package : %s"% package )
+        return None
+    return m
+
 class Publisher:
     """ 
         Prototype of a forwarding publisher.
@@ -64,11 +80,8 @@ class Publisher:
         
         # find message type
         package, message = message_type.split('/')
-        try:
-            m = __import__( package +'.msg')
-        except:
-            roslib.load_manifest(package)
-            m = __import__( package +'.msg')
+        m = load_pkg_module(package)
+
         m2 = getattr(m, 'msg')
         self.message = getattr(m2, message)
         self.publisher = rospy.Publisher(topic, self.message)
@@ -91,11 +104,8 @@ class Subscriber:
         
         # find message type
         package, message = message_type.split('/')
-        try:
-            m = __import__( package +'.msg')
-        except:
-            roslib.load_manifest(package)
-            m = __import__( package +'.msg')
+        m = load_pkg_module(package)
+
         m2 = getattr(m, 'msg')
         self.message = getattr(m2, message)
         rospy.Subscriber(topic, self.message, self.callback)
@@ -180,8 +190,8 @@ class SerialClient:
                         m.deserialize(msg)
                         self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
                         rospy.loginfo("Setup Publisher on %s [%s]" % (m.topic_name, m.message_type) )
-                    except:
-                        rospy.logerr("Failed to parse publisher.")
+                    except Exception as e:
+                        rospy.logerr("Failed to parse publisher: %s", e)
                 elif topic_id == TOPIC_SUBSCRIBERS:
                     try:
                         m = TopicInfo()
