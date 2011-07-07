@@ -5,7 +5,7 @@
  * using ROS and the arduiono
  * 
  * For the full tutorial write up, visit
- * www.ros.org/wiki/rosserial_arduino_tutorials
+ * www.ros.org/wiki/rosserial_arduino_demos
  *
  * For more information on the Arduino Servo Library
  * Checkout :

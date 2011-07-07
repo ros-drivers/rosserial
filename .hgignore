@@ -4,9 +4,6 @@ rosserial_msgs/build
 rosserial_msgs/msg_gen
 rosserial_msgs/src
 ./*.pyc
-rosserial_java/build
-rosserial_java/.*
-rosserial_java/ros.properties
 rosserial_python/build
-rosserial_arduino_tutorials/build
-rosserial_arduino_tutorials/msg_gen
+rosserial_arduino_demos/build
+rosserial_arduino_demos/msg_gen

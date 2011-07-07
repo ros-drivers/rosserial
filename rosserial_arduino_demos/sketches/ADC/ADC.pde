@@ -8,11 +8,11 @@
 
 #include <WProgram.h>
 #include <ros.h>
-#include <rosserial_arduino_tutorials/Adc.h>
+#include <rosserial_arduino_demos/Adc.h>
 
 ros::NodeHandle nh;
 
-rosserial_arduino_tutorials::Adc adc_msg;
+rosserial_arduino_demos::Adc adc_msg;
 ros::Publisher p("adc", &adc_msg);
 
 
