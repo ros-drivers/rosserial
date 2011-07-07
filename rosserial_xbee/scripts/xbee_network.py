@@ -136,7 +136,7 @@ like :
 	for t in threads:
 		t.deamon =True 
 		t.start()
-	rcv=0
+
 	while not rospy.is_shutdown():
 		try:
 			msg = xbee.wait_read_frame()
@@ -148,9 +148,6 @@ like :
 				data = msg['rf_data']
 				try:
 					client_ports[src].putData(data)
-					rcv+=1
-					if (rcv%100 ==0):
-						print "Recieved %d"%rcv
 				except KeyError as e:
 					print "Rcv ID corrupted"
 		except KeyboardInterrupt:

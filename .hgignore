@@ -8,3 +8,5 @@ rosserial_java/build
 rosserial_java/.*
 rosserial_java/ros.properties
 rosserial_python/build
+rosserial_arduino_tutorials/build
+rosserial_arduino_tutorials/msg_gen

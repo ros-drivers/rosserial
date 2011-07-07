@@ -10,4 +10,6 @@
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- std_msgs, rospy -->
+  <depend stack="rosjava_core" /> <!-- rosjava -->
+
 </stack>
