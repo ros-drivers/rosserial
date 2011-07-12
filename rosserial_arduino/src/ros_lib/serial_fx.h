@@ -1,5 +1,5 @@
 /* 
- * Redefine these if needed
+ * These are the serial function hooks for rosserial.
  */
 
 #ifndef serial_fx_H
@@ -7,18 +7,10 @@
 
 #include "WProgram.h"
 
-void fx_open(){
-    Serial.begin(57600);
-}
+void fx_open();
 
-
-int fx_putc(char c) {
-    Serial.write(c);
-    return 0;
-}
+int fx_putc(char c);
  
-int fx_getc(){
-    return Serial.read();
-}
+int fx_getc();
 
 #endif

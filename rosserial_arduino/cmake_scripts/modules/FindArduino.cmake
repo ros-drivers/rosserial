@@ -205,7 +205,7 @@ function(GENERATE_ARDUINO_FIRMWARE TARGET_NAME)
 
     
     list(APPEND ALL_LIBS ${CORE_LIB} ${INPUT_LIBS})
-    message(STATUS "ALL LIBS ARE : ${ALL_LIBS}")
+    #message(STATUS "ALL LIBS ARE : ${ALL_LIBS}")
     
     setup_arduino_target(${TARGET_NAME} "${ALL_SRCS}" "${ALL_LIBS}")
     
@@ -434,7 +434,7 @@ function(setup_arduino_upload BOARD_ID TARGET_NAME PORT)
         set(AVRDUDE_FLAGS ${${TARGET_NAME}_AFLAGS})
     endif()
     add_custom_target(${TARGET_NAME}-upload
-                      ${ARDUINO_AVRDUDE_PROGRAM} 
+                     stty -F ${PORT} hupcl   && ${ARDUINO_SDK_PATH}/hardware/tools/avrdude#${ARDUINO_AVRDUDE_PROGRAM} 
                          -U flash:w:${TARGET_NAME}.hex:i
                          ${AVRDUDE_FLAGS}
                          -C ${ARDUINO_AVRDUDE_CONFIG_PATH}
@@ -505,6 +505,7 @@ endfunction()
 
 # Setting up Arduino enviroment settings
 if(NOT ARDUINO_FOUND)
+message(STATUS "The arduino sdk path is ${ARDUINO_SDK_PATH}")
     find_file(ARDUINO_CORES_PATH
               NAMES cores
               PATHS ${ARDUINO_SDK_PATH}
@@ -558,8 +559,7 @@ if(NOT ARDUINO_FOUND)
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(Arduino
                                       REQUIRED_VARS ARDUINO_SDK_PATH
-                                                    ARDUINO_SDK_VERSION
-                                      VERSION_VAR ARDUINO_SDK_VERSION)
+                                                    ARDUINO_SDK_VERSION )
 
 
      mark_as_advanced(ARDUINO_CORES_PATH

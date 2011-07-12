@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
 
-include_directories(${ARDUINO_SDK_PATH}/hardware/arduino/cores/arduino)
+#lets set the name of the project to the name of the pkg
+#this emulates the typical rosbuild
+get_filename_component(_project ${CMAKE_SOURCE_DIR} NAME)
+project(${_project})
 
 set(CMAKE_MODULE_PATH    ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/modules)  # CMake module search path
-#set(CMAKE_TOOLCHAIN_FILE ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/toolchains/Arduino.cmake) # Arduino Toolchain
 include(${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/toolchains/Arduino.cmake) # Arduino Toolchain
 
 find_package(Arduino)
@@ -11,31 +13,71 @@ find_package(Arduino)
 execute_process(COMMAND cp -r ${rosserial_arduino_PACKAGE_PATH}/src/ros_lib/ ${PROJECT_SOURCE_DIR}/src/)
 include_directories(${PROJECT_SOURCE_DIR}/src/ros_lib)
 
-if(ROSSERIAL_CUSTOM_SERIAL)
-    set(ROS_SRCS ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp
-    			   ${ROSSERIAL_CUSTOM_SERIAL})
-    execute_process(COMMAND cp -rf ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/serial_fx.h ${PROJECT_SOURCE_DIR}/src/ros_lib/serial_fx.h)
-    execute_process(COMMAND cp -rf ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/serial_fx.cpp ${PROJECT_SOURCE_DIR}/src/ros_lib/serial_fx.cpp)
 
- else()
-     set(ROS_SRCS ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp)
-endif()
+#get a list of all the pkgs in the manifest
+#so that we can generate the rosserial implementation for them
+rosbuild_invoke_rospack(${PROJECT_NAME} ${PROJECT_NAME} "depedencies" "depends")
+string(REGEX REPLACE "\n" ";" ${PROJECT_NAME}_depedencies ${${PROJECT_NAME}_depedencies})
 
-set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp
-						 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
-						 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
+foreach(MSG_PKG ${${PROJECT_NAME}_depedencies})
+rosbuild_find_ros_package(${MSG_PKG})
 
-			  
-foreach(msg ${ROS_MSGS_USED})
-string(REPLACE "/"  ";" MSG_LIST ${msg} )
-LIST(GET MSG_LIST 0 MSG_PKG)
-LIST(GET MSG_LIST 1 MSG_TYPE)
+	if (EXISTS ${${MSG_PKG}_PACKAGE_PATH}/msg AND 
+		NOT EXISTS ${PROJECT_SOURCE_DIR}/src/ros_lib/${MSG_PKG})
+		message(STATUS "Generating rosserial implementation for ${MSG_PKG}" )
+		execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src ${MSG_PKG} OUTPUT_QUIET)
+	endif()
+endforeach(MSG_PKG)
 
-message(STATUS "The message pkg  ${MSG_PKG}  type: ${MSG_TYPE} is being generated")
-execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src ${MSG_PKG})
-endforeach(msg)
-
-add_custom_target(clean 
-    COMMAND rm -rf *.hex *.eep CMakeCache.txt cmake_install.cmake CMakeFiles *.a
+SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES 
+     ${PROJECT_SOURCE_DIR}/src/ros_lib
 )
 
+
+
+# - Generate firmware for rosserial_arduino Devices
+# generate_ros_firmware(TARGET_NAME)
+#        TARGET_NAME - Name of target
+# Creates a Arduino firmware target.
+#
+# The target options can be configured by setting options of
+# the following format:
+#      ${TARGET_NAME}${SUFFIX}
+# The following suffixes are availabe:
+#      _SRCS           # Sources
+#      _HDRS           # Headers
+#      _LIBS           # Libraries to linked in
+#      _BOARD          # Board name (such as uno, mega2560, ...)
+#      _PORT           # Serial port, for upload and serial targets [OPTIONAL]
+#      _AFLAGS         # Override global Avrdude flags for target
+#      _SERIAL         # Serial command for serial target           [OPTIONAL]
+#      _NO_AUTOLIBS    # Disables Arduino library detection
+#      _CUSTOM_COM     # use a custom implementation of fx_putc and fx_getc for rosserial
+
+# Here is a short example for a target named test:
+#       set(test_SRCS  test.cpp)
+#       set(test_HDRS  test.h)
+#       set(test_BOARD uno)
+#       generate_ros_firmware(test)
+
+macro(generate_ros_firmware TARGET_NAME)
+
+
+	set(ROS_SRCS ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp
+				 ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp
+				 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
+				 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
+
+	if ( ${${TARGET_NAME}_CUSTOM_COM} )
+	else()
+		set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/serial_fx.cpp)
+	endif()
+
+
+	#add in ROS SRCS
+	set(${TARGET_NAME}_SRCS ${${TARGET_NAME}_SRCS} ${ROS_SRCS})
+	generate_arduino_firmware(${TARGET_NAME})
+
+	SET_DIRECTORY_PROPERTIES(PROPERTIES  ADDITIONAL_MAKE_CLEAN_FILES 
+			"${PROJECT_SOURCE_DIR}/${TARGET_NAME}.eep;${PROJECT_SOURCE_DIR}/${TARGET_NAME}.hex")
+endmacro()

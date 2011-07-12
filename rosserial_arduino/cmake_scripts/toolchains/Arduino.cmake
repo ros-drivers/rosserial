@@ -75,9 +75,9 @@ set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "-Wl,--as-needed -Wl,--relax -Wl,--gc-se
 # C only fine tunning
 set(TUNNING_FLAGS "-funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums") 
 
-SET(CPP_FLAGS "-fno-inline-small-functions -ffunction-sections -fdata-sections -fno-tree-loop-optimize -fno-move-loop-invariants")
+SET(CPP_FLAGS " -ffunction-sections -fdata-sections -fno-tree-loop-optimize -fno-move-loop-invariants")
 
-set(CMAKE_CXX_FLAGS " -Os ${CPP_FLAGS}")
+set(CMAKE_CXX_FLAGS " -O3 ${CPP_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${TUNNING_FLAGS} -Wall -Wstrict-prototypes -std=gnu99 ${CPP_FLAGS}")
 
 
