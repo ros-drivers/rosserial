@@ -1,2 +1,8 @@
 librxtx-java:
   ubuntu: librxtx-java
+gcc-avr:
+  ubuntu: gcc-avr
+avr-libc:
+  ubuntu: avr-libc
+java:
+  ubuntu: openjdk-6-jdk

@@ -52,7 +52,8 @@ set(CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO ""                        CACHE STR
 
 
 set(ARDUINO_PATHS)
-foreach(VERSION RANGE 22 1)
+foreach(VERSION RANGE 26 1) #arduino only goes up to 22 right now, but
+							#we want to include near future distros
     list(APPEND ARDUINO_PATHS arduino-00${VERSION})
 endforeach()
 
@@ -66,7 +67,7 @@ find_path(ARDUINO_SDK_PATH
 include(Platform/ArduinoPaths)
 
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "-Wl,--as-needed -Wl,--relax -Wl,--gc-sections")
-# -Wl,--relax #-Wl,--gc-sections reduced code size from 50% to 18% ... what do they do?
+# -Wl,--relax #-Wl,--gc-sections reduced code size from 50% to 18% 
 # http://www.avrfreaks.net/index.php?name=PNphpBB2&file=viewtopic&t=91828&highlight=compile+program+programme+size
 
 #great explanation on avr compiler flags

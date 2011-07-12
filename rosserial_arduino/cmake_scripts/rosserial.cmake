@@ -52,8 +52,8 @@ SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
 #      _AFLAGS         # Override global Avrdude flags for target
 #      _SERIAL         # Serial command for serial target           [OPTIONAL]
 #      _NO_AUTOLIBS    # Disables Arduino library detection
-#      _CUSTOM_COM     # use a custom implementation of fx_putc and fx_getc for rosserial
-
+#      _NO_DEFAULT_COM # Disables a default communication implementation
+#
 # Here is a short example for a target named test:
 #       set(test_SRCS  test.cpp)
 #       set(test_HDRS  test.h)
@@ -68,7 +68,7 @@ macro(generate_ros_firmware TARGET_NAME)
 				 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
 				 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
 
-	if ( ${${TARGET_NAME}_CUSTOM_COM} )
+	if ( ${${TARGET_NAME}_NO_DEFAULT_COM} )
 	else()
 		set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/serial_fx.cpp)
 	endif()
