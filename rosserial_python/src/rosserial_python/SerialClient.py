@@ -44,6 +44,8 @@ import StringIO
 from std_msgs.msg import Time
 from rosserial_msgs.msg import *
 
+import time
+
 import struct
 
 MODE_FIRST_FF = 0
@@ -140,6 +142,9 @@ class SerialClient:
             self.port = Serial(port, baud, timeout=self.timeout*0.5)
         
         self.port.timeout = 0.01 #edit the port timeout
+        
+        time.sleep(0.1) #allow the driver to get ready 
+						#(Important for uno)
         
         self.publishers = dict()
         self.subscribers = dict()
