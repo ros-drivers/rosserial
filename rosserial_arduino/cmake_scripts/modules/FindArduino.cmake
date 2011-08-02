@@ -284,7 +284,20 @@ function(setup_arduino_core VAR_NAME BOARD_ID)
     if(BOARD_CORE AND NOT TARGET ${CORE_LIB_NAME})
         set(BOARD_CORE_PATH ${ARDUINO_CORES_PATH}/${BOARD_CORE})
         find_sources(CORE_SRCS ${BOARD_CORE_PATH})
-        add_library(${CORE_LIB_NAME} ${CORE_SRCS})
+        
+        #the following block is a hack to allow the 
+        #natty arduino deb to work with this cmake file
+        #natty includes a main.cxx as well as a main.cpp file
+        #this extra file causes main to be included 2 times
+        #this removes the main.cxx
+        set(TEMP "")
+	   foreach(SRC ${CORE_SRCS})
+		string(REGEX REPLACE ".*/main.cxx" ""  SRCOUT ${SRC})
+		set(TEMP ${TEMP} ${SRCOUT} )
+       endforeach(SRC) 
+	   set(CORE_SRCS ${TEMP} )
+	   
+      add_library(${CORE_LIB_NAME} ${CORE_SRCS})
         set(${VAR_NAME} ${CORE_LIB_NAME} PARENT_SCOPE)
     endif()
 endfunction()
