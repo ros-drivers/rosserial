@@ -71,17 +71,6 @@ int ros::Publisher::publish(Msg * msg)
 }
 
 
-/* 
- * Subscribers
- */
-ros::Subscriber::Subscriber(const char * topic_name, Msg * msg, msgCb *callback)
-{
-  id_ = 0;
-  topic_ = topic_name;
-  msg_ = msg;
-  cb_ = callback; 
-}
-
 
 /* 
  * Node Handles
@@ -102,21 +91,8 @@ bool ros::NodeHandle::advertise(Publisher & p)
   return false;
 }
 
-bool ros::NodeHandle::subscribe(Subscriber & s)
-{
-  int i;
-  for(i = 0; i < MAX_SUBSCRIBERS; i++)
-  {
-    if(subscribers[i] == 0) // empty slot
-    {
-      subscribers[i] = &s;
-      s.id_ = i+100;
-      s.nh_ = this;
-      return true;
-    }
-  }
-  return false;
-}
+
+
 
 void ros::NodeHandle::negotiateTopics()
 {
@@ -134,11 +110,11 @@ void ros::NodeHandle::negotiateTopics()
   }
   for(i = 0; i < MAX_SUBSCRIBERS; i++)
   {
-    if(subscribers[i] != 0) // non-empty slot
+    if(receivers[i] != 0) // non-empty slot
     {
-      ti.topic_id = subscribers[i]->id_;
-      ti.topic_name = (unsigned char *) subscribers[i]->topic_;
-      ti.message_type = (unsigned char *) subscribers[i]->msg_->getType();
+      ti.topic_id = receivers[i]->id_;
+      ti.topic_name = (unsigned char *) receivers[i]->topic_;
+      ti.message_type = (unsigned char *) receivers[i]->getMsgType();
       publish( TOPIC_SUBSCRIBERS, &ti );
     }
   }
@@ -223,7 +199,7 @@ void ros::NodeHandle::spinOnce()
     if( data < 0 )
       break;
     checksum_ += data;
-    if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
+    if( mode_ == MODE_MESSAGE ){        /* message data being received */
       message_in[index_++] = data;
       bytes_--;
       if(bytes_ == 0)                   /* is message complete? if so, checksum */
@@ -267,8 +243,8 @@ void ros::NodeHandle::spinOnce()
         }
         else
         {
-          if(subscribers[topic_-100])
-            subscribers[topic_-100]->cb_( message_in );
+          if(receivers[topic_-100])
+            receivers[topic_-100]->receive( message_in );
         }
       }
       mode_ = MODE_FIRST_FF;

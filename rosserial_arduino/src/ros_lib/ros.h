@@ -48,7 +48,8 @@
 #define TOPIC_NEGOTIATION   0
 #define TOPIC_PUBLISHERS    0
 #define TOPIC_SUBSCRIBERS   1
-// services?
+#define TOPIC_SERVICES      3
+
 #define TOPIC_TIME          10
 
 #define SYNC_SECONDS        5
@@ -67,7 +68,7 @@ namespace ros
       
   };
 
-  typedef void (msgCb) (unsigned char * data);
+
 
   /* Generic Publisher */
   class Publisher
@@ -82,25 +83,65 @@ namespace ros
       Msg * msg_;
   };
 
-  /* Generic Subscriber */
-  class Subscriber
-  {
-    public:
-      Subscriber( const char * topic_name, Msg * msg, msgCb * callback);
+  /* Base class for objects recieving messages (Services and Subscribers) */
+class MsgReceiver{
+	public:
+		virtual void receive(unsigned char *data)=0;
 
-      int id_;     
-      NodeHandle * nh_;
-      const char * topic_;
-      Msg * msg_;
-      msgCb * cb_;
-  };
+		//Distinguishes between different receiver types
+		virtual int _getType()=0;
+		virtual const char * getMsgType()=0;
+		int id_;
+		NodeHandle * nh_;
+		const char * topic_;
+};
+
+
+template<typename MsgT>
+class Subscriber: public MsgReceiver{
+public:
+	Subscriber(const char * topic_name, void(*msgCB)(const MsgT &)){
+		topic_ = topic_name;
+		cb_= msgCB;
+	}
+	MsgT msg;
+	virtual void receive(unsigned char* data){
+		msg.deserialize(data);
+		this->cb_(msg);
+	}
+	virtual const char * getMsgType(){return this->msg.getType();}
+	virtual int _getType(){return TOPIC_SUBSCRIBERS;}
+private:
+	void(*cb_)(const MsgT &);
+
+};
+
 
   /* Node Handle */
   class NodeHandle
   {
     public:
       bool advertise(Publisher &p);
-      bool subscribe(Subscriber &s);
+
+
+      /* Register subscriber with node handle */
+      template<typename MsgT>
+      bool subscribe(Subscriber< MsgT> &s){
+    	    int i;
+    	    for(i = 0; i < MAX_SUBSCRIBERS; i++)
+    	    {
+    	      if(receivers[i] == 0) // empty slot
+    	      {
+    	      	receivers[i] = (MsgReceiver*)&s;
+    	        s.id_ = i+100;
+    	        s.nh_ = this;
+    	        return true;
+    	      }
+    	    }
+    	    return false;
+      }
+
+
       void negotiateTopics();
       int publish(int id, Msg * msg);
 
@@ -121,7 +162,7 @@ namespace ros
     private:
       void makeHeader();
       Publisher * publishers[MAX_PUBLISHERS];
-      Subscriber * subscribers[MAX_SUBSCRIBERS];
+      MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
       int mode_;
       int bytes_;
