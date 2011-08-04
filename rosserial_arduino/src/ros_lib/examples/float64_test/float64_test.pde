@@ -5,18 +5,19 @@
 
 #include <ros.h>
 #include <std_msgs/Float64.h>
+#include <ArduinoHardware.h>
+
+ros::NodeHandle<ArduinoHardware> nh;
 
 float x; 
 
-ros::NodeHandle nh;
-
-ROS_CALLBACK(messageCb, std_msgs::Float64, msg)
+void messageCb( const std_msgs::Float64& msg){
   x = msg.data - 1.0;
   digitalWrite(13, HIGH-digitalRead(13));   // blink the led
 }
 
 std_msgs::Float64 test;
-ros::Subscriber s("your_topic", &msg, &messageCb);
+ros::Subscriber<std_msgs::Float64> s("your_topic", &messageCb);
 ros::Publisher p("my_topic", &test);
 
 void setup()

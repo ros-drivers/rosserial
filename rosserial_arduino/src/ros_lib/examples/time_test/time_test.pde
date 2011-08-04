@@ -6,8 +6,9 @@
 #include <ros.h>
 #include <ros/time.h>
 #include <std_msgs/Time.h>
+#include <ArduinoHardware.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle<ArduinoHardware> nh;
 
 std_msgs::Time test;
 ros::Publisher p("my_topic", &test);
@@ -21,7 +22,7 @@ void setup()
 
 void loop()
 {  
-  test.data = ros::Time::now();
+  test.data = nh.now();
   p.publish( &test );
   nh.spinOnce();
   delay(10);

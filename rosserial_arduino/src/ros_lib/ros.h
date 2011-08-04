@@ -34,7 +34,7 @@
 
 /* 
  * ROS definitions for Arduino
- * Author: Michael Ferguson
+ * Author: Michael Ferguson , Adam Stambler
  */
 
 #ifndef ros_lib_h
@@ -48,14 +48,24 @@
 #define TOPIC_NEGOTIATION   0
 #define TOPIC_PUBLISHERS    0
 #define TOPIC_SUBSCRIBERS   1
-// services?
+#define TOPIC_SERVICES      3
+
 #define TOPIC_TIME          10
 
 #define SYNC_SECONDS        5
 
+
 namespace ros
 {
-  class NodeHandle;
+
+	/*
+	 * Forward declaration of NodeHandleInterface
+	 * This class takes care of all the node handle functions
+	 * that an outside programmer would see.  NodeHandle
+	 * takes the hardware template and performs all of the actual
+	 * hardware templated functions.
+	 */
+	class NodeHandleInterface;
 
   /* Base Message Type */
   class Msg
@@ -67,7 +77,7 @@ namespace ros
       
   };
 
-  typedef void (msgCb) (unsigned char * data);
+
 
   /* Generic Publisher */
   class Publisher
@@ -77,67 +87,55 @@ namespace ros
       int publish( Msg * msg );
 
       int id_;     
-      NodeHandle * nh_;
+      NodeHandleInterface * nh_;
       const char * topic_;
       Msg * msg_;
   };
 
-  /* Generic Subscriber */
-  class Subscriber
-  {
-    public:
-      Subscriber( const char * topic_name, Msg * msg, msgCb * callback);
+  /* Base class for objects recieving messages (Services and Subscribers) */
+class MsgReceiver{
+	public:
+		virtual void receive(unsigned char *data)=0;
 
-      int id_;     
-      NodeHandle * nh_;
-      const char * topic_;
-      Msg * msg_;
-      msgCb * cb_;
-  };
+		//Distinguishes between different receiver types
+		virtual int _getType()=0;
+		virtual const char * getMsgType()=0;
+		int id_;
+		NodeHandleInterface * nh_;
+		const char * topic_;
+};
 
-  /* Node Handle */
-  class NodeHandle
-  {
-    public:
-      bool advertise(Publisher &p);
-      bool subscribe(Subscriber &s);
-      void negotiateTopics();
-      int publish(int id, Msg * msg);
+/* ROS Subscriber
+ * This class handles holding the msg so that
+ * it is not continously reallocated.  It is also used by the
+ * node handle to keep track of callback functions and IDs.
+ * */
+template<typename MsgT>
+class Subscriber: public MsgReceiver{
+public:
 
-      /* synchronize time with host */
-      void requestSyncTime();
-      void syncTime(unsigned char * data);
+	typedef void(*CallbackT)(const MsgT&);
 
-      /* Start serial, initialize buffers */
-      void initNode();
+	Subscriber(const char * topic_name, CallbackT msgCB){
+		topic_ = topic_name;
+		cb_= msgCB;
+	}
+	MsgT msg;
+	virtual void receive(unsigned char* data){
+		msg.deserialize(data);
+		this->cb_(msg);
+	}
+	virtual const char * getMsgType(){return this->msg.getType();}
+	virtual int _getType(){return TOPIC_SUBSCRIBERS;}
+private:
+	CallbackT cb_;
 
-      /* This function goes in your loop() function, it handles 
-       *  serial input and callbacks for subscribers. 
-       */
-      void spinOnce();
+};
 
-      bool configured_;
 
-    private:
-      void makeHeader();
-      Publisher * publishers[MAX_PUBLISHERS];
-      Subscriber * subscribers[MAX_SUBSCRIBERS];
-
-      int mode_;
-      int bytes_;
-      int topic_;
-      int index_;
-      int checksum_;
-	
-      unsigned char message_in[BUFFER_SIZE];
-      unsigned char message_out[BUFFER_SIZE];
-  };
 
 }
-
-#define ROS_CALLBACK( fn, ty, message )\
-ty message; \
-void fn (unsigned char *data){\
-    message.deserialize(data); 
+#include <NodeHandleInterface.h>
+#include "NodeHandle.h"
 
 #endif
