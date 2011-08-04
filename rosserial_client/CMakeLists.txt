@@ -28,10 +28,3 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-
-file(MAKE_DIRECTORY libraries/ros_lib)
-add_custom_target( make_libraries ALL
-    COMMAND cp -r src/ros_lib/* libraries/ros_lib/
-    COMMAND ../rosserial_client/src/rosserial_client/make_library.py libraries std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs rosserial_msgs tf
-    WORKING_DIRECTORY ../
-)
