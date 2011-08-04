@@ -12,7 +12,7 @@ ros::NodeHandle<ArduinoHardware> nh;
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
-unsigned char hello[13] = "hello world!";
+char hello[13] = "hello world!";
 
 void setup()
 {
