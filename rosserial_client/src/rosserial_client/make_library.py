@@ -190,7 +190,7 @@ class StringDataType(PrimitiveDataType):
     """ Need to convert to signed char *. """
 
     def make_declaration(self, f):
-        f.write('      signed char * %s;\n' % self.name)
+        f.write('      char * %s;\n' % self.name)
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")

@@ -101,7 +101,7 @@ namespace ros {
       void negotiateTopics();
     
       /* Are we connected to the PC? */
-      bool connected();
+      bool connected() { return configured_; };
 
 	  virtual Time now() =0;
       virtual void setNow(Time& t)=0;

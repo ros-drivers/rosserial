@@ -56,7 +56,7 @@ ros::Publisher::Publisher(const char * topic_name, Msg * msg )
 
 int ros::Publisher::publish(Msg * msg)
 {
-  if(!nh_->configured_)
+  if(!nh_->connected())
     return 0;
   return nh_->publish(id_, msg);
 }
