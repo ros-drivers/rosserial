@@ -38,84 +38,75 @@
  * Author: Michael Ferguson , Adam Stambler
  */
 
-
 #ifndef NODEHANDLEINTERFACE_H_
 #define NODEHANDLEINTERFACE_H_
 
 #include "ros/time.h"
+
 /*
  * This is the base node handle class used by
  * Publishers and subscribers to access the node handle.
  * The node handle is not used directly because it is templated.
  */
+
 namespace ros {
-	class NodeHandleInterface{
-	protected:
-		    void makeHeader();
-		    Publisher * publishers[MAX_PUBLISHERS];
-		    MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
+  class NodeHandleInterface{
+    protected:
+      void makeHeader();
+      Publisher * publishers[MAX_PUBLISHERS];
+      MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
-		    int mode_;
-		    int bytes_;
-		    int topic_;
-		    int index_;
-		    int checksum_;
+      int mode_;
+      int bytes_;
+      int topic_;
+      int index_;
+      int checksum_;
+	  bool configured_;
 
-		    int total_recievers;
+      int total_recievers;
 
-		    unsigned char message_in[BUFFER_SIZE];
-		    unsigned char message_out[BUFFER_SIZE];
+      unsigned char message_in[BUFFER_SIZE];
+      unsigned char message_out[BUFFER_SIZE];
 
-		    /* used for syncing the time */
-		    unsigned long last_sync_time;
-		    unsigned long last_sync_receive_time;
-		    unsigned long last_msg_receive_time;
+      /* used for syncing the time */
+      unsigned long last_sync_time;
+      unsigned long last_sync_receive_time;
+      unsigned long last_msg_receive_time;
 
-	public:
-		/* Initialize the node and hardware */
-		virtual void initNode()=0;
+    public:
+      /* Initialize the node and hardware */
+      virtual void initNode()=0;
 
-		/*  Let the node handle its IO.  This is where the
-		 *  callbacks happen.
-		 */
-		virtual void spinOnce()=0;
+      /*  Let the node handle its IO.  This is where the callbacks happen. */
+      virtual void spinOnce()=0;
 
-		/*
-		 * publish a message
-		 */
-		virtual int publish(int id, Msg * msg)=0;
+      /* Publish a message */
+      virtual int publish(int id, Msg * msg)=0;
 
-		/*
-		 * Advertise a publisher
-		 */
+      /* Advertise a publisher */
+      bool advertise(Publisher &p);
 
-		bool advertise(Publisher &p);
+      /* Register a subscriber with the node */
+      template<typename MsgT>
+      bool subscribe(Subscriber< MsgT> &s){
+        if (total_recievers >= MAX_SUBSCRIBERS) return false;
+        receivers[total_recievers] = (MsgReceiver*)&s;
+        s.id_ = 100+total_recievers;
+        total_recievers++;
+        return true;
+      }
 
-		/*
-		 * register a subscriber with the node
-		 */
-		template<typename MsgT>
-		bool subscribe(Subscriber< MsgT> &s){
-		   if (total_recievers >= MAX_SUBSCRIBERS) return false;
-		   receivers[total_recievers] = (MsgReceiver*)&s;
-		   s.id_ = 100+total_recievers;
-		   total_recievers++;
-		   return true;
-		 }
+      /* Establish the topics to be sent across the serial connection*/
+      void negotiateTopics();
+    
+      /* Are we connected to the PC? */
+      bool connected();
 
-		/* Establish the topics to be sent across the serial connection*/
-		void negotiateTopics();
+	  virtual Time now() =0;
+      virtual void setNow(Time& t)=0;
+  };
 
-
-		/* configured_ marks weather the node has been set up its connection or not
-		 * to disable publishing, set configured_ to false
-		 */
-		bool configured_;
-
-		virtual Time now() =0;
-		virtual void setNow(Time& t)=0;
-		};
 }
 
 #endif /* NODEHANDLEINTERFACE_H_ */
