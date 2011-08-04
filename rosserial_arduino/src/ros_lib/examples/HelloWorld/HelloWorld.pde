@@ -5,9 +5,8 @@
 
 #include <ros.h>
 #include <std_msgs/String.h>
-#include <ArduinoHardware.h>
 
-ros::NodeHandle<ArduinoHardware> nh;
+ros::NodeHandle nh;
 
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);

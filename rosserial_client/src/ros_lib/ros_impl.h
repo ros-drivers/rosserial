@@ -33,7 +33,6 @@
  */
 
 /* 
- * ROS definitions for Arduino
  * Author: Michael Ferguson , Adam Stambler
  */
 
@@ -53,7 +52,6 @@
 #define TOPIC_TIME          10
 
 #define SYNC_SECONDS        5
-
 
 namespace ros
 {
@@ -93,7 +91,8 @@ namespace ros
   };
 
   /* Base class for objects recieving messages (Services and Subscribers) */
-class MsgReceiver{
+  class MsgReceiver
+  {
 	public:
 		virtual void receive(unsigned char *data)=0;
 
@@ -103,38 +102,36 @@ class MsgReceiver{
 		int id_;
 		NodeHandleInterface * nh_;
 		const char * topic_;
-};
+  };
 
-/* ROS Subscriber
- * This class handles holding the msg so that
- * it is not continously reallocated.  It is also used by the
- * node handle to keep track of callback functions and IDs.
- * */
-template<typename MsgT>
-class Subscriber: public MsgReceiver{
-public:
+  /* ROS Subscriber
+   * This class handles holding the msg so that
+   * it is not continously reallocated.  It is also used by the
+   * node handle to keep track of callback functions and IDs.
+   */
+  template<typename MsgT>
+  class Subscriber: public MsgReceiver{
+    public:
 
-	typedef void(*CallbackT)(const MsgT&);
+	  typedef void(*CallbackT)(const MsgT&);
 
-	Subscriber(const char * topic_name, CallbackT msgCB){
-		topic_ = topic_name;
-		cb_= msgCB;
-	}
-	MsgT msg;
-	virtual void receive(unsigned char* data){
-		msg.deserialize(data);
-		this->cb_(msg);
-	}
-	virtual const char * getMsgType(){return this->msg.getType();}
-	virtual int _getType(){return TOPIC_SUBSCRIBERS;}
-private:
-	CallbackT cb_;
-
-};
-
-
+	  Subscriber(const char * topic_name, CallbackT msgCB){
+        topic_ = topic_name;
+        cb_= msgCB;
+      }
+      MsgT msg;
+      virtual void receive(unsigned char* data){
+        msg.deserialize(data);
+        this->cb_(msg);
+	  }
+      virtual const char * getMsgType(){return this->msg.getType();}
+      virtual int _getType(){return TOPIC_SUBSCRIBERS;}
+    private:
+      CallbackT cb_;
+  };
 
 }
+
 #include <NodeHandleInterface.h>
 #include "NodeHandle.h"
 

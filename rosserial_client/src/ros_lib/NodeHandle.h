@@ -52,12 +52,11 @@
 #define MODE_MESSAGE        6
 #define MODE_CHECKSUM       7
 
-
 namespace ros {
 
   /* Node Handle */
   template<class Hardware>
-  class NodeHandle : public NodeHandleInterface
+  class NodeHandle_ : public NodeHandleInterface
   {
 
     protected:
@@ -70,10 +69,10 @@ namespace ros {
       unsigned long sec_offset, nsec_offset;
 
     public:
-	  NodeHandle(Hardware hardware){
+	  NodeHandle_(Hardware hardware){
         hardware_ = hardware;
 	  }
-	  NodeHandle(){}
+	  NodeHandle_(){}
 
 	  void setHardware(Hardware& h){
         hardware_ = h;
