@@ -3,21 +3,12 @@
   <author>Michael Ferguson, Adam Stambler</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/rosserial_arduino</url>
-  <depend package="rospy"/>
-  <depend package="std_msgs"/>
-  <depend package="diagnostic_msgs"/>
-  <depend package="geometry_msgs"/>
-  <depend package="nav_msgs"/>
-  <depend package="sensor_msgs"/>
-  <depend package="rosserial_msgs"/>
-  <depend package="tf"/>
-  
+  <url>http://ros.org/wiki/rosserial_arduino</url>  
+
   <rosdep name="gcc-avr"/>
   <rosdep name="avr-libc"/>
   <rosdep name="java"/>
   <rosdep name="librxtx-java"/>
-  
   
 </package>
 

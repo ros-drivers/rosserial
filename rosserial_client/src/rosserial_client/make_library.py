@@ -43,7 +43,7 @@ one or more packages for which you want to make libraries.
 rosrun rosserial_arduino <libraries_path>  pkg_name [pkg2 pkg3 ...]
 """
 
-import roslib; roslib.load_manifest("rosserial_arduino")
+import roslib; roslib.load_manifest("rosserial_client")
 import rospy
 
 import os, sys, subprocess
