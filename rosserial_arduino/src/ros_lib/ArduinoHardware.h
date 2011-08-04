@@ -26,6 +26,12 @@ public:
 		this->baud_ = h.baud_;
 		this->iostream = iostream;
 	}
+	
+	void setBaud(int baud){
+		this->baud_= baud;
+	}
+	
+	int getBaud(){return baud_;}
 
 	void init(){
 		iostream->begin(baud_);

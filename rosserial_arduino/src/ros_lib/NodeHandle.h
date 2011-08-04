@@ -78,6 +78,9 @@ template<class Hardware>
 	  void setHardware(Hardware& h){
 		  hardware_ = h;
 	  }
+	  Hardware& getHardware(){
+		  return hardware_;
+	  }
 
       /* Start serial, initialize buffers */
       virtual void initNode(){
@@ -181,7 +184,7 @@ template<class Hardware>
     	  message_out[4] = (unsigned char) l&255;
           message_out[5] = ((unsigned char) l>>8);
 
-
+	//TODO add in check for configured
           ///calculate
           int chk = 0;
     	  for(int i =2; i<l+6; i++) chk += message_out[i];
