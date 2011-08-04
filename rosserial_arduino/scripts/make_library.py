@@ -202,10 +202,14 @@ class StringDataType(PrimitiveDataType):
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      long * length_%s = (long *)(inbuffer + offset);\n' % cn)
+        f.write('      uint32_t length_%s = *(uint32_t *)(inbuffer + offset);\n' % cn)
         f.write('      offset += 4;\n')
-        f.write('      this->%s = (inbuffer + offset);\n' % self.name)
-        f.write('      offset += *length_%s;\n' % cn)
+        f.write('      for(int i= offset; i< offset+length_%s; ++i){\n'%cn) #shift for null character
+        f.write('          inbuffer[i-1]=inbuffer[i];\n')
+        f.write('           }\n')
+        f.write('      inbuffer[offset+length_%s-1]=0;\n'%cn)
+        f.write('      this->%s = (inbuffer + offset-1);\n' % self.name)
+        f.write('      offset += length_%s;\n' % cn)
 
 
 class TimeDataType(PrimitiveDataType):
