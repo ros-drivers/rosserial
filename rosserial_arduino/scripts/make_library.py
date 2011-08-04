@@ -398,7 +398,9 @@ class Message:
         f.write('#ifndef ros_%s_h\n' % self.name)
         f.write('#define ros_%s_h\n' % self.name)
         f.write('\n')
-        f.write('#include "WProgram.h"\n')
+        f.write('#include <stdint.h>\n')
+        f.write('#include <string.h>\n')
+
         f.write('#include "ros.h"\n')
         for i in self.includes:
             f.write('#include "%s.h"\n' % i)
