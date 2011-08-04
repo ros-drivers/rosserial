@@ -400,6 +400,8 @@ class Message:
         f.write('\n')
         f.write('#include <stdint.h>\n')
         f.write('#include <string.h>\n')
+        f.write('#include <stdlib.h>\n')
+
 
         f.write('#include "ros.h"\n')
         for i in self.includes:
