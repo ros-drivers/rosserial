@@ -39,13 +39,12 @@
 #ifndef ros_time_h_included
 #define ros_time_h_included
 
-#include <ros.h>
 #include <ros/duration.h>
 #include <math.h>
-
 namespace ros
 {
   void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);
+
 
   class Time
   {
@@ -69,8 +68,8 @@ namespace ros
 
       static Time now();
       static void setNow( Time & new_now);
-  };
 
+  };
 }
 
 #endif

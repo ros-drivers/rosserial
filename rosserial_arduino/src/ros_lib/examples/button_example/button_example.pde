@@ -4,8 +4,9 @@
 
 #include <ros.h>
 #include <std_msgs/Bool.h>
+#include <ArduinoHardware.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle<ArduinoHardware> nh;
 
 std_msgs::Bool pushed_msg;
 ros::Publisher pub_button("pushed", &pushed_msg);

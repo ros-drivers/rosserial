@@ -6,15 +6,18 @@
 #include <ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
+#include <ArduinoHardware.h>
+
+ros::NodeHandle<ArduinoHardware> nh;
+
 
 bool set_; 
 
-ros::NodeHandle nh;
 
 geometry_msgs::Pose sum_msg;
 ros::Publisher p("sum", &sum_msg);
 
-ROS_CALLBACK(messageCb, geometry_msgs::PoseArray, msg)
+void messageCb(const geometry_msgs::PoseArray& msg){
   sum_msg.position.x = 0;
   sum_msg.position.y = 0;
   sum_msg.position.z = 0;
@@ -27,7 +30,7 @@ ROS_CALLBACK(messageCb, geometry_msgs::PoseArray, msg)
   digitalWrite(13, HIGH-digitalRead(13));   // blink the led
 }
 
-ros::Subscriber s("poses", &msg, &messageCb);
+ros::Subscriber<geometry_msgs::PoseArray> s("poses",messageCb);
 
 void setup()
 { 

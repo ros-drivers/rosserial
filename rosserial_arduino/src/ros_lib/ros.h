@@ -34,7 +34,7 @@
 
 /* 
  * ROS definitions for Arduino
- * Author: Michael Ferguson
+ * Author: Michael Ferguson , Adam Stambler
  */
 
 #ifndef ros_lib_h
@@ -54,9 +54,18 @@
 
 #define SYNC_SECONDS        5
 
+
 namespace ros
 {
-  class NodeHandle;
+
+	/*
+	 * Forward declaration of NodeHandleInterface
+	 * This class takes care of all the node handle functions
+	 * that an outside programmer would see.  NodeHandle
+	 * takes the hardware template and performs all of the actual
+	 * hardware templated functions.
+	 */
+	class NodeHandleInterface;
 
   /* Base Message Type */
   class Msg
@@ -78,7 +87,7 @@ namespace ros
       int publish( Msg * msg );
 
       int id_;     
-      NodeHandle * nh_;
+      NodeHandleInterface * nh_;
       const char * topic_;
       Msg * msg_;
   };
@@ -92,15 +101,22 @@ class MsgReceiver{
 		virtual int _getType()=0;
 		virtual const char * getMsgType()=0;
 		int id_;
-		NodeHandle * nh_;
+		NodeHandleInterface * nh_;
 		const char * topic_;
 };
 
-
+/* ROS Subscriber
+ * This class handles holding the msg so that
+ * it is not continously reallocated.  It is also used by the
+ * node handle to keep track of callback functions and IDs.
+ * */
 template<typename MsgT>
 class Subscriber: public MsgReceiver{
 public:
-	Subscriber(const char * topic_name, void(*msgCB)(const MsgT &)){
+
+	typedef void(*CallbackT)(const MsgT&);
+
+	Subscriber(const char * topic_name, CallbackT msgCB){
 		topic_ = topic_name;
 		cb_= msgCB;
 	}
@@ -112,73 +128,14 @@ public:
 	virtual const char * getMsgType(){return this->msg.getType();}
 	virtual int _getType(){return TOPIC_SUBSCRIBERS;}
 private:
-	void(*cb_)(const MsgT &);
+	CallbackT cb_;
 
 };
 
 
-  /* Node Handle */
-  class NodeHandle
-  {
-    public:
-      bool advertise(Publisher &p);
-
-
-      /* Register subscriber with node handle */
-      template<typename MsgT>
-      bool subscribe(Subscriber< MsgT> &s){
-    	    int i;
-    	    for(i = 0; i < MAX_SUBSCRIBERS; i++)
-    	    {
-    	      if(receivers[i] == 0) // empty slot
-    	      {
-    	      	receivers[i] = (MsgReceiver*)&s;
-    	        s.id_ = i+100;
-    	        s.nh_ = this;
-    	        return true;
-    	      }
-    	    }
-    	    return false;
-      }
-
-
-      void negotiateTopics();
-      int publish(int id, Msg * msg);
-
-      /* synchronize time with host */
-      void requestSyncTime();
-      void syncTime(unsigned char * data);
-
-      /* Start serial, initialize buffers */
-      void initNode();
-
-      /* This function goes in your loop() function, it handles 
-       *  serial input and callbacks for subscribers. 
-       */
-      void spinOnce();
-
-      bool configured_;
-
-    private:
-      void makeHeader();
-      Publisher * publishers[MAX_PUBLISHERS];
-      MsgReceiver * receivers[MAX_SUBSCRIBERS];
-
-      int mode_;
-      int bytes_;
-      int topic_;
-      int index_;
-      int checksum_;
-	
-      unsigned char message_in[BUFFER_SIZE];
-      unsigned char message_out[BUFFER_SIZE];
-  };
 
 }
-
-#define ROS_CALLBACK( fn, ty, message )\
-ty message; \
-void fn (unsigned char *data){\
-    message.deserialize(data); 
+#include <NodeHandleInterface.h>
+#include "NodeHandle.h"
 
 #endif

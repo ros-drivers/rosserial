@@ -37,21 +37,13 @@
  */
 
 #include "ros.h"
-#include "serial_fx.h"
 #include "ros/time.h"
 
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 
-#define MODE_FIRST_FF       0
-#define MODE_SECOND_FF      1
-#define MODE_TOPIC_L        2   // waiting for topic id
-#define MODE_TOPIC_H        3
-#define MODE_SIZE_L         4   // waiting for message size
-#define MODE_SIZE_H         5   
-#define MODE_MESSAGE        6
-#define MODE_CHECKSUM       7
 
+ros::NodeHandleInterface * __nh =0;
 
 /* 
  * Publishers 
@@ -75,7 +67,7 @@ int ros::Publisher::publish(Msg * msg)
 /* 
  * Node Handles
  */
-bool ros::NodeHandle::advertise(Publisher & p)
+bool ros::NodeHandleInterface::advertise(Publisher & p)
 {
   int i;
   for(i = 0; i < MAX_PUBLISHERS; i++)
@@ -94,7 +86,7 @@ bool ros::NodeHandle::advertise(Publisher & p)
 
 
 
-void ros::NodeHandle::negotiateTopics()
+void ros::NodeHandleInterface::negotiateTopics()
 {
   rosserial_msgs::TopicInfo ti; 
   int i;
@@ -121,140 +113,4 @@ void ros::NodeHandle::negotiateTopics()
   configured_ = true;
 }
 
-static unsigned long rt_time;
-void ros::NodeHandle::requestSyncTime()
-{
-  std_msgs::Time t;
-  publish( TOPIC_TIME, &t);
-  rt_time = millis();
-}
-
-static unsigned long last_sync_time;
-static unsigned long last_sync_receive_time;
-static unsigned long last_msg_receive_time;
-void ros::NodeHandle::syncTime( unsigned char * data )
-{
-  std_msgs::Time t;
-  unsigned long offset = millis() - rt_time;
-
-  t.deserialize(data);
-
-  t.data.sec += offset/1000;
-  t.data.nsec += (offset%1000)*1000000UL;
-
-  ros::Time::setNow(t.data);
-  last_sync_receive_time = millis();
-}
-
-int ros::NodeHandle::publish(int id, Msg * msg)
-{
-  int l = msg->serialize(message_out);
-  int chk = (id&255) + (id>>8) + (l&255) + (l>>8);
-    for(int i = 0; i<l; i++)
-  {
-    chk += message_out[i];
-  }
-   chk = 255 - (chk%256);
-   
-  fx_putc(0xff);
-  fx_putc(0xff);
-  fx_putc( (unsigned char) id&255);
-  fx_putc( (unsigned char) id>>8);
-  fx_putc( (unsigned char) l&255);
-  fx_putc( (unsigned char) l>>8);
-  for(int i = 0; i<l; i++)
-  {
-    fx_putc(message_out[i]);
-  }
-  fx_putc(  chk);
-  return 1;
-}
-
-
-void ros::NodeHandle::initNode()
-{
-  // initialize serial
-  fx_open();
-  configured_ = false;
-  mode_ = 0;
-  bytes_ = 0;
-  index_ = 0;
-  topic_ = 0;
-}
-
-void ros::NodeHandle::spinOnce()
-{
-  /* restart if timed-out */
-  if((millis() - last_msg_receive_time) > 500){
-    mode_ == MODE_FIRST_FF;
-    if((millis() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
-      //configured_ = false;
-    }
-  }
-
-  /* while available buffer, read data */
-  while( true )
-  {  
-    int data = fx_getc();
-    if( data < 0 )
-      break;
-    checksum_ += data;
-    if( mode_ == MODE_MESSAGE ){        /* message data being received */
-      message_in[index_++] = data;
-      bytes_--;
-      if(bytes_ == 0)                   /* is message complete? if so, checksum */
-        mode_ = MODE_CHECKSUM;
-    }else if( mode_ == MODE_FIRST_FF ){
-      if(data == 0xff){
-        mode_++;
-        last_msg_receive_time = millis();
-      }
-    }else if( mode_ == MODE_SECOND_FF ){
-      if(data == 0xff){
-        mode_++;
-      }else
-        mode_ = MODE_FIRST_FF;
-    }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
-      topic_ = data; 
-      mode_++;
-      checksum_ = data;                 // first byte included in checksum
-    }else if( mode_ == MODE_TOPIC_H ){  /* top half of topic id */
-      topic_ += data<<8;
-      mode_++;
-    }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
-      bytes_ = data;
-      index_ = 0;
-      mode_++;
-    }else if( mode_ == MODE_SIZE_H ){   /* top half of message size */
-      bytes_ += data<<8;
-      mode_ = MODE_MESSAGE;
-      if(bytes_ == 0) 
-        mode_ = MODE_CHECKSUM;
-    }else if( mode_ == MODE_CHECKSUM ){ /* do checksum */
-      if( (checksum_%256) == 255){
-        if(topic_ == TOPIC_NEGOTIATION){
-		  requestSyncTime();
-          negotiateTopics();
-          last_sync_time = 0;
-        }
-        else if(topic_ == TOPIC_TIME)
-        {
-          syncTime(message_in);
-        }
-        else
-        {
-          if(receivers[topic_-100])
-            receivers[topic_-100]->receive( message_in );
-        }
-      }
-      mode_ = MODE_FIRST_FF;
-    }
-  }
-   
-  /* occasionally sync time */
-  if( configured_ && ((millis()-last_sync_time) > (SYNC_SECONDS*900) )){
-    requestSyncTime();
-	last_sync_time = millis();
-  }
-}
 
