@@ -187,10 +187,10 @@ class Int64DataType(PrimitiveDataType):
 
     
 class StringDataType(PrimitiveDataType):
-    """ Need to convert to unsigned char *. """
+    """ Need to convert to signed char *. """
 
     def make_declaration(self, f):
-        f.write('      unsigned char * %s;\n' % self.name)
+        f.write('      signed char * %s;\n' % self.name)
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
@@ -208,7 +208,7 @@ class StringDataType(PrimitiveDataType):
         f.write('          inbuffer[i-1]=inbuffer[i];\n')
         f.write('           }\n')
         f.write('      inbuffer[offset+length_%s-1]=0;\n'%cn)
-        f.write('      this->%s = (inbuffer + offset-1);\n' % self.name)
+        f.write('      this->%s = (char *)(inbuffer + offset-1);\n' % self.name)
         f.write('      offset += length_%s;\n' % cn)
 
 

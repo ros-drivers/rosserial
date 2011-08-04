@@ -95,8 +95,8 @@ void ros::NodeHandleInterface::negotiateTopics()
     if(publishers[i] != 0) // non-empty slot
     {
       ti.topic_id = publishers[i]->id_;
-      ti.topic_name = (unsigned char *) publishers[i]->topic_;
-      ti.message_type = (unsigned char *) publishers[i]->msg_->getType();
+      ti.topic_name = (char *) publishers[i]->topic_;
+      ti.message_type = (char *) publishers[i]->msg_->getType();
       publish( TOPIC_PUBLISHERS, &ti );
     }
   }
@@ -105,8 +105,8 @@ void ros::NodeHandleInterface::negotiateTopics()
     if(receivers[i] != 0) // non-empty slot
     {
       ti.topic_id = receivers[i]->id_;
-      ti.topic_name = (unsigned char *) receivers[i]->topic_;
-      ti.message_type = (unsigned char *) receivers[i]->getMsgType();
+      ti.topic_name = (char *) receivers[i]->topic_;
+      ti.message_type = (char *) receivers[i]->getMsgType();
       publish( TOPIC_SUBSCRIBERS, &ti );
     }
   }
