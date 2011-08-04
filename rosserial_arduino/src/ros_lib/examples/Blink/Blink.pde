@@ -5,14 +5,15 @@
 
 #include <ros.h>
 #include <std_msgs/Empty.h>
+#include <ArduinoHardware.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle<ArduinoHardware> nh;
 
-ROS_CALLBACK(messageCb, std_msgs::Empty, toggle_msg)
+void messageCb( const std_msgs::Empty& toggle_msg){
   digitalWrite(13, HIGH-digitalRead(13));   // blink the led
 }
 
-ros::Subscriber sub("toggle_led", &toggle_msg, messageCb );
+ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
 
 void setup()
 { 

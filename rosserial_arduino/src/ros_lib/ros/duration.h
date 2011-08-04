@@ -39,8 +39,6 @@
 #ifndef ros_duration_h_included
 #define ros_duration_h_included
 
-#include <ros.h>
-#include <math.h>
 
 namespace ros
 {
