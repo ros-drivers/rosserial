@@ -13,19 +13,22 @@
  */
 
 #include <WProgram.h>
+
 #include <Servo.h> 
 #include <ros.h>
 #include <std_msgs/UInt16.h>
 
+ros::NodeHandle  nh;
+
 Servo servo;
 
-ROS_CALLBACK( servo_cb, std_msgs::UInt16, cmd_msg)
+void servo_cb( const std_msgs::UInt16& cmd_msg){
   servo.write(cmd_msg.data); //set servo angle, should be from 0-180  
   digitalWrite(13, HIGH-digitalRead(13));  //toggle led  
 }
 
-ros::NodeHandle nh;
-ros::Subscriber sub("servo", &cmd_msg, servo_cb);
+
+ros::Subscriber<std_msgs::UInt16> sub("servo", servo_cb);
 
 void setup(){
   pinMode(13, OUTPUT);

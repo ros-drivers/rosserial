@@ -14,9 +14,11 @@
 #include <ros.h>
 #include <std_msgs/Float32.h>
 
+ros::NodeHandle  nh;
+
+
 std_msgs::Float32 temp_msg;
 ros::Publisher pub_temp("temperature", &temp_msg);
-ros::NodeHandle nh;
 
 
 // From the datasheet the BMP module address LSB distinguishes

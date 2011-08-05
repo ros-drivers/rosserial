@@ -10,10 +10,11 @@
  */
 
 #include <WProgram.h>
+
 #include <ros.h>
 #include <std_msgs/Empty.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle  nh;
 
 std_msgs::Empty clap_msg;
 ros::Publisher p("clap", &clap_msg);

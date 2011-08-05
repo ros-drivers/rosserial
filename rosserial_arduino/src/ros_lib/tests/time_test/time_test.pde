@@ -6,9 +6,9 @@
 #include <ros.h>
 #include <ros/time.h>
 #include <std_msgs/Time.h>
-#include <ArduinoHardware.h>
 
-ros::NodeHandle<ArduinoHardware> nh;
+
+ros::NodeHandle  nh;
 
 std_msgs::Time test;
 ros::Publisher p("my_topic", &test);

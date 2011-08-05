@@ -8,7 +8,8 @@
 #include <ros/time.h>
 #include <sensor_msgs/Range.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle  nh;
+
 
 sensor_msgs::Range range_msg;
 ros::Publisher pub_range( "range_data", &range_msg);
@@ -33,7 +34,7 @@ float getRange(int pin_num){
     return (sample - 1)/100; //convert to meters
 }
 
-unsigned char frameid[] = "/ir_ranger";
+char frameid[] = "/ir_ranger";
 
 void setup()
 {
@@ -54,7 +55,7 @@ void loop()
   //   since it takes that long for the sensor to stabilize
   if ( (millis()-range_timer) > 50){
     range_msg.range = getRange(analog_pin);
-    range_msg.header.stamp = ros::Time::now();
+    range_msg.header.stamp = nh.now();
     pub_range.publish(&range_msg);
     range_timer =  millis() + 50;
   }

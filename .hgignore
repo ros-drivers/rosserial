@@ -7,3 +7,4 @@ rosserial_msgs/src
 rosserial_python/build
 rosserial_arduino_demos/build
 rosserial_arduino_demos/msg_gen
+./*/msg_gen

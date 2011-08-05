@@ -6,9 +6,9 @@
 #include <ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
-#include <ArduinoHardware.h>
 
-ros::NodeHandle<ArduinoHardware> nh;
+
+ros::NodeHandle nh;
 
 
 bool set_; 

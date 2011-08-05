@@ -8,14 +8,14 @@
 #include <ros/time.h>
 #include <sensor_msgs/Range.h>
 
-ros::NodeHandle nh;
+ros::NodeHandle  nh;
 
 sensor_msgs::Range range_msg;
 ros::Publisher pub_range( "/ultrasound", &range_msg);
 
 const int adc_pin = 0;
 
-unsigned char frameid[] = "/ultrasound";
+char frameid[] = "/ultrasound";
 
 float getRange_Ultrasound(int pin_num){
   int val = 0;
@@ -52,7 +52,7 @@ void loop()
     int r =0;
 
     range_msg.range = getRange_Ultrasound(5);
-    range_msg.header.stamp = ros::Time::now();
+    range_msg.header.stamp = nh.now();
     pub_range.publish(&range_msg);
     range_time =  millis() + 50;
   }

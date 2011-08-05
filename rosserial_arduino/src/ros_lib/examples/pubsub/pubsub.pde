@@ -6,9 +6,8 @@
 #include <ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
-#include <ArduinoHardware.h>
 
-ros::NodeHandle<ArduinoHardware> nh;
+ros::NodeHandle  nh;
 
 
 void messageCb( const std_msgs::Empty& toggle_msg){
@@ -22,7 +21,7 @@ ros::Subscriber<std_msgs::Empty> sub("toggle_led", messageCb );
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
-unsigned char hello[13] = "hello world!";
+char hello[13] = "hello world!";
 
 void setup()
 {

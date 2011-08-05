@@ -5,9 +5,9 @@
 
 #include <ros.h>
 #include <std_msgs/Float64.h>
-#include <ArduinoHardware.h>
 
-ros::NodeHandle<ArduinoHardware> nh;
+
+ros::NodeHandle nh;
 
 float x; 
 

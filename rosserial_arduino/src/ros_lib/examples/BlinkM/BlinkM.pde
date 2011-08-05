@@ -5,10 +5,11 @@
 */
 
 #include "WProgram.h" //include the Arduino library
+#include <stdlib.h>
+
 
 #include <ros.h>
 #include <std_msgs/String.h>
-#include <stdlib.h>
 
 
 //include Wire/ twi for the BlinkM
@@ -118,8 +119,7 @@ void setLED( bool solid,  char color)
 	}
 }
 
-ROS_CALLBACK(light_cb, std_msgs::String, light_cmd)
-
+void light_cb( const std_msgs::String& light_cmd){
         bool solid =false;
         char color; 
         if (strlen( (const char* ) light_cmd.data) ==2 ){
@@ -136,8 +136,8 @@ ROS_CALLBACK(light_cb, std_msgs::String, light_cmd)
 
 
 
-ros::NodeHandle nh;
-ros::Subscriber sub("blinkm", &light_cmd, light_cb);
+ros::NodeHandle  nh;
+ros::Subscriber<std_msgs::String> sub("blinkm" , light_cb);
 
 
 void setup()
