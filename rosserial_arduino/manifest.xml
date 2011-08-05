@@ -5,10 +5,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosserial_arduino</url>  
 
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend pacakge="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+
   <rosdep name="gcc-avr"/>
   <rosdep name="avr-libc"/>
-  <rosdep name="java"/>
-  <rosdep name="librxtx-java"/>
   
 </package>
 

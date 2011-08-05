@@ -5,12 +5,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rosserial_client</url>
   
-  <depend package="rospy"/>
   <depend package="std_msgs"/>
-  <depend package="diagnostic_msgs"/>
-  <depend package="geometry_msgs"/>
-  <depend package="nav_msgs"/>
-  <depend package="sensor_msgs"/>
   <depend package="rosserial_msgs"/>
   <depend package="tf"/>
 
