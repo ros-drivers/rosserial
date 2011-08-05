@@ -38,10 +38,10 @@
  * Author: Michael Ferguson , Adam Stambler
  */
 
-#ifndef NODEHANDLE_H_
-#define NODEHANDLE_H_
+#ifndef ROS_NODE_HANDLE_H_
+#define ROS_NODE_HANDLE_H_
 
-#include "std_msgs/Time.h"
+#include "../std_msgs/Time.h"
 
 #define MODE_FIRST_FF       0
 #define MODE_SECOND_FF      1
@@ -51,6 +51,8 @@
 #define MODE_SIZE_H         5
 #define MODE_MESSAGE        6
 #define MODE_CHECKSUM       7
+
+#include "node_handle_interface.h"
 
 namespace ros {
 

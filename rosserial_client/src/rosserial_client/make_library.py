@@ -204,7 +204,7 @@ class StringDataType(PrimitiveDataType):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = *(uint32_t *)(inbuffer + offset);\n' % cn)
         f.write('      offset += 4;\n')
-        f.write('      for(int i= offset; i< offset+length_%s; ++i){\n'%cn) #shift for null character
+        f.write('      for(unsigned int i= offset; i< offset+length_%s; ++i){\n'%cn) #shift for null character
         f.write('          inbuffer[i-1]=inbuffer[i];\n')
         f.write('           }\n')
         f.write('      inbuffer[offset+length_%s-1]=0;\n'%cn)
@@ -403,7 +403,7 @@ class Message:
         f.write('#include <stdlib.h>\n')
 
 
-        f.write('#include "ros.h"\n')
+        f.write('#include "../ros/msg.h"\n')
         for i in self.includes:
             f.write('#include "%s.h"\n' % i)
         f.write('\n')

@@ -53,6 +53,8 @@
 
 #define SYNC_SECONDS        5
 
+#include "msg.h"
+
 namespace ros
 {
 
@@ -64,17 +66,6 @@ namespace ros
 	 * hardware templated functions.
 	 */
 	class NodeHandleInterface;
-
-  /* Base Message Type */
-  class Msg
-  {
-    public: 
-      virtual int serialize(unsigned char *outbuffer) = 0;
-	  virtual int deserialize(unsigned char *data) = 0;
-      virtual const char * getType() = 0;
-      
-  };
-
 
 
   /* Generic Publisher */
@@ -132,7 +123,6 @@ namespace ros
 
 }
 
-#include <NodeHandleInterface.h>
-#include "NodeHandle.h"
+#include "node_handle.h"
 
 #endif

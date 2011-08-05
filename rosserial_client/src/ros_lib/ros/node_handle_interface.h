@@ -38,8 +38,8 @@
  * Author: Michael Ferguson , Adam Stambler
  */
 
-#ifndef NODEHANDLEINTERFACE_H_
-#define NODEHANDLEINTERFACE_H_
+#ifndef ROS_NODE_HANDLE_INTERFACE_H_
+#define ROS_NODE_HANDLE_INTERFACE_H_
 
 #include "ros/time.h"
 

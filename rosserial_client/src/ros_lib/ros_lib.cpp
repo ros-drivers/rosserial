@@ -42,7 +42,6 @@
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 
-ros::NodeHandleInterface * __nh =0;
 
 /* 
  * Publishers 

@@ -33,54 +33,19 @@
  */
 
 /* 
+ * ROS definitions for Arduino
  * Author: Michael Ferguson
  */
 
-#include "ros/duration.h"
-#include <math.h>
+#ifndef ros_h
+#define ros_h
 
+#include "ros/ros_impl.h"
+#include "ArduinoHardware.h"
 
 namespace ros
 {
-  void normalizeSecNSecSigned(long &sec, long &nsec)
-  {
-    long nsec_part = nsec;
-    long sec_part = sec;
-     
-    while (nsec_part > 1000000000L)
-    {
-      nsec_part -= 1000000000L;
-      ++sec_part;
-    }
-    while (nsec_part < 0)
-    {
-      nsec_part += 1000000000L;
-      --sec_part;
-    }
-    sec = sec_part;
-    nsec = nsec_part;
-  }
-
-  Duration& Duration::operator+=(const Duration &rhs)
-  {
-    sec += rhs.sec;
-    nsec += rhs.nsec;
-    normalizeSecNSecSigned(sec, nsec);
-    return *this;
-  }
-
-  Duration& Duration::operator-=(const Duration &rhs){
-    sec += -rhs.sec;
-    nsec += -rhs.nsec;
-    normalizeSecNSecSigned(sec, nsec);
-    return *this;
-  }
-
-  Duration& Duration::operator*=(double scale){
-    sec *= scale;
-    nsec *= scale;
-    normalizeSecNSecSigned(sec, nsec);
-    return *this;
-  }
-
+  typedef NodeHandle_<ArduinoHardware> NodeHandle;
 }
+
+#endif

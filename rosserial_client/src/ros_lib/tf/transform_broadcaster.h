@@ -39,7 +39,7 @@
 #ifndef ros_tf_h
 #define ros_tf_h
 
-#include "tf/tfMessage.h"
+#include "tfMessage.h"
 
 namespace tf
 {
