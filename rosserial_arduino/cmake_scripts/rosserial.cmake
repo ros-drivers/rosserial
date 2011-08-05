@@ -10,6 +10,8 @@ include(${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/toolchains/Arduino.cmake
 
 find_package(Arduino)
 
+rosbuild_find_ros_package(rosserial_client)
+execute_process(COMMAND cp -r ${rosserial_client_PACKAGE_PATH}/src/ros_lib/ ${PROJECT_SOURCE_DIR}/src/)
 execute_process(COMMAND cp -r ${rosserial_arduino_PACKAGE_PATH}/src/ros_lib/ ${PROJECT_SOURCE_DIR}/src/)
 include_directories(${PROJECT_SOURCE_DIR}/src/ros_lib)
 
@@ -24,8 +26,8 @@ rosbuild_find_ros_package(${MSG_PKG})
 
 	if (EXISTS ${${MSG_PKG}_PACKAGE_PATH}/msg AND 
 		NOT EXISTS ${PROJECT_SOURCE_DIR}/src/ros_lib/${MSG_PKG})
-		message(STATUS "Generating rosserial implementation for ${MSG_PKG}" )
-		execute_process(COMMAND rosrun rosserial_arduino make_library.py ${PROJECT_SOURCE_DIR}/src ${MSG_PKG} OUTPUT_QUIET)
+		message(STATUS "Generating rosserial implementation for ${MSG_PKG} in ${PROJECT_SOURCE_DIR}/src" )
+		execute_process(COMMAND rosrun rosserial_client make_library.py ${PROJECT_SOURCE_DIR}/src ${MSG_PKG} OUTPUT_QUIET)
 	endif()
 endforeach(MSG_PKG)
 
@@ -67,12 +69,6 @@ macro(generate_ros_firmware TARGET_NAME)
 				 ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp
 				 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
 				 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
-
-	if ( ${${TARGET_NAME}_NO_DEFAULT_COM} )
-	else()
-		set(ROS_SRCS ${ROS_SRCS} ${PROJECT_SOURCE_DIR}/src/ros_lib/serial_fx.cpp)
-	endif()
-
 
 	#add in ROS SRCS
 	set(${TARGET_NAME}_SRCS ${${TARGET_NAME}_SRCS} ${ROS_SRCS})
