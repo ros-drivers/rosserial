@@ -7,7 +7,7 @@
 
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
-  <depend pacakge="geometry_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
 
   <rosdep name="gcc-avr"/>
