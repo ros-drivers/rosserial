@@ -64,11 +64,12 @@ SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
 
 macro(generate_ros_firmware TARGET_NAME)
 
+	FILE(GLOB ROS_SRCS		${PROJECT_SOURCE_DIR}/src/ros_lib/*.cpp)
 
-	set(ROS_SRCS ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp
-				 ${PROJECT_SOURCE_DIR}/src/ros_lib/ros_lib.cpp
-				 ${PROJECT_SOURCE_DIR}/src/ros_lib/duration.cpp
-				 ${PROJECT_SOURCE_DIR}/src/ros_lib/time.cpp)
+
+	set(ROS_SRCS ${ROS_SRCS} 
+	      ${rosserial_arduino_PACKAGE_PATH}/cmake_scripts/cc_support.cpp)
+
 
 	#add in ROS SRCS
 	set(${TARGET_NAME}_SRCS ${${TARGET_NAME}_SRCS} ${ROS_SRCS})

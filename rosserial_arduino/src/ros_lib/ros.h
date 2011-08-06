@@ -40,8 +40,8 @@
 #ifndef ros_h
 #define ros_h
 
-#include <ros_impl.h>
-#include <ArduinoHardware.h>
+#include "ros/ros_impl.h"
+#include "ArduinoHardware.h"
 
 namespace ros
 {
