@@ -42,6 +42,10 @@
 #define ROS_NODE_HANDLE_H_
 
 #include "../std_msgs/Time.h"
+#include "../rosserial_msgs/TopicInfo.h"
+
+#define TOPIC_TIME          10
+#define SYNC_SECONDS        5
 
 #define MODE_FIRST_FF       0
 #define MODE_SECOND_FF      1
@@ -52,17 +56,25 @@
 #define MODE_MESSAGE        6
 #define MODE_CHECKSUM       7
 
-#include "node_handle_interface.h"
+#include "node_output.h"
+
+#include "publisher.h"
+#include "msg_receiver.h"
+#include "subscriber.h"
+#include "rosserial_ids.h"
+#include "service_server.h"
 
 namespace ros {
 
   /* Node Handle */
-  template<class Hardware>
-  class NodeHandle_ : public NodeHandleInterface
+  template<class Hardware, int MAX_SUBSCRIBERS=25, int MAX_PUBLISHERS=25,
+		  int INPUT_SIZE=512, int OUTPUT_SIZE=512>
+  class NodeHandle_
   {
 
     protected:
       Hardware hardware_;
+      NodeOutput<Hardware, OUTPUT_SIZE> no_;
 
       /* time used for syncing */
       unsigned long rt_time;
@@ -70,11 +82,20 @@ namespace ros {
       /* used for computing current time */
       unsigned long sec_offset, nsec_offset;
 
+      unsigned char message_in[INPUT_SIZE];
+
+      Publisher * publishers[MAX_PUBLISHERS];
+      MsgReceiver * receivers[MAX_SUBSCRIBERS];
+
+
+      /******************************
+       *  Setup Functions
+       */
     public:
-	  NodeHandle_(Hardware hardware){
+	  NodeHandle_(Hardware hardware) : no_(&hardware_){
         hardware_ = hardware;
 	  }
-	  NodeHandle_(){}
+	  NodeHandle_() : no_(&hardware_){}
 
 	  void setHardware(Hardware& h){
         hardware_ = h;
@@ -86,23 +107,51 @@ namespace ros {
       /* Start serial, initialize buffers */
       virtual void initNode(){
         hardware_.init();
-        configured_ = false;
         mode_ = 0;
         bytes_ = 0;
         index_ = 0;
         topic_ = 0;
-        total_recievers=0;
+        total_receivers=0;
       };
 
+
+    protected:
+
+      //State machine variables for spinOnce
+      int mode_;
+      int bytes_;
+      int topic_;
+      int index_;
+      int checksum_;
+
+      int total_receivers;
+
+
+           /* used for syncing the time */
+     unsigned long last_sync_time;
+     unsigned long last_sync_receive_time;
+     unsigned long last_msg_receive_time;
+
+     bool registerReceiver(MsgReceiver* rcv){
+         if (total_receivers >= MAX_SUBSCRIBERS) return false;
+         	receivers[total_receivers] = rcv;
+         	rcv->id_ = 100+total_receivers;
+         	total_receivers++;
+         	return true;
+           }
+
+
+public:
       /* This function goes in your loop() function, it handles
        *  serial input and callbacks for subscribers.
        */
+
       virtual void spinOnce(){
         /* restart if timed-out */
         if((hardware_.time() - last_msg_receive_time) > 500){
-          mode_ == MODE_FIRST_FF;
+          mode_ ==MODE_FIRST_FF;
           if((hardware_.time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
-            configured_ = false;
+            no_.setConfigured(false);
           }
         }
 
@@ -163,44 +212,26 @@ namespace ros {
         }
 
         /* occasionally sync time */
-        if( configured_ && ((hardware_.time()-last_sync_time) > (SYNC_SECONDS*900) )){
+        if( no_.configured() && ((hardware_.time()-last_sync_time) > (SYNC_SECONDS*900) )){
           requestSyncTime();
           last_sync_time = hardware_.time();
         }
       }
 
-      virtual int publish(int id, Msg * msg){
-        if(!configured_) return 0;
 
-        /* serialize message */
-        int l = msg->serialize(message_out+6);
-
-        /* setup the header */
-        message_out[0] = 0xff;
-        message_out[1] = 0xff;
-        message_out[2] = (unsigned char) id&255;
-        message_out[3] = (unsigned char) id>>8;
-        message_out[4] = (unsigned char) l&255;
-        message_out[5] = ((unsigned char) l>>8);
-        
-        /* calculate checksum */
-        int chk = 0;
-        for(int i =2; i<l+6; i++)
-          chk += message_out[i];
-        message_out[6+l] = 255 - (chk%256);
-
-        hardware_.write(message_out, 6+l+1);
-        return 1;
-      }
+      /* Are we connected to the PC? */
+	  bool connected() {
+		   return no_.configured();
+	  };
 
       /**************************************************************
        * Time functions
-       */
+       **************************************************************/
 
       void requestSyncTime()
       {
         std_msgs::Time t;
-        publish( TOPIC_TIME, &t);
+        no_.publish( TOPIC_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -238,6 +269,65 @@ namespace ros {
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
       }
+
+
+    /***************   Registeration    *****************************/
+      bool advertise(Publisher & p)
+      {
+        int i;
+        for(i = 0; i < MAX_PUBLISHERS; i++)
+        {
+          if(publishers[i] == 0) // empty slot
+          {
+            publishers[i] = &p;
+            p.id_ = i+100+MAX_SUBSCRIBERS;
+            p.no_ = &this->no_;
+            return true;
+          }
+        }
+        return false;
+      }
+
+      /* Register a subscriber with the node */
+      template<typename MsgT>
+      	  bool subscribe(Subscriber< MsgT> &s){
+    	  return registerReceiver((MsgReceiver*) &s);
+     }
+
+     template<typename SrvReq, typename SrvResp>
+     bool advertiseService(ServiceServer<SrvReq,SrvResp>& srv){
+    	 srv.no_ = &no_;
+    	 return registerReceiver((MsgReceiver*) &srv);
+     }
+
+      void negotiateTopics()
+      {
+          no_.setConfigured(true);
+
+        rosserial_msgs::TopicInfo ti;
+        int i;
+        for(i = 0; i < MAX_PUBLISHERS; i++)
+        {
+          if(publishers[i] != 0) // non-empty slot
+          {
+            ti.topic_id = publishers[i]->id_;
+            ti.topic_name = (char *) publishers[i]->topic_;
+            ti.message_type = (char *) publishers[i]->msg_->getType();
+            no_.publish( TOPIC_PUBLISHERS, &ti );
+          }
+        }
+        for(i = 0; i < MAX_SUBSCRIBERS; i++)
+        {
+          if(receivers[i] != 0) // non-empty slot
+          {
+            ti.topic_id = receivers[i]->id_;
+            ti.topic_name = (char *) receivers[i]->topic_;
+            ti.message_type = (char *) receivers[i]->getMsgType();
+            no_.publish( TOPIC_SUBSCRIBERS, &ti );
+          }
+        }
+      }
+
 
   };
 
