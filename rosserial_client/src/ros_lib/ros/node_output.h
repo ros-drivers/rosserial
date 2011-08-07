@@ -14,6 +14,7 @@
  */
 
 #include "msg.h"
+
 namespace ros{
 
 	class NodeOutput_{
@@ -35,7 +36,13 @@ namespace ros{
 	    	hardware_ = h;
 	    	configured_ = false;
 	    }
-
+	    
+	    NodeOutput(){};
+	   void setHardware(Hardware* h){
+			hardware_  = h;
+			configured_=false;
+	   }
+	   
 		void setConfigured(bool b){
 			configured_ =b;
 		}

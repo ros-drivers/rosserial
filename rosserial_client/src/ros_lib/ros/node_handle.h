@@ -64,6 +64,7 @@
 #include "rosserial_ids.h"
 #include "service_server.h"
 
+
 namespace ros {
 
   /* Node Handle */
@@ -73,7 +74,7 @@ namespace ros {
   {
 
     protected:
-      Hardware hardware_;
+      Hardware* hardware_;
       NodeOutput<Hardware, OUTPUT_SIZE> no_;
 
       /* time used for syncing */
@@ -87,26 +88,34 @@ namespace ros {
       Publisher * publishers[MAX_PUBLISHERS];
       MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
-
+	  //used to make sure we dont try to delete someone elses hardware
+	  bool own_hardware_;
       /******************************
        *  Setup Functions
        */
     public:
-	  NodeHandle_(Hardware hardware) : no_(&hardware_){
-        hardware_ = hardware;
+	  NodeHandle_(Hardware* hardware) : hardware_(hardware), no_(hardware){
+		own_hardware_=false;
 	  }
-	  NodeHandle_() : no_(&hardware_){}
+	  NodeHandle_() {
+        hardware_ = new Hardware;
+        own_hardware_ =true;
+        no_.setHardware(hardware_);
+	  }
 
-	  void setHardware(Hardware& h){
+	  void setHardware(Hardware* h){
+        if (own_hardware_) delete hardware_;
         hardware_ = h;
+        no_.setHardware(h);
       }
-	  Hardware& getHardware(){
+      
+	  Hardware* getHardware(){
 		return hardware_;
 	  }
 
       /* Start serial, initialize buffers */
-      virtual void initNode(){
-        hardware_.init();
+      void initNode(){
+        hardware_->init();
         mode_ = 0;
         bytes_ = 0;
         index_ = 0;
@@ -148,17 +157,15 @@ public:
 
       virtual void spinOnce(){
         /* restart if timed-out */
-        if((hardware_.time() - last_msg_receive_time) > 500){
-          mode_ ==MODE_FIRST_FF;
-          if((hardware_.time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        if((hardware_->time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             no_.setConfigured(false);
-          }
-        }
+         }
+        
 
         /* while available buffer, read data */
         while( true )
         {
-          int data = hardware_.read();
+          int data = hardware_->read();
           if( data < 0 )
             break;
           checksum_ += data;
@@ -170,7 +177,7 @@ public:
           }else if( mode_ == MODE_FIRST_FF ){
             if(data == 0xff){
               mode_++;
-              last_msg_receive_time = hardware_.time();
+              last_msg_receive_time = hardware_->time();
             }
           }else if( mode_ == MODE_SECOND_FF ){
             if(data == 0xff){
@@ -212,9 +219,9 @@ public:
         }
 
         /* occasionally sync time */
-        if( no_.configured() && ((hardware_.time()-last_sync_time) > (SYNC_SECONDS*900) )){
+        if( no_.configured() && ((hardware_->time()-last_sync_time) > (SYNC_SECONDS*900) )){
           requestSyncTime();
-          last_sync_time = hardware_.time();
+          last_sync_time = hardware_->time();
         }
       }
 
@@ -232,13 +239,13 @@ public:
       {
         std_msgs::Time t;
         no_.publish( TOPIC_TIME, &t);
-        rt_time = hardware_.time();
+        rt_time = hardware_->time();
       }
 
       void syncTime( unsigned char * data )
       {
         std_msgs::Time t;
-        unsigned long offset = hardware_.time() - rt_time;
+        unsigned long offset = hardware_->time() - rt_time;
 
         t.deserialize(data);
 
@@ -246,15 +253,15 @@ public:
         t.data.nsec += (offset%1000)*1000000UL;
 
         this->setNow(t.data);
-        last_sync_receive_time = hardware_.time();
+        last_sync_receive_time = hardware_->time();
       }
 
-      virtual unsigned long hardwareTime(){
-        return this->hardware_.time();
+      unsigned long hardwareTime(){
+        return this->hardware_->time();
       }
 
-      virtual Time now(){
-        unsigned long ms = hardware_.time();
+      Time now(){
+        unsigned long ms = hardware_->time();
         Time current_time;
         current_time.sec = ms/1000 + sec_offset;
         current_time.nsec = (ms%1000)*1000000UL + nsec_offset;
@@ -262,9 +269,9 @@ public:
         return current_time;
       }
 
-      virtual void setNow( Time & new_now )
+      void setNow( Time & new_now )
       {
-        unsigned long ms = hardware_.time();
+        unsigned long ms = hardware_->time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);

@@ -43,6 +43,7 @@ import StringIO
 
 from std_msgs.msg import Time
 from rosserial_msgs.msg import *
+from rosserial_msgs.srv import *
 
 import time
 
@@ -50,10 +51,6 @@ import struct
 
 MODE_FIRST_FF = 0
 MODE_SECOND_FF = 1
-
-TOPIC_PUBLISHERS = 0
-TOPIC_SUBSCRIBERS = 1
-TOPIC_TIME = 10
 
 
 def load_pkg_module(package):
@@ -71,11 +68,11 @@ def load_pkg_module(package):
         return None
     return m
 
+
 class Publisher:
     """ 
         Prototype of a forwarding publisher.
     """
-
     def __init__(self, topic, message_type):
         """ Create a new publisher. """ 
         self.topic = topic
@@ -88,12 +85,12 @@ class Publisher:
         self.message = getattr(m2, message)
         self.publisher = rospy.Publisher(topic, self.message)
     
-    def publish(self, msg):
-        """ Publish a message """ 
+    def handlePacket(self, data):
+        """ """
         m = self.message()
-        m.deserialize(msg)
+        m.deserialize(data)
         self.publisher.publish(m)
-                         
+
 
 class Subscriber:
     """ 
@@ -117,6 +114,31 @@ class Subscriber:
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
         self.parent.send(self.parent.subscribers[self.topic][0], data_buffer.getvalue())
+
+class ServiceServer:
+    def __init__(self, name, service_type, parent):
+        self.name = service_name
+        self.service_type = service_type
+        self.parent = parent
+        
+        # find message type
+        package, message = self.service_type.split('/')
+        m = load_pkg_module(package)
+        
+        srvs = getattr(m, 'srv')
+        self.srv_req = getattr(srvs, message+"Request")
+        self.srv_resp = getattr(srvs, message+"Response")
+        self.srv = getattr(srvs, message)
+        self.service = rospy.Service(self.service_name, self.srv, self.callback)
+        self.response = None
+    def handlePacket(self, data):
+        resp = self.srv_resp()
+        resp.deserialize(data)
+        self.response = resp
+    def callback(self, msg):
+        msg.serialize(data_buffer)
+        self.parent.send(self.parent.services[self.name][0], data_buffer.getvalue())
+        
 
 
 class SerialClient:
@@ -144,11 +166,12 @@ class SerialClient:
         self.port.timeout = 0.01 #edit the port timeout
         
         time.sleep(0.1) #allow the driver to get ready 
-						#(Important for uno)
+                        #(Important for uno)
         
-        self.publishers = dict()
-        self.subscribers = dict()
-        rospy.sleep(1.0) # TODO
+        self.senders = dict() #Publishers/ServiceServers
+        self.receivers = dict() #subscribers/serviceclients
+                
+        rospy.sleep(2.0) # TODO
         self.requestTopics()
 
     def requestTopics(self):
@@ -167,11 +190,13 @@ class SerialClient:
                 self.requestTopics()
                 self.lastsync = rospy.Time.now()    
             
-            flag = self.port.read(1)
-            if (flag != '\xff'):
+            flag = [0,0]
+            flag[0]  = self.port.read(1)
+            if (flag[0] != '\xff'):
                 continue
-            elif (self.port.read(1) != '\xff'):
-                rospy.loginfo("Failed Packet Flags")
+            flag[1] = self.port.read(1)
+            if ( flag[1] != '\xff'):
+                rospy.loginfo("Failed Packet Flags ")
                 continue
             # topic id (2 bytes)
             header = self.port.read(4)
@@ -189,39 +214,104 @@ class SerialClient:
             checksum = sum(map(ord,header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
-                if topic_id == TOPIC_PUBLISHERS:
+                if topic_id == TopicInfo.ID_PUBLISHER:
                     try:
                         m = TopicInfo()
                         m.deserialize(msg)
-                        self.publishers[m.topic_id] = Publisher(m.topic_name, m.message_type)
+                        self.senders[m.topic_id] = Publisher(m.topic_name, m.message_type)
                         rospy.loginfo("Setup Publisher on %s [%s]" % (m.topic_name, m.message_type) )
                     except Exception as e:
                         rospy.logerr("Failed to parse publisher: %s", e)
-                elif topic_id == TOPIC_SUBSCRIBERS:
+                elif topic_id == TopicInfo.ID_SUBSCRIBER:
                     try:
                         m = TopicInfo()
                         m.deserialize(msg)
-                        self.subscribers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
+                        self.receivers[m.topic_name] = [m.topic_id, Subscriber(m.topic_name, m.message_type, self)]
                         rospy.loginfo("Setup Subscriber on %s [%s]" % (m.topic_name, m.message_type))
+                    except Exception as e:
+                        rospy.logerr("Failed to parse subscriber. %s"%e)
+                elif topic_id == TopicInfo.ID_SERVICE_SERVER:
+                    try:
+                        m = TopicInfo()
+                        m.deserialize(msg)
+                        self.senders[m.topic_id]=ServiceServer(m.topic_name, m.message_type, self) 
+                        rospy.loginfo("Setup ServiceServer on %s [%s]"%(m.topic_name, m.message_type) )
                     except:
-                        rospy.logerr("Failed to parse subscriber.")
-                elif topic_id == TOPIC_TIME:
+                        rospy.logerr("Failed to parse service server")
+                elif topic_id == TopicInfo.ID_SERVICE_CLIENT:
+                    pass
+                
+                elif topic_id == TopicInfo.ID_PARAMETER_REQUEST:
+                    self.handleParameterRequest(msg)
+                
+                elif topic_id == TopicInfo.ID_LOG:
+                    handleLogging(data)
+                    
+                elif topic_id == TopicInfo.ID_TIME:
                     t = Time()
                     t.data = rospy.Time.now()
                     data_buffer = StringIO.StringIO()
                     t.serialize(data_buffer)
-                    self.send( TOPIC_TIME, data_buffer.getvalue() )
+                    self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
                     self.lastsync = rospy.Time.now()
                 elif topic_id >= 100: # TOPIC
                     try:
-                        self.publishers[topic_id].publish(msg)
+                        self.senders[topic_id].handlePacket(msg)
                     except KeyError:
                         rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
                 else:
                     rospy.logerr("Unrecognized command topic!")
                 rospy.sleep(0.001)
             
-            
+    def handleParameterRequest(data):
+        """Handlers the request for parameters from the rosserial_client
+            This is only serves a limmited selection of parameter types.
+            It is meant for simple configuration of your hardware. It 
+            will not send dictionaries or multitype lists.
+        """
+        req = RequestParamRequest()
+        req.deserialize(data)
+        resp = RequestParamResponse()
+        param = rospy.get_param(req.name)
+        if param == None:
+            rospy.logerr("Parameter %s does not exist"%req.name)
+            return
+        if (type(param) == dict):
+            rospy.logerr("Cannot send param %s because it is a dictionary"%req.name)
+            return
+        if (type(param) != list):
+            param = [param]
+        #check to make sure that all parameters in list are same type
+        t = type(param[0])
+        for p in param:
+            if t!= type(p):
+                rospy.logerr('All Paramers in the list %s must be of the same type'%req.name)
+                return      
+        if (param[0] == int):
+            resp.ints= param
+        if (param[0] == float):
+            resp.floats=param
+        if (param[0] == str):
+            resp.strings = param
+        data_buffer = StringIO.StringIO()
+        resp.serialize(data_buffer)
+        self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer)
+        
+        
+    def handleLogging(data):
+        m= Log()
+        m.deserialize(msg)
+        if (m.level == Log.DEBUG):
+            rospy.logdebug(m.msg)
+        elif(m.level== Log.INFO):
+            rospy.loginfo(m.msg)
+        elif(m.level== Log.WARN):
+            rospy.logwarn(m.msg)
+        elif(m.level== Log.ERROR):
+            rospy.logerror(m.msg)
+        elif(m.level==Log.FATAL):
+            rospy.logfatal(m.msg)
+        
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
         with self.mutex:
