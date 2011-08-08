@@ -44,6 +44,7 @@
 #include "../std_msgs/Time.h"
 #include "../rosserial_msgs/TopicInfo.h"
 #include "../rosserial_msgs/Log.h"
+#include "../rosserial_msgs/RequestParam.h"
 
 #define SYNC_SECONDS        5
 
@@ -198,6 +199,8 @@ public:
                 last_sync_receive_time = hardware_.time();
               }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
+              }else if (topic == TopicInfo::ID_PARAMETER_REQUEST){
+				  
               }else{
                 if(receivers[topic_-100])
                   receivers[topic_-100]->receive( message_in );
@@ -350,6 +353,31 @@ public:
 	}
 
   };
+
+/****************************************
+ * Retrieve Parameters
+ *****************************************/
+private:
+	bool param_recieved;
+	
+	bool requestParam(const char * name, int time_out =  1000){
+		param_recieved = false;
+		no_.publish(TopicInfo::ID_PARAMETER_REQUEST, (char*) name);
+		int end_time = hardware_.time();
+		while(!param_recieveds ){
+			spinOnce();
+			if (end_time > hardware_.time()) return false;
+		}
+		return true;
+	}
+public:
+	int getParam(const char* name, int* param, int length =1){
+		
+	}
+	int getParam(const char* name, float* param, int length=1);
+	int getParam(const char* name, char** param, int length=1, int max_str_length = 100);
+	
+
 
 }
 

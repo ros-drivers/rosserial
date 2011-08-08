@@ -46,7 +46,7 @@ rosrun rosserial_arduino <libraries_path>  pkg_name [pkg2 pkg3 ...]
 import roslib; roslib.load_manifest("rosserial_client")
 import rospy
 
-import os, sys, subprocess
+import os, sys, subprocess, re
 
 ros_types = {
     'bool'  :   ('bool',           1),
@@ -394,32 +394,9 @@ class Message:
                         self.data.append( MessageDataType(name, type_package + "::" + type_name, 0) )
         #print ""
 
-    def make_header(self, f):
-        f.write('#ifndef ros_%s_h\n' % self.name)
-        f.write('#define ros_%s_h\n' % self.name)
-        f.write('\n')
-        f.write('#include <stdint.h>\n')
-        f.write('#include <string.h>\n')
-        f.write('#include <stdlib.h>\n')
 
-
-        f.write('#include "../ros/msg.h"\n')
-        for i in self.includes:
-            f.write('#include "%s.h"\n' % i)
-        f.write('\n')
-        f.write('namespace %s\n' % self.package)
-        f.write('{\n')
-        f.write('\n')
-        f.write('  class %s : public ros::Msg\n' % self.name)
-        f.write('  {\n')
-        f.write('    public:\n')
-
-        for d in self.data:
-            d.make_declaration(f)
-        for e in self.enums:
-            e.make_declaration(f)
-
-        # serializer   
+    def _write_serializer(self, f):
+                # serializer   
         f.write('\n')
         f.write('    virtual int serialize(unsigned char *outbuffer)\n')
         f.write('    {\n')
@@ -429,7 +406,8 @@ class Message:
         f.write('      return offset;\n');
         f.write('    }\n')
         f.write('\n')
-
+        
+    def _write_deserializer(self, f):
         # deserializer
         f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
         f.write('    {\n')
@@ -439,14 +417,110 @@ class Message:
         f.write('     return offset;\n');
         f.write('    }\n')         
         f.write('\n')
+    def _write_std_includes(self, f):
+        f.write('#include <stdint.h>\n')
+        f.write('#include <string.h>\n')
+        f.write('#include <stdlib.h>\n')
+        f.write('#include "../ros/msg.h"\n')
+
+    def _write_msg_includes(self,f):
+        for i in self.includes:
+            f.write('#include "%s.h"\n' % i)
+            
+    def _write_data(self, f):
+        for d in self.data:
+            d.make_declaration(f)
+        for e in self.enums:
+            e.make_declaration(f)
+            
+    def _write_getType(self, f):
         f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
+
+    def _write_impl(self, f):
+        f.write('  class %s : public ros::Msg\n' % self.name)
+        f.write('  {\n')
+        f.write('    public:\n')
+        self._write_data(f)
+        self._write_serializer(f)
+        self._write_deserializer(f)
+        self._write_getType(f)
         f.write('\n')
         f.write('  };\n')
+        
+    def make_header(self, f):
+        f.write('#ifndef ros_%s_h\n' % self.name)
+        f.write('#define ros_%s_h\n' % self.name)
+        f.write('\n')
+        self._write_std_includes(f)
+        self._write_msg_includes(f)
+       
+        f.write('\n')
+        f.write('namespace %s\n' % self.package)
+        f.write('{\n')
+        f.write('\n')
+        self._write_impl(f)
         f.write('\n')
         f.write('}\n')
 
         f.write('#endif')
 
+class Service:
+    def __init__(self, name, package, definition):
+        """ 
+        @param name -  name of service
+        @param package - name of service package
+        @param definition - list of lines of  definition
+        """
+        
+        self.name = name
+        self.package = package
+        
+        sep_line = None
+        sep = re.compile('---*')
+        for i in range(0, len(definition)):
+            if (None!= re.match(sep, definition[i]) ):
+                sep_line = i
+                break
+        self.req_def = definition[0:sep_line]
+        self.resp_def = definition[sep_line+1:]
+        
+        self.req = Message(name+"Request", package, self.req_def)
+        self.resp = Message(name+"Response", package, self.resp_def)
+        
+    def make_header(self, f):
+        f.write('#ifndef ros_SERVICE_%s_h\n' % self.name)
+        f.write('#define ros_SERVICE_%s_h\n' % self.name)
+        
+        self.req._write_std_includes(f)
+        includes = self.req.includes
+        includes.extend(self.resp.includes)
+        includes = list(set(includes))
+        for inc in includes:
+            f.write('#include "%s.h"\n' % i)
+            
+        f.write('\n')
+        f.write('namespace %s\n' % self.package)
+        f.write('{\n')
+        f.write('\n')       
+        f.write('static const char[] %s = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
+        
+        def write_type(out, name):
+            out.write('    const char * getType(){ return %s; };\n'%(name))
+        _write_getType = lambda out: write_type(out, self.name.upper())
+        self.req._write_getType = _write_getType
+        self.resp._write_getType = _write_getType
+        
+        f.write('\n')
+        self.req._write_impl(f)
+        f.write('\n')
+        self.resp._write_impl(f)
+        f.write('\n')
+        f.write('}\n')
+
+        f.write('#endif')
+        
+   
+        
 #####################################################################
 # Core Library Maker
 
@@ -456,22 +530,31 @@ class ArduinoLibraryMaker:
     def __init__(self, package):
         """ Initialize by finding location and all messages in this package. """
         self.name = package
-        print "\nExporting " + package + ":", 
+        print "\nExporting " + package +"\n", 
 
-        # find directory for this package
-        proc = subprocess.Popen(["rospack","find",msg_package], stdout=subprocess.PIPE)
-        self.directory = proc.communicate()[0].rstrip() + "/msg"
-
+        self.pkg_dir = roslib.packages.get_pkg_dir(package)
+        
+        sys.stdout.write('Messages:\n    ')
         # find the messages in this package
         self.messages = list()
-        for f in os.listdir(self.directory):
+        for f in os.listdir(self.pkg_dir+"/msg"):
             if f.endswith(".msg"):
                 # add to list of messages
                 print "%s," % f[0:-4],
-                definition = open(self.directory + "/" + f).readlines()
+                definition = open(self.pkg_dir + "/msg/" + f).readlines()
                 self.messages.append( Message(f[0:-4], self.name, definition) )
         print "\n"
      
+        sys.stdout.write('Services:\n    ')
+        # find the services in this package
+        self.services = list()
+        for f in os.listdir(self.pkg_dir+"/srv"):
+            if f.endswith(".srv"):
+                # add to list of messages
+                print "%s," % f[0:-4],
+                definition = open(self.pkg_dir + "/srv/" + f).readlines()
+                self.messages.append( Service(f[0:-4], self.name, definition) )
+        print "\n"
 
     def generate(self, path_to_output):
         """ Generate header and source files for this package. """
@@ -490,8 +573,8 @@ if __name__=="__main__":
     # get path to arduino sketchbook
     
     if (len(sys.argv) <3):
-		print __usage__
-		exit()
+        print __usage__
+        exit()
     
     path = sys.argv[1]
     if path[-1] == "/":
