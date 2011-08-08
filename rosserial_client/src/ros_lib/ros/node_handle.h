@@ -43,8 +43,8 @@
 
 #include "../std_msgs/Time.h"
 #include "../rosserial_msgs/TopicInfo.h"
+#include "../rosserial_msgs/Log.h"
 
-#define TOPIC_TIME          10
 #define SYNC_SECONDS        5
 
 #define MODE_FIRST_FF       0
@@ -67,6 +67,8 @@
 
 namespace ros {
 
+using rosserial_msgs::TopicInfo;
+
   /* Node Handle */
   template<class Hardware, int MAX_SUBSCRIBERS=25, int MAX_PUBLISHERS=25,
 		  int INPUT_SIZE=512, int OUTPUT_SIZE=512>
@@ -74,7 +76,7 @@ namespace ros {
   {
 
     protected:
-      Hardware* hardware_;
+      Hardware hardware_;
       NodeOutput<Hardware, OUTPUT_SIZE> no_;
 
       /* time used for syncing */
@@ -88,34 +90,20 @@ namespace ros {
       Publisher * publishers[MAX_PUBLISHERS];
       MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
-	  //used to make sure we dont try to delete someone elses hardware
-	  bool own_hardware_;
       /******************************
        *  Setup Functions
        */
     public:
-	  NodeHandle_(Hardware* hardware) : hardware_(hardware), no_(hardware){
-		own_hardware_=false;
+	  NodeHandle_() : no_(&hardware_){
 	  }
-	  NodeHandle_() {
-        hardware_ = new Hardware;
-        own_hardware_ =true;
-        no_.setHardware(hardware_);
-	  }
-
-	  void setHardware(Hardware* h){
-        if (own_hardware_) delete hardware_;
-        hardware_ = h;
-        no_.setHardware(h);
-      }
       
 	  Hardware* getHardware(){
-		return hardware_;
+		return &hardware_;
 	  }
 
       /* Start serial, initialize buffers */
       void initNode(){
-        hardware_->init();
+        hardware_.init();
         mode_ = 0;
         bytes_ = 0;
         index_ = 0;
@@ -157,7 +145,7 @@ public:
 
       virtual void spinOnce(){
         /* restart if timed-out */
-        if((hardware_->time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        if(  (hardware_.time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             no_.setConfigured(false);
          }
         
@@ -165,7 +153,7 @@ public:
         /* while available buffer, read data */
         while( true )
         {
-          int data = hardware_->read();
+          int data = hardware_.read();
           if( data < 0 )
             break;
           checksum_ += data;
@@ -177,7 +165,7 @@ public:
           }else if( mode_ == MODE_FIRST_FF ){
             if(data == 0xff){
               mode_++;
-              last_msg_receive_time = hardware_->time();
+              last_msg_receive_time = hardware_.time();
             }
           }else if( mode_ == MODE_SECOND_FF ){
             if(data == 0xff){
@@ -206,8 +194,9 @@ public:
               if(topic_ == TOPIC_NEGOTIATION){
                 requestSyncTime();
                 negotiateTopics();
-                last_sync_time = 0;
-              }else if(topic_ == TOPIC_TIME){
+                last_sync_time = hardware_.time();
+                last_sync_receive_time = hardware_.time();
+              }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
               }else{
                 if(receivers[topic_-100])
@@ -219,9 +208,9 @@ public:
         }
 
         /* occasionally sync time */
-        if( no_.configured() && ((hardware_->time()-last_sync_time) > (SYNC_SECONDS*900) )){
+        if( no_.configured() && ((hardware_.time()-last_sync_time) > (SYNC_SECONDS*500) )){
           requestSyncTime();
-          last_sync_time = hardware_->time();
+          last_sync_time = hardware_.time();
         }
       }
 
@@ -238,14 +227,14 @@ public:
       void requestSyncTime()
       {
         std_msgs::Time t;
-        no_.publish( TOPIC_TIME, &t);
-        rt_time = hardware_->time();
+        no_.publish( rosserial_msgs::TopicInfo::ID_TIME, &t);
+        rt_time = hardware_.time();
       }
 
       void syncTime( unsigned char * data )
       {
         std_msgs::Time t;
-        unsigned long offset = hardware_->time() - rt_time;
+        unsigned long offset = hardware_.time() - rt_time;
 
         t.deserialize(data);
 
@@ -253,15 +242,13 @@ public:
         t.data.nsec += (offset%1000)*1000000UL;
 
         this->setNow(t.data);
-        last_sync_receive_time = hardware_->time();
+        last_sync_receive_time = hardware_.time();
       }
 
-      unsigned long hardwareTime(){
-        return this->hardware_->time();
-      }
+     
 
       Time now(){
-        unsigned long ms = hardware_->time();
+        unsigned long ms = hardware_.time();
         Time current_time;
         current_time.sec = ms/1000 + sec_offset;
         current_time.nsec = (ms%1000)*1000000UL + nsec_offset;
@@ -271,7 +258,7 @@ public:
 
       void setNow( Time & new_now )
       {
-        unsigned long ms = hardware_->time();
+        unsigned long ms = hardware_.time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
@@ -335,6 +322,32 @@ public:
         }
       }
 
+/*
+ * Logging
+ */
+	private:
+	void log(char byte, const char * msg){
+		rosserial_msgs::Log l;
+		l.level= byte;
+		l.msg = (char*)msg;
+		this->no_.publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
+	}
+	public:
+	void logdebug(const char* msg){
+		log(rosserial_msgs::Log::DEBUG, msg);
+	}
+	void loginfo(const char * msg){
+		log(rosserial_msgs::Log::INFO, msg);
+	}
+	void logwarn(const char *msg){
+		log(rosserial_msgs::Log::WARN, msg);
+	}
+	void logerror(const char*msg){
+		log(rosserial_msgs::Log::ERROR, msg);
+	}
+	void logfatal(const char*msg){
+		log(rosserial_msgs::Log::FATAL, msg);
+	}
 
   };
 

@@ -50,8 +50,8 @@ import os, sys, subprocess
 
 ros_types = {
     'bool'  :   ('bool',           1),
-    'byte'  :   ('byte',           1),
-    'char'  :   ('unsigned char',  1),
+    'byte'  :   ('unsigned char',  1),
+    'char'  :   ('char',  1),
     'int8'  :   ('signed char',    1),
     'uint8' :   ('unsigned char',  1),
     'int16' :   ('int',            2),

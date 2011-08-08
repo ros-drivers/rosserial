@@ -245,7 +245,7 @@ class SerialClient:
                     self.handleParameterRequest(msg)
                 
                 elif topic_id == TopicInfo.ID_LOG:
-                    handleLogging(data)
+                    self.handleLogging(msg)
                     
                 elif topic_id == TopicInfo.ID_TIME:
                     t = Time()
@@ -263,7 +263,7 @@ class SerialClient:
                     rospy.logerr("Unrecognized command topic!")
                 rospy.sleep(0.001)
             
-    def handleParameterRequest(data):
+    def handleParameterRequest(self,data):
         """Handlers the request for parameters from the rosserial_client
             This is only serves a limmited selection of parameter types.
             It is meant for simple configuration of your hardware. It 
@@ -298,9 +298,9 @@ class SerialClient:
         self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer)
         
         
-    def handleLogging(data):
+    def handleLogging(self, data):
         m= Log()
-        m.deserialize(msg)
+        m.deserialize(data)
         if (m.level == Log.DEBUG):
             rospy.logdebug(m.msg)
         elif(m.level== Log.INFO):
@@ -308,7 +308,7 @@ class SerialClient:
         elif(m.level== Log.WARN):
             rospy.logwarn(m.msg)
         elif(m.level== Log.ERROR):
-            rospy.logerror(m.msg)
+            rospy.logerr(m.msg)
         elif(m.level==Log.FATAL):
             rospy.logfatal(m.msg)
         
