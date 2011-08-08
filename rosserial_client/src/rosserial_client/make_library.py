@@ -204,8 +204,8 @@ class StringDataType(PrimitiveDataType):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = *(uint32_t *)(inbuffer + offset);\n' % cn)
         f.write('      offset += 4;\n')
-        f.write('      for(unsigned int i= offset; i< offset+length_%s; ++i){\n'%cn) #shift for null character
-        f.write('          inbuffer[i-1]=inbuffer[i];\n')
+        f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
+        f.write('          inbuffer[k-1]=inbuffer[k];\n')
         f.write('           }\n')
         f.write('      inbuffer[offset+length_%s-1]=0;\n'%cn)
         f.write('      this->%s = (char *)(inbuffer + offset-1);\n' % self.name)
@@ -364,7 +364,7 @@ class Message:
                         self.includes.append("ros/duration")
                 elif type_name == 'string':
                     cls = StringDataType
-                    code_type = 'unsigned char*'
+                    code_type = 'char*'
                 elif type_name == 'uint64' or type_name == 'int64':
                     cls = Int64DataType
                     code_type = 'long'
@@ -496,13 +496,13 @@ class Service:
         includes.extend(self.resp.includes)
         includes = list(set(includes))
         for inc in includes:
-            f.write('#include "%s.h"\n' % i)
+            f.write('#include "%s.h"\n' % inc)
             
         f.write('\n')
         f.write('namespace %s\n' % self.package)
         f.write('{\n')
         f.write('\n')       
-        f.write('static const char[] %s = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
+        f.write('static const char %s[] = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
         
         def write_type(out, name):
             out.write('    const char * getType(){ return %s; };\n'%(name))
@@ -537,24 +537,26 @@ class ArduinoLibraryMaker:
         sys.stdout.write('Messages:\n    ')
         # find the messages in this package
         self.messages = list()
-        for f in os.listdir(self.pkg_dir+"/msg"):
-            if f.endswith(".msg"):
-                # add to list of messages
-                print "%s," % f[0:-4],
-                definition = open(self.pkg_dir + "/msg/" + f).readlines()
-                self.messages.append( Message(f[0:-4], self.name, definition) )
-        print "\n"
+        if (os.path.exists(self.pkg_dir+"/msg")):
+			for f in os.listdir(self.pkg_dir+"/msg"):
+				if f.endswith(".msg"):
+					# add to list of messages
+					print "%s," % f[0:-4],
+					definition = open(self.pkg_dir + "/msg/" + f).readlines()
+					self.messages.append( Message(f[0:-4], self.name, definition) )
+			print "\n"
      
         sys.stdout.write('Services:\n    ')
         # find the services in this package
         self.services = list()
-        for f in os.listdir(self.pkg_dir+"/srv"):
-            if f.endswith(".srv"):
-                # add to list of messages
-                print "%s," % f[0:-4],
-                definition = open(self.pkg_dir + "/srv/" + f).readlines()
-                self.messages.append( Service(f[0:-4], self.name, definition) )
-        print "\n"
+        if (os.path.exists(self.pkg_dir+"/srv/")):
+			for f in os.listdir(self.pkg_dir+"/srv"):
+				if f.endswith(".srv"):
+					# add to list of messages
+					print "%s," % f[0:-4],
+					definition = open(self.pkg_dir + "/srv/" + f).readlines()
+					self.messages.append( Service(f[0:-4], self.name, definition) )
+			print "\n"
 
     def generate(self, path_to_output):
         """ Generate header and source files for this package. """

@@ -199,8 +199,9 @@ public:
                 last_sync_receive_time = hardware_.time();
               }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
-              }else if (topic == TopicInfo::ID_PARAMETER_REQUEST){
-				  
+              }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
+				  req_param_resp.deserialize(message_in);
+				  param_recieved= true;
               }else{
                 if(receivers[topic_-100])
                   receivers[topic_-100]->receive( message_in );
@@ -352,30 +353,59 @@ public:
 		log(rosserial_msgs::Log::FATAL, msg);
 	}
 
-  };
 
 /****************************************
  * Retrieve Parameters
  *****************************************/
 private:
 	bool param_recieved;
-	
+	rosserial_msgs::RequestParamResponse req_param_resp;
 	bool requestParam(const char * name, int time_out =  1000){
 		param_recieved = false;
-		no_.publish(TopicInfo::ID_PARAMETER_REQUEST, (char*) name);
+        rosserial_msgs::RequestParamRequest req;
+        req.name  = (char*)name;
+		no_.publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
 		int end_time = hardware_.time();
-		while(!param_recieveds ){
+		while(!param_recieved ){
 			spinOnce();
 			if (end_time > hardware_.time()) return false;
 		}
 		return true;
 	}
 public:
-	int getParam(const char* name, int* param, int length =1){
-		
+	bool getParam(const char* name, int* param, int length =1){
+		if (requestParam(name) ){
+			if (length == req_param_resp.ints_length){
+			//copy it over
+			for(int i=0; i<length; i++) param[i] = req_param_resp.ints[i];
+			return true;
+			}
+		}
+		return false;
 	}
-	int getParam(const char* name, float* param, int length=1);
-	int getParam(const char* name, char** param, int length=1, int max_str_length = 100);
+	bool getParam(const char* name, float* param, int length=1){
+		if (requestParam(name) ){
+			if (length == req_param_resp.floats_length){
+			//copy it over
+			for(int i=0; i<length; i++) param[i] = req_param_resp.floats[i];
+			return true;
+			}
+		}
+		return false;
+	}
+	bool getParam(const char* name, char** param, int length=1){
+		if (requestParam(name) ){
+			if (length == req_param_resp.strings_length){
+			//copy it over
+			for(int i=0; i<length; i++) strcpy(param[i],req_param_resp.strings[i]);
+			return true;
+			}
+		}
+	return false;
+
+	}
+	
+};
 	
 
 

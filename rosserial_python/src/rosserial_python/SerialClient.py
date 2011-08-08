@@ -287,15 +287,16 @@ class SerialClient:
             if t!= type(p):
                 rospy.logerr('All Paramers in the list %s must be of the same type'%req.name)
                 return      
-        if (param[0] == int):
+        if (t == int):
             resp.ints= param
-        if (param[0] == float):
+        if (t == float):
             resp.floats=param
-        if (param[0] == str):
+        if (t == str):
             resp.strings = param
+        print resp
         data_buffer = StringIO.StringIO()
         resp.serialize(data_buffer)
-        self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer)
+        self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer.getvalue())
         
         
     def handleLogging(self, data):

@@ -3,5 +3,5 @@ string name
 ---
 
 int32[]   ints
-float64[] floats
+float32[] floats
 string[]  strings
