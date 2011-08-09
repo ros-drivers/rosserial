@@ -113,7 +113,7 @@ class Subscriber:
         """ Forward a message """
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
-        self.parent.send(self.parent.subscribers[self.topic][0], data_buffer.getvalue())
+        self.parent.send(self.parent.receivers[self.topic][0], data_buffer.getvalue())
 
 class ServiceServer:
     def __init__(self, name, service_type, parent):

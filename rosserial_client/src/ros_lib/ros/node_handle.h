@@ -57,6 +57,9 @@
 #define MODE_MESSAGE        6
 #define MODE_CHECKSUM       7
 
+
+#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
+
 #include "node_output.h"
 
 #include "publisher.h"
@@ -128,7 +131,7 @@ using rosserial_msgs::TopicInfo;
            /* used for syncing the time */
      unsigned long last_sync_time;
      unsigned long last_sync_receive_time;
-     unsigned long last_msg_receive_time;
+     unsigned long last_msg_timeout_time;
 
      bool registerReceiver(MsgReceiver* rcv){
          if (total_receivers >= MAX_SUBSCRIBERS) return false;
@@ -146,10 +149,21 @@ public:
 
       virtual void spinOnce(){
         /* restart if timed-out */
-        if(  (hardware_.time() - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        
+        unsigned long c_time = hardware_.time();
+        
+        if(  (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             no_.setConfigured(false);
          }
-        
+         
+        if ( mode_ != MODE_FIRST_FF){ //we are still in the midde of 
+                                    //the message, and the message's 
+                                    //timeout has already past, reset
+                                    //state machine
+            if (c_time > last_msg_timeout_time){
+                mode_ = MODE_FIRST_FF;
+            }
+        }
 
         /* while available buffer, read data */
         while( true )
@@ -166,7 +180,7 @@ public:
           }else if( mode_ == MODE_FIRST_FF ){
             if(data == 0xff){
               mode_++;
-              last_msg_receive_time = hardware_.time();
+              last_msg_timeout_time = c_time + MSG_TIMEOUT;
             }
           }else if( mode_ == MODE_SECOND_FF ){
             if(data == 0xff){
@@ -195,8 +209,8 @@ public:
               if(topic_ == TOPIC_NEGOTIATION){
                 requestSyncTime();
                 negotiateTopics();
-                last_sync_time = hardware_.time();
-                last_sync_receive_time = hardware_.time();
+                last_sync_time = c_time;
+                last_sync_receive_time = c_time;
               }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
               }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
@@ -212,9 +226,9 @@ public:
         }
 
         /* occasionally sync time */
-        if( no_.configured() && ((hardware_.time()-last_sync_time) > (SYNC_SECONDS*500) )){
+        if( no_.configured() && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
           requestSyncTime();
-          last_sync_time = hardware_.time();
+          last_sync_time = c_time;
         }
       }
 
