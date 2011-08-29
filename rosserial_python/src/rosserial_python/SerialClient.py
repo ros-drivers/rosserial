@@ -56,6 +56,7 @@ MODE_SECOND_FF = 1
 def load_pkg_module(package):
     #check if its in the python path
     in_path = False
+    path = sys.path
     for entry in sys.path:
         if package in entry:
             in_path = True
@@ -65,6 +66,7 @@ def load_pkg_module(package):
         m = __import__( package +'.msg')
     except:
         rospy.logerr( "Cannot import package : %s"% package )
+        rospy.logerr( "sys.path was " + str(path) )
         return None
     return m
 
@@ -115,6 +117,7 @@ class Subscriber:
         msg.serialize(data_buffer)
         self.parent.send(self.parent.receivers[self.topic][0], data_buffer.getvalue())
 
+
 class ServiceServer:
     def __init__(self, name, service_type, parent):
         self.name = service_name
@@ -138,14 +141,13 @@ class ServiceServer:
     def callback(self, msg):
         msg.serialize(data_buffer)
         self.parent.send(self.parent.services[self.name][0], data_buffer.getvalue())
-        
 
 
 class SerialClient:
     """
         Prototype of rosserial python client to connect to serial bus.
     """
-    
+
     def __init__(self, port=None, baud=57600, timeout=5.0):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
@@ -179,7 +181,6 @@ class SerialClient:
         self.port.flushInput()
         # request topic sync
         self.port.write("\xff\xff\x00\x00\x00\x00\xff")
-    
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -262,7 +263,7 @@ class SerialClient:
                 else:
                     rospy.logerr("Unrecognized command topic!")
                 rospy.sleep(0.001)
-            
+
     def handleParameterRequest(self,data):
         """Handlers the request for parameters from the rosserial_client
             This is only serves a limmited selection of parameter types.
@@ -297,8 +298,7 @@ class SerialClient:
         data_buffer = StringIO.StringIO()
         resp.serialize(data_buffer)
         self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer.getvalue())
-        
-        
+
     def handleLogging(self, data):
         m= Log()
         m.deserialize(data)
@@ -321,3 +321,4 @@ class SerialClient:
             data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
             data = data + msg + chr(checksum)
             self.port.write(data)
+
