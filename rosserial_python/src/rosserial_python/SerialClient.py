@@ -57,8 +57,10 @@ def load_pkg_module(package):
     #check if its in the python path
     in_path = False
     path = sys.path
+    pkg_src = package+'/src' #check for the source directory which
+                             # is added to path by roslib boostrapping
     for entry in sys.path:
-        if package in entry:
+        if pkg_src in entry:
             in_path = True
     if not in_path:
         roslib.load_manifest(package)
