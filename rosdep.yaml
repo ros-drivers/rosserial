@@ -2,7 +2,9 @@ librxtx-java:
   ubuntu: librxtx-java
 gcc-avr:
   ubuntu: gcc-avr
+  gentoo: cross-avr/gcc
 avr-libc:
   ubuntu: avr-libc
+  gentoo: cross-avr/avr-libc
 java:
   ubuntu: openjdk-6-jdk
