@@ -448,8 +448,8 @@ class Message:
         f.write('  };\n')
         
     def make_header(self, f):
-        f.write('#ifndef ros_%s_h\n' % self.name)
-        f.write('#define ros_%s_h\n' % self.name)
+        f.write('#ifndef ros_%s_%s_h\n'%(self.package, self.name))
+        f.write('#define ros_%s_%s_h\n'%(self.package, self.name))
         f.write('\n')
         self._write_std_includes(f)
         self._write_msg_includes(f)
