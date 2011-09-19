@@ -36,8 +36,8 @@
  * Author: Michael Ferguson
  */
 
-#ifndef ros_tf_h
-#define ros_tf_h
+#ifndef ROS_TF_H_
+#define ROS_TF_H_
 
 #include "tfMessage.h"
 

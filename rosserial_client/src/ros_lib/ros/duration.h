@@ -36,9 +36,8 @@
  * Author: Michael Ferguson
  */
 
-#ifndef ros_duration_h_included
-#define ros_duration_h_included
-
+#ifndef ROS_DURATION_H_
+#define ROS_DURATION_H_
 
 namespace ros
 {
@@ -58,7 +57,6 @@ namespace ros
       Duration& operator+=(const Duration &rhs);
       Duration& operator-=(const Duration &rhs);
       Duration& operator*=(double scale);
-      
   };
 
 }

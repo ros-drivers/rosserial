@@ -36,9 +36,8 @@
  * Author: Michael Ferguson
  */
 
-#include "ros/duration.h"
 #include <math.h>
-
+#include "ros/duration.h"
 
 namespace ros
 {

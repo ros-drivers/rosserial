@@ -36,15 +36,15 @@
  * Author: Michael Ferguson
  */
 
-#ifndef ros_time_h_included
-#define ros_time_h_included
+#ifndef ROS_TIME_H_
+#define ROS_TIME_H_
 
 #include <ros/duration.h>
 #include <math.h>
+
 namespace ros
 {
   void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);
-
 
   class Time
   {
@@ -68,8 +68,8 @@ namespace ros
 
       static Time now();
       static void setNow( Time & new_now);
-
   };
+
 }
 
 #endif

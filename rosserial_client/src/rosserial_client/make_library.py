@@ -40,7 +40,7 @@ make_library.py generates the Arduino rosserial library files.  It
 requires the location of your arduino libraries folder and the name of 
 one or more packages for which you want to make libraries.  
 
-rosrun rosserial_arduino <libraries_path>  pkg_name [pkg2 pkg3 ...]
+rosrun rosserial_client make_library.py <library_path>  pkg_name [pkg2 pkg3 ...]
 """
 
 import roslib; roslib.load_manifest("rosserial_client")

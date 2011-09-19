@@ -37,10 +37,10 @@
  * Author: Michael Ferguson
  */
 
-#ifndef ros_h
-#define ros_h
+#ifndef ROS_H_
+#define ROS_H_
 
-#include "ros/ros_impl.h"
+#include "node_handle.h"
 #include "ArduinoHardware.h"
 
 namespace ros

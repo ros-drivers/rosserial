@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#####################################################################
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2011, Willow Garage, Inc.
@@ -46,12 +47,7 @@ from rosserial_msgs.msg import *
 from rosserial_msgs.srv import *
 
 import time
-
 import struct
-
-MODE_FIRST_FF = 0
-MODE_SECOND_FF = 1
-
 
 def load_pkg_module(package):
     #check if its in the python path
