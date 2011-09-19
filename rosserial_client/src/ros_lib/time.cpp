@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
- * Author: Michael Ferguson
- */
-
 #include "ros.h"
 #include "ros/time.h"
 

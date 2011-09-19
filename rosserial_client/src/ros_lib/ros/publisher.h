@@ -32,18 +32,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: astambler
- */
-
 #ifndef PUBLISHER_H_
 #define PUBLISHER_H_
 
 #include "node_output.h"
 
 namespace ros{
-  /* Generic Publisher */
 
+  /* Generic Publisher */
   class Publisher
   {
     public:

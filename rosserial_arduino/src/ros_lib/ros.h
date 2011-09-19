@@ -32,15 +32,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
- * ROS definitions for Arduino
- * Author: Michael Ferguson
- */
-
 #ifndef ros_h
 #define ros_h
 
-#include "ros/ros_impl.h"
+#include "ros/node_handle.h"
 #include "ArduinoHardware.h"
 
 namespace ros

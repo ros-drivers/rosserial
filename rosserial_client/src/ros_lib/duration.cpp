@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
- * Author: Michael Ferguson
- */
-
 #include <math.h>
 #include "ros/duration.h"
 

@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: Michael Ferguson, Adam Stambler
- */
-
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
@@ -65,14 +61,16 @@
 #include "rosserial_ids.h"
 #include "service_server.h"
 
-
 namespace ros {
 
   using rosserial_msgs::TopicInfo;
 
   /* Node Handle */
-  template<class Hardware, int MAX_SUBSCRIBERS=25, int MAX_PUBLISHERS=25,
-          int INPUT_SIZE=512, int OUTPUT_SIZE=512>
+  template<class Hardware,
+           int MAX_SUBSCRIBERS=25,
+           int MAX_PUBLISHERS=25,
+           int INPUT_SIZE=512,
+           int OUTPUT_SIZE=512>
   class NodeHandle_
   {
     protected:
@@ -90,8 +88,8 @@ namespace ros {
       Publisher * publishers[MAX_PUBLISHERS];
       MsgReceiver * receivers[MAX_SUBSCRIBERS];
 
-      /******************************
-       *  Setup Functions
+      /*
+       * Setup Functions
        */
     public:
       NodeHandle_() : no_(&hardware_) {}
@@ -140,21 +138,18 @@ namespace ros {
        */
 
       virtual void spinOnce(){
-        /* restart if timed-out */
-        
+
+        /* restart if timed out */
         unsigned long c_time = hardware_.time();
-        
-        if(  (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             no_.setConfigured(false);
          }
          
-        if ( mode_ != MODE_FIRST_FF){ //we are still in the midde of 
-                                      //the message, and the message's 
-                                      //timeout has already past, reset
-                                      //state machine
-            if (c_time > last_msg_timeout_time){
-                mode_ = MODE_FIRST_FF;
-            }
+        /* reset if message has timed out */
+        if ( mode_ != MODE_FIRST_FF){ 
+          if (c_time > last_msg_timeout_time){
+            mode_ = MODE_FIRST_FF;
+          }
         }
 
         /* while available buffer, read data */
@@ -224,15 +219,14 @@ namespace ros {
         }
       }
 
-
       /* Are we connected to the PC? */
       bool connected() {
-           return no_.configured();
+        return no_.configured();
       };
 
-      /**************************************************************
+      /*
        * Time functions
-       **************************************************************/
+       */
 
       void requestSyncTime()
       {
@@ -255,8 +249,6 @@ namespace ros {
         last_sync_receive_time = hardware_.time();
       }
 
-     
-
       Time now(){
         unsigned long ms = hardware_.time();
         Time current_time;
@@ -274,8 +266,10 @@ namespace ros {
         normalizeSecNSec(sec_offset, nsec_offset);
       }
 
+      /*
+       * Registration 
+       */
 
-    /***************   Registeration    *****************************/
       bool advertise(Publisher & p)
       {
         int i;
@@ -294,19 +288,19 @@ namespace ros {
 
       /* Register a subscriber with the node */
       template<typename MsgT>
-            bool subscribe(Subscriber< MsgT> &s){
-          return registerReceiver((MsgReceiver*) &s);
-     }
+        bool subscribe(Subscriber< MsgT> &s){
+        return registerReceiver((MsgReceiver*) &s);
+      }
 
-     template<typename SrvReq, typename SrvResp>
-     bool advertiseService(ServiceServer<SrvReq,SrvResp>& srv){
-         srv.no_ = &no_;
-         return registerReceiver((MsgReceiver*) &srv);
-     }
+      template<typename SrvReq, typename SrvResp>
+      bool advertiseService(ServiceServer<SrvReq,SrvResp>& srv){
+        srv.no_ = &no_;
+        return registerReceiver((MsgReceiver*) &srv);
+      }
 
       void negotiateTopics()
       {
-          no_.setConfigured(true);
+        no_.setConfigured(true);
 
         rosserial_msgs::TopicInfo ti;
         int i;
@@ -332,89 +326,93 @@ namespace ros {
         }
       }
 
-/*
- * Logging
- */
+      /*
+       * Logging
+       */
+
     private:
-    void log(char byte, const char * msg){
+      void log(char byte, const char * msg){
         rosserial_msgs::Log l;
         l.level= byte;
         l.msg = (char*)msg;
         this->no_.publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
-    }
+      }
+
     public:
-    void logdebug(const char* msg){
+      void logdebug(const char* msg){
         log(rosserial_msgs::Log::DEBUG, msg);
-    }
-    void loginfo(const char * msg){
+      }
+      void loginfo(const char * msg){
         log(rosserial_msgs::Log::INFO, msg);
-    }
-    void logwarn(const char *msg){
+      }
+      void logwarn(const char *msg){
         log(rosserial_msgs::Log::WARN, msg);
-    }
-    void logerror(const char*msg){
+      }
+      void logerror(const char*msg){
         log(rosserial_msgs::Log::ERROR, msg);
-    }
-    void logfatal(const char*msg){
+      }
+      void logfatal(const char*msg){
         log(rosserial_msgs::Log::FATAL, msg);
-    }
+      }
 
 
-/****************************************
- * Retrieve Parameters
- *****************************************/
-private:
-    bool param_recieved;
-    rosserial_msgs::RequestParamResponse req_param_resp;
-    bool requestParam(const char * name, int time_out =  1000){
+      /*
+       * Retrieve Parameters
+       */
+
+    private:
+      bool param_recieved;
+      rosserial_msgs::RequestParamResponse req_param_resp;
+
+      bool requestParam(const char * name, int time_out =  1000){
         param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         no_.publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
         int end_time = hardware_.time();
         while(!param_recieved ){
-            spinOnce();
-            if (end_time > hardware_.time()) return false;
+          spinOnce();
+          if (end_time > hardware_.time()) return false;
         }
         return true;
-    }
-public:
-    bool getParam(const char* name, int* param, int length =1){
+      }
+
+    public:
+      bool getParam(const char* name, int* param, int length =1){
         if (requestParam(name) ){
-            if (length == req_param_resp.ints_length){
+          if (length == req_param_resp.ints_length){
             //copy it over
-            for(int i=0; i<length; i++) param[i] = req_param_resp.ints[i];
+            for(int i=0; i<length; i++)
+              param[i] = req_param_resp.ints[i];
             return true;
-            }
+          }
         }
         return false;
-    }
-    bool getParam(const char* name, float* param, int length=1){
+      }
+      bool getParam(const char* name, float* param, int length=1){
         if (requestParam(name) ){
-            if (length == req_param_resp.floats_length){
+          if (length == req_param_resp.floats_length){
             //copy it over
-            for(int i=0; i<length; i++) param[i] = req_param_resp.floats[i];
+            for(int i=0; i<length; i++) 
+              param[i] = req_param_resp.floats[i];
             return true;
-            }
+          }
         }
         return false;
-    }
-    bool getParam(const char* name, char** param, int length=1){
+      }
+      bool getParam(const char* name, char** param, int length=1){
         if (requestParam(name) ){
-            if (length == req_param_resp.strings_length){
+          if (length == req_param_resp.strings_length){
             //copy it over
-            for(int i=0; i<length; i++) strcpy(param[i],req_param_resp.strings[i]);
+            for(int i=0; i<length; i++)
+              strcpy(param[i],req_param_resp.strings[i]);
             return true;
-            }
+          }
         }
-    return false;
-
-    }
-    
-};
-    
-
+        return false;
+      }  
+  };
 
 }
 
-#endif /* NODEHANDLE_H_ */
+#endif

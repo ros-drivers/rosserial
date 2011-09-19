@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: astambler
- */
-
 #ifndef ROS_SERVICE_SERVER_H_
 #define ROS_SERVICE_SERVER_H_
 

@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: astambler
- */
-
 #ifndef ROS_SUBSCRIBER_H_
 #define ROS_SUBSCRIBER_H_
 
@@ -59,7 +55,6 @@ namespace ros {
         topic_ = topic_name;
         cb_= msgCB;
       }
-
 
       virtual void receive(unsigned char* data){
         msg.deserialize(data);

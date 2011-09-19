@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: astambler
- */
-
 #ifndef ROS_ROSSERIAL_IDS_H_
 #define ROS_ROSSERIAL_IDS_H_
 

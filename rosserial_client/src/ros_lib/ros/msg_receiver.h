@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: astambler
- */
-
 #ifndef ROS_MSG_RECEIVER_H_
 #define ROS_MSG_RECEIVER_H_
 

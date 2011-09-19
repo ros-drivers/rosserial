@@ -32,10 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
- * Author: Michael Ferguson
- */
-
 #ifndef ROS_TIME_H_
 #define ROS_TIME_H_
 
