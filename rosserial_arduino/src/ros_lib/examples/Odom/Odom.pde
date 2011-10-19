@@ -43,7 +43,7 @@ void loop()
   t.transform.translation.x = x;
   t.transform.translation.y = y;
   
-  tf::createQuaternionFromYaw(theta, t.transform.rotation);
+  t.transform.rotation = tf::createQuaternionFromYaw(theta);
   t.header.stamp = nh.now();
   
   broadcaster.sendTransform(t);

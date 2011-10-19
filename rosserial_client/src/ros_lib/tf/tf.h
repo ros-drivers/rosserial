@@ -40,13 +40,14 @@
 namespace tf
 {
   
-  int createQuaternionFromYaw(double yaw, geometry_msgs::Quaternion &q)
+  geometry_msgs::Quaternion createQuaternionFromYaw(double yaw)
   {
+    geometry_msgs::Quaternion q;
     q.x = 0;
     q.y = 0;
     q.z = sin(yaw * 0.5);
     q.w = cos(yaw * 0.5);
-    return 0;
+    return q;
   }
 
 }
