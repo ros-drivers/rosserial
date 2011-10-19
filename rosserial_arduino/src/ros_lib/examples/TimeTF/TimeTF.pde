@@ -5,10 +5,9 @@
 
 #include <ros.h>
 #include <ros/time.h>
+#include <tf/transform_broadcaster.h>
 
 ros::NodeHandle  nh;
-
-#include <tf/transform_broadcaster.h>
 
 geometry_msgs::TransformStamped t;
 tf::TransformBroadcaster broadcaster;
@@ -19,6 +18,7 @@ char odom[] = "/odom";
 void setup()
 {
   nh.initNode();
+  broadcaster.init(nh);
 }
 
 void loop()
