@@ -32,35 +32,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_TRANSFORM_BROADCASTER_H_
-#define ROS_TRANSFORM_BROADCASTER_H_
+#ifndef ROS_TF_H_
+#define ROS_TF_H_
 
-#include "tfMessage.h"
+#include "geometry_msgs/TransformStamped.h"
 
 namespace tf
 {
-
-  class TransformBroadcaster
+  
+  int createQuaternionFromYaw(double yaw, geometry_msgs::Quaternion &q)
   {
-    public:
-      TransformBroadcaster() : publisher_("tf", &internal_msg) {}
-
-      void init(ros::NodeHandle &nh)
-      {
-        nh.advertise(publisher_);
-      }
-
-      void sendTransform(geometry_msgs::TransformStamped &transform)
-      {
-        internal_msg.transforms_length = 1;
-        internal_msg.transforms = &transform;
-        publisher_.publish(&internal_msg);
-      }
-
-    private:
-      tf::tfMessage internal_msg;
-      ros::Publisher publisher_;
-  };
+    q.x = 0;
+    q.y = 0;
+    q.z = sin(yaw * 0.5);
+    q.w = cos(yaw * 0.5);
+    return 0;
+  }
 
 }
 
