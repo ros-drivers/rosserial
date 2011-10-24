@@ -35,7 +35,7 @@
 #ifndef ROS_SUBSCRIBER_H_
 #define ROS_SUBSCRIBER_H_
 
-#include "rosserial_ids.h"
+#include "rosserial_msgs/TopicInfo.h"
 #include "msg_receiver.h"
 
 namespace ros {
@@ -62,7 +62,7 @@ namespace ros {
       }
 
       virtual const char * getMsgType(){return this->msg.getType();}
-      virtual int _getType(){return TOPIC_SUBSCRIBERS;}
+      virtual int _getType(){return rosserial_msgs::TopicInfo::ID_SUBSCRIBER;}
 
     private:
       CallbackT cb_;

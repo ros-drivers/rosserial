@@ -53,7 +53,6 @@ namespace ros{
       Msg *msg_;
       int id_;
       NodeOutput_* no_;
-
   };
 
 }

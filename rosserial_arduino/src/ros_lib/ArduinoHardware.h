@@ -50,8 +50,8 @@ class ArduinoHardware {
       baud_ = 57600;
     }
     ArduinoHardware(ArduinoHardware& h){
-      this->baud_ = h.baud_;
       this->iostream = iostream;
+      this->baud_ = h.baud_;
     }
   
     void setBaud(long baud){
@@ -73,8 +73,8 @@ class ArduinoHardware {
     unsigned long time(){return millis();}
 
   protected:
-    long baud_;
     HardwareSerial* iostream;
+    long baud_;
 };
 
 #endif

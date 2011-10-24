@@ -35,10 +35,10 @@
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
-#include "../std_msgs/Time.h"
-#include "../rosserial_msgs/TopicInfo.h"
-#include "../rosserial_msgs/Log.h"
-#include "../rosserial_msgs/RequestParam.h"
+#include "std_msgs/Time.h"
+#include "rosserial_msgs/TopicInfo.h"
+#include "rosserial_msgs/Log.h"
+#include "rosserial_msgs/RequestParam.h"
 
 #define SYNC_SECONDS        5
 
@@ -58,7 +58,6 @@
 #include "publisher.h"
 #include "msg_receiver.h"
 #include "subscriber.h"
-#include "rosserial_ids.h"
 #include "service_server.h"
 
 namespace ros {
@@ -193,7 +192,7 @@ namespace ros {
               mode_ = MODE_CHECKSUM;
           }else if( mode_ == MODE_CHECKSUM ){ /* do checksum */
             if( (checksum_%256) == 255){
-              if(topic_ == TOPIC_NEGOTIATION){
+              if(topic_ == TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
                 negotiateTopics();
                 last_sync_time = c_time;
@@ -231,7 +230,7 @@ namespace ros {
       void requestSyncTime()
       {
         std_msgs::Time t;
-        no_.publish( rosserial_msgs::TopicInfo::ID_TIME, &t);
+        no_.publish(TopicInfo::ID_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -311,7 +310,7 @@ namespace ros {
             ti.topic_id = publishers[i]->id_;
             ti.topic_name = (char *) publishers[i]->topic_;
             ti.message_type = (char *) publishers[i]->msg_->getType();
-            no_.publish( TOPIC_PUBLISHERS, &ti );
+            no_.publish( TopicInfo::ID_PUBLISHER, &ti );
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -321,7 +320,7 @@ namespace ros {
             ti.topic_id = receivers[i]->id_;
             ti.topic_name = (char *) receivers[i]->topic_;
             ti.message_type = (char *) receivers[i]->getMsgType();
-            no_.publish( TOPIC_SUBSCRIBERS, &ti );
+            no_.publish( TopicInfo::ID_SUBSCRIBER, &ti );
           }
         }
       }

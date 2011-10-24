@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ros_h
-#define ros_h
+#ifndef _ROS_H_
+#define _ROS_H_
 
 #include "ros/node_handle.h"
 #include "ArduinoHardware.h"

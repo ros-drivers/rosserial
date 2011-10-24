@@ -35,6 +35,7 @@
 #ifndef ROS_SERVICE_SERVER_H_
 #define ROS_SERVICE_SERVER_H_
 
+#include "rosserial_msgs/TopicInfo.h"
 #include "node_output.h"
 
 namespace ros {
@@ -61,7 +62,7 @@ namespace ros {
       }
 
       virtual int _getType(){
-        return 3;
+        return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER;
       }
      
       virtual const char * getMsgType(){
