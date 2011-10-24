@@ -7,7 +7,7 @@ uint16 ID_SERVICE_SERVER=2
 uint16 ID_SERVICE_CLIENT=3
 uint16 ID_PARAMETER_REQUEST=4
 uint16 ID_LOG=5
-uint16 ID_TIME =10
+uint16 ID_TIME=10
 
 #any topic_id > 100 is a dynamically registered/advertised endpoint
 #ie. it is the result of a subscribe, publish, or advertise
@@ -15,5 +15,3 @@ uint16 ID_TIME =10
 string topic_name
 
 string message_type
-
-string md5_checksum
