@@ -36,37 +36,51 @@
 #define ROS_SUBSCRIBER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
-#include "msg_receiver.h"
 
 namespace ros {
 
-  /* ROS Subscriber
-   * This class handles holding the msg so that
-   * it is not continously reallocated.  It is also used by the
-   * node handle to keep track of callback functions and IDs.
-   */
+  /* Base class for objects subscribers. */
+  class Subscriber_
+  {
+    public:
+      virtual void callback(unsigned char *data)=0;
+      virtual int getEndpointType()=0;
+
+      // id_ is set by NodeHandle when we advertise 
+      int id_;
+
+      virtual const char * getMsgType()=0;
+      virtual const char * getMsgMD5()=0;
+      const char * topic_;
+  };
+
+
+  /* Actual subscriber, templated on message type. */
   template<typename MsgT>
-  class Subscriber: public MsgReceiver{
+  class Subscriber: public Subscriber_{
     public:
       typedef void(*CallbackT)(const MsgT&);
       MsgT msg;
 
-      Subscriber(const char * topic_name, CallbackT msgCB){
+      Subscriber(const char * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+        cb_(cb),
+        endpoint_(endpoint)
+      {
         topic_ = topic_name;
-        cb_= msgCB;
-      }
+      };
 
-      virtual void receive(unsigned char* data){
+      virtual void callback(unsigned char* data){
         msg.deserialize(data);
         this->cb_(msg);
       }
 
       virtual const char * getMsgType(){ return this->msg.getType(); }
       virtual const char * getMsgMD5(){ return this->msg.getMD5(); }
-      virtual int _getType(){ return rosserial_msgs::TopicInfo::ID_SUBSCRIBER; }
+      virtual int getEndpointType(){ return endpoint_; }
 
     private:
       CallbackT cb_;
+      int endpoint_;
   };
 
 }

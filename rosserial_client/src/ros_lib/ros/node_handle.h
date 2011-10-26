@@ -54,11 +54,10 @@
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
 #include "node_output.h"
-
 #include "publisher.h"
-#include "msg_receiver.h"
 #include "subscriber.h"
 #include "service_server.h"
+//#include "service_client.h"
 
 namespace ros {
 
@@ -85,7 +84,7 @@ namespace ros {
       unsigned char message_in[INPUT_SIZE];
 
       Publisher * publishers[MAX_PUBLISHERS];
-      MsgReceiver * receivers[MAX_SUBSCRIBERS];
+      Subscriber_ * subscribers[MAX_SUBSCRIBERS];
 
       /*
        * Setup Functions
@@ -104,7 +103,6 @@ namespace ros {
         bytes_ = 0;
         index_ = 0;
         topic_ = 0;
-        total_receivers=0;
       };
 
     protected:
@@ -115,21 +113,10 @@ namespace ros {
       int index_;
       int checksum_;
 
-      int total_receivers;
-
       /* used for syncing the time */
       unsigned long last_sync_time;
       unsigned long last_sync_receive_time;
       unsigned long last_msg_timeout_time;
-
-      bool registerReceiver(MsgReceiver* rcv){
-        if (total_receivers >= MAX_SUBSCRIBERS)
-          return false;
-        receivers[total_receivers] = rcv;
-        rcv->id_ = 100+total_receivers;
-        total_receivers++;
-        return true;
-      }
 
     public:
       /* This function goes in your loop() function, it handles
@@ -203,8 +190,8 @@ namespace ros {
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
               }else{
-                if(receivers[topic_-100])
-                  receivers[topic_-100]->receive( message_in );
+                if(subscribers[topic_-100])
+                  subscribers[topic_-100]->callback( message_in );
               }
             }
             mode_ = MODE_FIRST_FF;
@@ -223,7 +210,7 @@ namespace ros {
         return no_.configured();
       };
 
-      /*
+      /********************************************************************
        * Time functions
        */
 
@@ -240,7 +227,6 @@ namespace ros {
         unsigned long offset = hardware_.time() - rt_time;
 
         t.deserialize(data);
-
         t.data.sec += offset/1000;
         t.data.nsec += (offset%1000)*1000000UL;
 
@@ -265,17 +251,15 @@ namespace ros {
         normalizeSecNSec(sec_offset, nsec_offset);
       }
 
-      /*
-       * Registration 
+      /********************************************************************
+       * Topic Management 
        */
 
+      /* Register a new publisher */    
       bool advertise(Publisher & p)
       {
-        int i;
-        for(i = 0; i < MAX_PUBLISHERS; i++)
-        {
-          if(publishers[i] == 0) // empty slot
-          {
+        for(int i = 0; i < MAX_PUBLISHERS; i++){
+          if(publishers[i] == 0){ // empty slot
             publishers[i] = &p;
             p.id_ = i+100+MAX_SUBSCRIBERS;
             p.no_ = &this->no_;
@@ -285,17 +269,39 @@ namespace ros {
         return false;
       }
 
-      /* Register a subscriber with the node */
+      /* Register a new subscriber */
       template<typename MsgT>
-        bool subscribe(Subscriber< MsgT> &s){
-        return registerReceiver((MsgReceiver*) &s);
+      bool subscribe(Subscriber< MsgT> & s){
+        for(int i = 0; i < MAX_SUBSCRIBERS; i++){
+          if(subscribers[i] == 0){ // empty slot
+            subscribers[i] = (Subscriber_*) &s;
+            s.id_ = i+100;
+            return true;
+          }
+        }
+        return false;
       }
 
-      template<typename SrvReq, typename SrvResp>
-      bool advertiseService(ServiceServer<SrvReq,SrvResp>& srv){
-        srv.no_ = &no_;
-        return registerReceiver((MsgReceiver*) &srv);
+      /* Register a new Service Server */
+      template<typename MReq, typename MRes>
+      bool advertiseService(ServiceServer<MReq,MRes>& srv){
+        bool v = advertise(srv.pub);
+        for(int i = 0; i < MAX_SUBSCRIBERS; i++){
+          if(subscribers[i] == 0){ // empty slot
+            subscribers[i] = (Subscriber_*) &srv;
+            srv.id_ = i+100;
+            return v;
+          }
+        }
+        return false;
       }
+
+      /* Register a new Service Client 
+      template<typename MReq, typename MRes>
+      bool advertiseService(ServiceServer<MReq,MRes>& srv){
+        srv.no_ = &no_;
+        return registerReceiver((MsgReceiver*) &srv)
+      }*/
 
       void negotiateTopics()
       {
@@ -312,19 +318,19 @@ namespace ros {
             ti.message_type = (char *) publishers[i]->msg_->getType();
             ti.md5sum = (char *) publishers[i]->msg_->getMD5();
             ti.buffer_size = OUTPUT_SIZE;
-            no_.publish( TopicInfo::ID_PUBLISHER, &ti );
+            no_.publish( publishers[i]->getEndpointType(), &ti );
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
         {
-          if(receivers[i] != 0) // non-empty slot
+          if(subscribers[i] != 0) // non-empty slot
           {
-            ti.topic_id = receivers[i]->id_;
-            ti.topic_name = (char *) receivers[i]->topic_;
-            ti.message_type = (char *) receivers[i]->getMsgType();
-            ti.md5sum = (char *) receivers[i]->getMsgMD5();
+            ti.topic_id = subscribers[i]->id_;
+            ti.topic_name = (char *) subscribers[i]->topic_;
+            ti.message_type = (char *) subscribers[i]->getMsgType();
+            ti.md5sum = (char *) subscribers[i]->getMsgMD5();
             ti.buffer_size = INPUT_SIZE;
-            no_.publish( TopicInfo::ID_SUBSCRIBER, &ti );
+            no_.publish( subscribers[i]->getEndpointType(), &ti );
           }
         }
       }

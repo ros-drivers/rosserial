@@ -455,8 +455,8 @@ class Message:
         f.write('  };\n')
         
     def make_header(self, f):
-        f.write('#ifndef ros_%s_%s_h\n'%(self.package, self.name))
-        f.write('#define ros_%s_%s_h\n'%(self.package, self.name))
+        f.write('#ifndef _ROS_%s_%s_h\n'%(self.package, self.name))
+        f.write('#define _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('\n')
         self._write_std_includes(f)
         self._write_msg_includes(f)
@@ -495,8 +495,8 @@ class Service:
         self.resp = Message(name+"Response", package, self.resp_def, "0")
         
     def make_header(self, f):
-        f.write('#ifndef ros_SERVICE_%s_h\n' % self.name)
-        f.write('#define ros_SERVICE_%s_h\n' % self.name)
+        f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
+        f.write('#define _ROS_SERVICE_%s_h\n' % self.name)
         
         self.req._write_std_includes(f)
         includes = self.req.includes
@@ -522,6 +522,13 @@ class Service:
         f.write('\n')
         self.resp._write_impl(f)
         f.write('\n')
+        f.write('  class %s {\n' % self.name )
+        f.write('    public:\n')
+        f.write('    typedef %s Request;\n' % self.req.name )
+        f.write('    typedef %s Response;\n' % self.resp.name )
+        f.write('  };\n')
+        f.write('\n')
+
         f.write('}\n')
 
         f.write('#endif')

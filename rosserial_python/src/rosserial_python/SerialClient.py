@@ -49,7 +49,7 @@ from rosserial_msgs.srv import *
 import time
 import struct
 
-def load_pkg_module(package):
+def load_pkg_module(package, directory):
     #check if its in the python path
     in_path = False
     path = sys.path
@@ -61,17 +61,21 @@ def load_pkg_module(package):
     if not in_path:
         roslib.load_manifest(package)
     try:
-        m = __import__( package +'.msg')
+        m = __import__( package + '.' + directory )
     except:
         rospy.logerr( "Cannot import package : %s"% package )
         rospy.logerr( "sys.path was " + str(path) )
         return None
     return m
 
+def load_message(package, message):
+    m = load_pkg_module(package, 'msg')
+    m2 = getattr(m, 'msg')
+    return getattr(m2, message)
 
 class Publisher:
     """ 
-        Prototype of a forwarding publisher.
+        Publisher forwards messages from the serial device to ROS.
     """
     def __init__(self, topic_info):
         """ Create a new publisher. """ 
@@ -79,17 +83,14 @@ class Publisher:
         
         # find message type
         package, message = topic_info.message_type.split('/')
-        m = load_pkg_module(package)
-
-        m2 = getattr(m, 'msg')
-        self.message = getattr(m2, message)
+        self.message = load_message(package, message)
         if self.message._md5sum == topic_info.md5sum:
             self.publisher = rospy.Publisher(self.topic, self.message)
         else:
             raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
     
     def handlePacket(self, data):
-        """ """
+        """ Forward message to ROS network. """
         m = self.message()
         m.deserialize(data)
         self.publisher.publish(m)
@@ -97,7 +98,70 @@ class Publisher:
 
 class Subscriber:
     """ 
-        Prototype of a forwarding subscriber.
+        Subscriber forwards messages from ROS to the serial device.
+    """
+
+    def __init__(self, topic_info, parent):
+        self.topic = topic_info.topic_name
+        self.id = topic_info.topic_id
+        self.parent = parent
+        
+        # find message type
+        package, message = topic_info.message_type.split('/')
+        self.message = load_message(package, message)
+        if self.message._md5sum == topic_info.md5sum:
+            rospy.Subscriber(self.topic, self.message, self.callback)
+        else:
+            raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5_checksum)
+
+    def callback(self, msg):
+        """ Forward message to serial device. """
+        data_buffer = StringIO.StringIO()
+        msg.serialize(data_buffer)
+        self.parent.send(self.id, data_buffer.getvalue())
+
+
+class ServiceServer:
+    """ 
+        ServiceServer responds to requests from ROS.
+    """
+
+    def __init__(self, topic_info, parent):
+        self.topic = topic_info.topic_name
+        self.parent = parent
+        
+        # find message type
+        package, service = topic_info.message_type.split('/')
+        s = load_pkg_module(package, 'srv')
+        s = getattr(s, 'srv')
+        self.mreq = getattr(s, service+"Request")
+        self.mres = getattr(s, service+"Response")
+        srv = getattr(s, service)
+        self.service = rospy.Service(self.topic, srv, self.callback)
+
+        # response message
+        self.data = None
+
+    def callback(self, req):
+        """ Forward request to serial device. """
+        data_buffer = StringIO.StringIO()
+        req.serialize(data_buffer)
+        self.response = None
+        self.parent.send(self.id, data_buffer.getvalue())
+        while self.response == None:
+            pass
+        return self.response
+
+    def handlePacket(self, data):
+        """ Forward response to ROS network. """
+        r = self.mres()
+        r.deserialize(data)
+        self.response = r
+
+
+class ServiceClient:
+    """ 
+        ServiceServer responds to requests from ROS.
     """
 
     def __init__(self, topic_info, parent):
@@ -107,49 +171,29 @@ class Subscriber:
         # find message type
         package, message = topic_info.message_type.split('/')
         m = load_pkg_module(package)
-
-        m2 = getattr(m, 'msg')
-        self.message = getattr(m2, message)
-        if self.message._md5sum == topic_info.md5sum:
-            rospy.Subscriber(self.topic, self.message, self.callback)
-        else:
-            raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5_checksum)
-
-    def callback(self, msg):
-        """ Forward a message """
-        data_buffer = StringIO.StringIO()
-        msg.serialize(data_buffer)
-        self.parent.send(self.parent.receivers[self.topic][0], data_buffer.getvalue())
-
-
-class ServiceServer:
-    def __init__(self, name, service_type, parent):
-        self.name = service_name
-        self.service_type = service_type
-        self.parent = parent
         
-        # find message type
-        package, message = self.service_type.split('/')
-        m = load_pkg_module(package)
-        
-        srvs = getattr(m, 'srv')
-        self.srv_req = getattr(srvs, message+"Request")
-        self.srv_resp = getattr(srvs, message+"Response")
-        self.srv = getattr(srvs, message)
-        self.service = rospy.Service(self.service_name, self.srv, self.callback)
-        self.response = None
+        m2 = getattr(m, 'srv')
+        self.mreq = getattr(m2, message+"Request")
+        self.mres = getattr(m2, message+"Response")
+        srv = getattr(m2, message)
+        rospy.wait_for_service(self.topic)
+        self.proxy = rospy.ServiceProxy(self.topic, srv)
+
     def handlePacket(self, data):
-        resp = self.srv_resp()
-        resp.deserialize(data)
-        self.response = resp
-    def callback(self, msg):
-        msg.serialize(data_buffer)
-        self.parent.send(self.parent.services[self.name][0], data_buffer.getvalue())
-
+        """ Forward request to ROS network. """
+        req = self.mreq()
+        req.deserialize(data)
+        # call service proxy
+        resp = self.proxy(req)
+        # serialize and publish
+        data_buffer = StringIO.StringIO()
+        resp.serialize(data_buffer)
+        self.parent.send(self.id, data_buffer.getvalue())
+        
 
 class SerialClient:
-    """
-        Prototype of rosserial python client to connect to serial bus.
+    """ 
+        ServiceServer responds to requests from the serial device.
     """
 
     def __init__(self, port=None, baud=57600, timeout=5.0):
@@ -169,18 +213,24 @@ class SerialClient:
             # open a specific port
             self.port = Serial(port, baud, timeout=self.timeout*0.5)
         
-        self.port.timeout = 0.01 # Edit the port timeout
+        self.port.timeout = 0.01  # Edit the port timeout
         
-        time.sleep(0.1)          # Wait for ready (patch for Uno)
+        time.sleep(0.1)           # Wait for ready (patch for Uno)
         
-        self.senders = dict()    # Publishers/ServiceServers
-        self.receivers = dict()  # Subscribers/ServiceClients
+        self.publishers = dict()  # id:Publishers
+        self.subscribers = dict() # topic:Subscriber
+        self.services = dict()    # topic:Service
                 
         self.callbacks = dict()
+        # endpoints for creating new pubs/subs
         self.callbacks[TopicInfo.ID_PUBLISHER] = self.setupPublisher
         self.callbacks[TopicInfo.ID_SUBSCRIBER] = self.setupSubscriber
-        #self.callbacks[TopicInfo.ID_SERVICE_SERVER] = self.setupServiceServer
-        #self.callbacks[TopicInfo.ID_SERVICE_CLIENT] = self.setupServiceClient
+        # service client/servers have 2 creation endpoints (a publisher and a subscriber)
+        self.callbacks[TopicInfo.ID_SERVICE_SERVER+TopicInfo.ID_PUBLISHER] = self.setupServiceServerPublisher
+        self.callbacks[TopicInfo.ID_SERVICE_SERVER+TopicInfo.ID_SUBSCRIBER] = self.setupServiceServerSubscriber
+        self.callbacks[TopicInfo.ID_SERVICE_CLIENT+TopicInfo.ID_PUBLISHER] = self.setupServiceClientPublisher
+        self.callbacks[TopicInfo.ID_SERVICE_CLIENT+TopicInfo.ID_SUBSCRIBER] = self.setupServiceClientSubscriber
+        # custom endpoints
         self.callbacks[TopicInfo.ID_PARAMETER_REQUEST] = self.handleParameterRequest
         self.callbacks[TopicInfo.ID_LOG] = self.handleLoggingRequest
         self.callbacks[TopicInfo.ID_TIME] = self.handleTimeRequest
@@ -233,14 +283,13 @@ class SerialClient:
                     rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
                 rospy.sleep(0.001)
 
-
     def setupPublisher(self, data):
         """ Register a new publisher. """
         try:
             msg = TopicInfo()
             msg.deserialize(data)
             pub = Publisher(msg)
-            self.senders[msg.topic_id] = pub
+            self.publishers[msg.topic_id] = pub
             self.callbacks[msg.topic_id] = pub.handlePacket
             rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
@@ -252,26 +301,71 @@ class SerialClient:
             msg = TopicInfo()
             msg.deserialize(data)
             sub = Subscriber(msg, self)
-            self.receivers[msg.topic_name] = [msg.topic_id, sub]
+            self.subscribers[msg.topic_name] = sub
             rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
             
+    def setupServiceServerPublisher(self, data):
+        """ Register a new service server. """
+        try:
+            msg = TopicInfo()
+            msg.deserialize(data)
+            try:
+                srv = self.services[msg.topic_name] 
+            except:
+                srv = ServiceServer(msg, self)
+                rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
+                self.services[msg.topic_name] = srv
+            self.callbacks[msg.topic_id] = srv.handlePacket
+        except Exception as e:
+            rospy.logerr("Creation of service server failed: %s", e)
+    def setupServiceServerSubscriber(self, data):
+        """ Register a new service server. """
+        try:
+            msg = TopicInfo()
+            msg.deserialize(data)
+            try:
+                srv = self.services[msg.topic_name] 
+            except:
+                srv = ServiceServer(msg, self)
+                rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
+                self.services[msg.topic_name] = srv
+            srv.id = msg.topic_id
+        except Exception as e:
+            rospy.logerr("Creation of service server failed: %s", e)
 
+    def setupServiceClientPublisher(self, data):
+        """ Register a new service client. """
+        try:
+            msg = TopicInfo()
+            msg.deserialize(data)
+            try:
+                srv = self.services[msg.topic_name] 
+            except:
+                srv = ServiceClient(msg, self)
+                rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
+                self.services[msg.topic_info] = srv
+            self.callbacks[msg.topic_id] = srv.handlePacket
+        except Exception as e:
+            rospy.logerr("Creation of service client failed: %s", e)
+    def setupServiceClientSubscriber(self, data):
+        """ Register a new service client. """
+        try:
+            msg = TopicInfo()
+            msg.deserialize(data)
+            try:
+                srv = self.services[msg.topic_name] 
+            except:
+                srv = ServiceClient(msg, self)
+                rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
+                self.services[msg.topic_info] = srv
+            srv.id = msg.topic_id
+        except Exception as e:
+            rospy.logerr("Creation of service client failed: %s", e)
 
-    #elif topic_id == TopicInfo.ID_SERVICE_SERVER:
-    #                try:
-    #                    m = TopicInfo()
-    #                    m.deserialize(msg)
-    #                    self.senders[m.topic_id]=ServiceServer(m.topic_name, m.message_type, self) 
-    #                    rospy.loginfo("Setup ServiceServer on %s [%s]"%(m.topic_name, m.message_type) )
-    #                except:
-    #                    rospy.logerr("Failed to parse service server")
-    #            elif topic_id == TopicInfo.ID_SERVICE_CLIENT:
-    #                pass
-                
-            
     def handleTimeRequest(self, data):
+        """ Respond to device with system time. """
         t = Time()
         t.data = rospy.Time.now()
         data_buffer = StringIO.StringIO()
@@ -280,12 +374,7 @@ class SerialClient:
         self.lastsync = rospy.Time.now()
 
     def handleParameterRequest(self, data):
-        """ 
-            Handlers the request for parameters from the rosserial_client
-            This is only serves a limited selection of parameter types.
-            It is meant for simple configuration of your hardware. It 
-            will not send dictionaries or multitype lists.
-        """
+        """ Send parameters to device. Supports only simple datatypes and arrays of such. """
         req = RequestParamRequest()
         req.deserialize(data)
         resp = RequestParamResponse()
@@ -316,7 +405,8 @@ class SerialClient:
         self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer.getvalue())
 
     def handleLoggingRequest(self, data):
-        msg= Log()
+        """ Forward logging information from serial device into ROS. """
+        msg = Log()
         msg.deserialize(data)
         if (msg.level == Log.DEBUG):
             rospy.logdebug(msg.msg)

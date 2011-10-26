@@ -36,39 +36,37 @@
 #define ROS_SERVICE_SERVER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
-#include "node_output.h"
+
+#include "publisher.h"
+#include "subscriber.h"
 
 namespace ros {
 
-  template<typename SrvRequest , typename SrvResponse>
-  class ServiceServer : MsgReceiver{
+  template<typename MReq , typename MRes>
+  class ServiceServer : public Subscriber_ {
     public:
-      typedef void(*CallbackT)(const SrvRequest&,  SrvResponse&);
+      typedef void(*CallbackT)(const MReq&,  MRes&);
 
-      ServiceServer(const char* topic_name, CallbackT cb){
+      ServiceServer(const char* topic_name, CallbackT cb) :
+        pub(topic_name, &resp, rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+      {
         this->topic_ = topic_name;
         this->cb_ = cb;
       }
 
-      ServiceServer(ServiceServer& srv){
-        this->topic_ = srv.topic_;
-        this->cb_ = srv.cb_;
-      }
-
-      virtual void receive(unsigned char * data){
+      // these refer to the subscriber
+      virtual void callback(unsigned char *data){
         req.deserialize(data);
-        this->cb_(req, resp);
-        no_->publish(id_, &resp);
+        cb_(req,resp);
+        pub.publish(&resp);
       }
+      virtual const char * getMsgType(){ return this->req.getType(); }
+      virtual const char * getMsgMD5(){ return this->req.getMD5(); }
+      virtual int getEndpointType(){ return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_SUBSCRIBER; }
 
-      virtual const char * getMsgType(){return req.getType();}
-      virtual const char * getMsgMD5(){return req.getMD5();}
-      virtual int _getType(){return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER;}
-
-      SrvRequest req;
-      SrvResponse resp;
-      NodeOutput_ * no_;
-
+      MReq req;
+      MRes resp;
+      Publisher pub;
     private:
       CallbackT cb_;
   };
