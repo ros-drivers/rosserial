@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_DURATION_H_
-#define ROS_DURATION_H_
+#ifndef _ROS_DURATION_H_
+#define _ROS_DURATION_H_
 
 namespace ros {
 

@@ -32,12 +32,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PUBLISHER_H_
-#define PUBLISHER_H_
+#ifndef _ROS_PUBLISHER_H_
+#define _ROS_PUBLISHER_H_
 
 #include "node_output.h"
 
-namespace ros{
+namespace ros {
 
   /* Generic Publisher */
   class Publisher
@@ -49,13 +49,12 @@ namespace ros{
       };
 
       const char * topic_;
-
       Msg *msg_;
+      // id_ and no_ are set by NodeHandle when we advertise 
       int id_;
       NodeOutput_* no_;
   };
 
 }
-
 
 #endif

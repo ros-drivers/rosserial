@@ -40,10 +40,11 @@ make_library.py generates the Arduino rosserial library files.  It
 requires the location of your arduino libraries folder and the name of 
 one or more packages for which you want to make libraries.  
 
-rosrun rosserial_client make_library.py <library_path>  pkg_name [pkg2 pkg3 ...]
+rosrun rosserial_client make_library.py <output_path> pkg_name [pkg2 pkg3 ...]
 """
 
 import roslib; roslib.load_manifest("rosserial_client")
+import roslib.gentools
 import rospy
 
 import os, sys, subprocess, re
@@ -51,7 +52,7 @@ import os, sys, subprocess, re
 ros_types = {
     'bool'  :   ('bool',           1),
     'byte'  :   ('unsigned char',  1),
-    'char'  :   ('char',  1),
+    'char'  :   ('char',           1),
     'int8'  :   ('signed char',    1),
     'uint8' :   ('unsigned char',  1),
     'int16' :   ('int',            2),
@@ -295,10 +296,11 @@ class ArrayDataType(PrimitiveDataType):
 class Message:    
     """ Parses message definitions into something we can export. """
 
-    def __init__(self, name, package, definition):
+    def __init__(self, name, package, definition, md5):
 
         self.name = name            # name of message/class
         self.package = package      # package we reside in
+        self.md5 = md5              # checksum
         self.includes = list()      # other files we must include
 
         self.data = list()          # data types for code generation
@@ -417,11 +419,12 @@ class Message:
         f.write('     return offset;\n');
         f.write('    }\n')         
         f.write('\n')
+
     def _write_std_includes(self, f):
         f.write('#include <stdint.h>\n')
         f.write('#include <string.h>\n')
         f.write('#include <stdlib.h>\n')
-        f.write('#include "../ros/msg.h"\n')
+        f.write('#include "ros/msg.h"\n')
 
     def _write_msg_includes(self,f):
         for i in self.includes:
@@ -436,6 +439,9 @@ class Message:
     def _write_getType(self, f):
         f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
 
+    def _write_getMD5(self, f):
+        f.write('    const char * getMD5(){ return "%s"; };\n'%self.md5)
+
     def _write_impl(self, f):
         f.write('  class %s : public ros::Msg\n' % self.name)
         f.write('  {\n')
@@ -444,6 +450,7 @@ class Message:
         self._write_serializer(f)
         self._write_deserializer(f)
         self._write_getType(f)
+        self._write_getMD5(f)
         f.write('\n')
         f.write('  };\n')
         
@@ -484,8 +491,8 @@ class Service:
         self.req_def = definition[0:sep_line]
         self.resp_def = definition[sep_line+1:]
         
-        self.req = Message(name+"Request", package, self.req_def)
-        self.resp = Message(name+"Response", package, self.resp_def)
+        self.req = Message(name+"Request", package, self.req_def, "0")
+        self.resp = Message(name+"Response", package, self.resp_def, "0")
         
     def make_header(self, f):
         f.write('#ifndef ros_SERVICE_%s_h\n' % self.name)
@@ -522,62 +529,59 @@ class Service:
    
         
 #####################################################################
-# Core Library Maker
+# Make a Library
 
-class ArduinoLibraryMaker:
-    """ Create an Arduino Library from a set of Message Definitions. """
+def MakeLibrary(package, output_path):
+    print "\nExporting " + package + "\n", 
 
-    def __init__(self, package):
-        """ Initialize by finding location and all messages in this package. """
-        self.name = package
-        print "\nExporting " + package +"\n", 
-
-        self.pkg_dir = roslib.packages.get_pkg_dir(package)
+    pkg_dir = roslib.packages.get_pkg_dir(package)
         
-        sys.stdout.write('Messages:\n    ')
-        # find the messages in this package
-        self.messages = list()
-        if (os.path.exists(self.pkg_dir+"/msg")):
-			for f in os.listdir(self.pkg_dir+"/msg"):
-				if f.endswith(".msg"):
-					# add to list of messages
-					print "%s," % f[0:-4],
-					definition = open(self.pkg_dir + "/msg/" + f).readlines()
-					self.messages.append( Message(f[0:-4], self.name, definition) )
-			print "\n"
+    sys.stdout.write('Messages:\n    ')
+    # find the messages in this package
+    messages = list()
+    if os.path.exists(pkg_dir+"/msg"):
+        for f in os.listdir(pkg_dir+"/msg"):
+            if f.endswith(".msg"):
+                file = pkg_dir + "/msg/" + f
+                # add to list of messages
+                print "%s," % f[0:-4],
+                definition = open(file).readlines()
+                md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
+                messages.append( Message(f[0:-4], package, definition, md5sum) )
+        print "\n"
      
-        sys.stdout.write('Services:\n    ')
-        # find the services in this package
-        self.services = list()
-        if (os.path.exists(self.pkg_dir+"/srv/")):
-			for f in os.listdir(self.pkg_dir+"/srv"):
-				if f.endswith(".srv"):
-					# add to list of messages
-					print "%s," % f[0:-4],
-					definition = open(self.pkg_dir + "/srv/" + f).readlines()
-					self.messages.append( Service(f[0:-4], self.name, definition) )
-			print "\n"
+    sys.stdout.write('Services:\n    ')
+    # find the services in this package
+    services = list()
+    if (os.path.exists(pkg_dir+"/srv/")):
+        for f in os.listdir(pkg_dir+"/srv"):
+            if f.endswith(".srv"):
+                file = pkg_dir + "/srv/" + f
+                # add to list of messages
+                print "%s," % f[0:-4],
+                definition = open(file).readlines()
+                #md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
+                messages.append( Service(f[0:-4], package, definition ) )
+        print "\n"
 
-    def generate(self, path_to_output):
-        """ Generate header and source files for this package. """
-
-        # generate for each message
-        for msg in self.messages:
-            if not os.path.exists(path_to_output + "/" + self.name):
-                os.makedirs(path_to_output + "/" + self.name)
-            header = open(path_to_output + "/" + self.name + "/" + msg.name + ".h", "w")
-            msg.make_header(header)
-            header.close()
+    # generate for each message
+    output_path = output_path + "/" + package
+    for msg in messages:
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        header = open(output_path + "/" + msg.name + ".h", "w")
+        msg.make_header(header)
+        header.close()
 
     
 if __name__=="__main__":
-
-    # get path to arduino sketchbook
     
+    # need correct inputs
     if (len(sys.argv) <3):
         print __usage__
         exit()
     
+    # get output path
     path = sys.argv[1]
     if path[-1] == "/":
         path = path[0:-1]
@@ -587,6 +591,5 @@ if __name__=="__main__":
     # make libraries
     packages = sys.argv[2:]
     for msg_package in packages:
-        lm = ArduinoLibraryMaker(msg_package)
-        lm.generate(path)
+        MakeLibrary(msg_package, path)
 
