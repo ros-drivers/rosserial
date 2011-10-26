@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_MSG_H_
-#define ROS_MSG_H_
+#ifndef _ROS_MSG_H_
+#define _ROS_MSG_H_
 
 namespace ros {
 

@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_MSG_RECEIVER_H_
-#define ROS_MSG_RECEIVER_H_
+#ifndef _ROS_MSG_RECEIVER_H_
+#define _ROS_MSG_RECEIVER_H_
 
 namespace ros {
 
@@ -45,9 +45,12 @@ namespace ros {
 
       //Distinguishes between different receiver types
       virtual int _getType()=0;
+
+      // id_ is set by NodeHandle when we advertise 
+      int id_;
+
       virtual const char * getMsgType()=0;
       virtual const char * getMsgMD5()=0;
-      int id_;
       const char * topic_;
   };
 
