@@ -310,6 +310,8 @@ namespace ros {
             ti.topic_id = publishers[i]->id_;
             ti.topic_name = (char *) publishers[i]->topic_;
             ti.message_type = (char *) publishers[i]->msg_->getType();
+            ti.md5sum = (char *) publishers[i]->msg_->getMD5();
+            ti.buffer_size = OUTPUT_SIZE;
             no_.publish( TopicInfo::ID_PUBLISHER, &ti );
           }
         }
@@ -320,6 +322,8 @@ namespace ros {
             ti.topic_id = receivers[i]->id_;
             ti.topic_name = (char *) receivers[i]->topic_;
             ti.message_type = (char *) receivers[i]->getMsgType();
+            ti.md5sum = (char *) receivers[i]->getMsgMD5();
+            ti.buffer_size = INPUT_SIZE;
             no_.publish( TopicInfo::ID_SUBSCRIBER, &ti );
           }
         }

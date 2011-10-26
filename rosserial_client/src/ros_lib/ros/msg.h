@@ -44,6 +44,7 @@ namespace ros {
       virtual int serialize(unsigned char *outbuffer) = 0;
 	  virtual int deserialize(unsigned char *data) = 0;
       virtual const char * getType() = 0;
+      virtual const char * getMD5() = 0;
   };
 
 }

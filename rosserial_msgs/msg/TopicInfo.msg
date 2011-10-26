@@ -14,7 +14,7 @@ string topic_name
 string message_type
 
 # MD5 checksum for this message type
-string md5_checksum
+string md5sum
 
 # size of the buffer message must fit in
 int32 buffer_size

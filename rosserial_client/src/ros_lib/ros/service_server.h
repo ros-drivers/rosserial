@@ -61,13 +61,9 @@ namespace ros {
         no_->publish(id_, &resp);
       }
 
-      virtual int _getType(){
-        return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER;
-      }
-     
-      virtual const char * getMsgType(){
-        return req.getType();
-      }
+      virtual const char * getMsgType(){return req.getType();}
+      virtual const char * getMsgMD5(){return req.getMD5();}
+      virtual int _getType(){return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER;}
 
       SrvRequest req;
       SrvResponse resp;

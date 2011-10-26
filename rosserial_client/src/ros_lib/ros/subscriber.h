@@ -62,6 +62,7 @@ namespace ros {
       }
 
       virtual const char * getMsgType(){return this->msg.getType();}
+      virtual const char * getMsgMD5(){return this->msg.getMD5();}
       virtual int _getType(){return rosserial_msgs::TopicInfo::ID_SUBSCRIBER;}
 
     private:

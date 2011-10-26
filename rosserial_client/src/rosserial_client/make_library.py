@@ -491,8 +491,8 @@ class Service:
         self.req_def = definition[0:sep_line]
         self.resp_def = definition[sep_line+1:]
         
-        self.req = Message(name+"Request", package, self.req_def)
-        self.resp = Message(name+"Response", package, self.resp_def)
+        self.req = Message(name+"Request", package, self.req_def, "0")
+        self.resp = Message(name+"Response", package, self.resp_def, "0")
         
     def make_header(self, f):
         f.write('#ifndef ros_SERVICE_%s_h\n' % self.name)
@@ -553,16 +553,16 @@ def MakeLibrary(package, output_path):
     sys.stdout.write('Services:\n    ')
     # find the services in this package
     services = list()
-#    if (os.path.exists(pkg_dir+"/srv/")):
-#        for f in os.listdir(pkg_dir+"/srv"):
-#            if f.endswith(".srv"):
-#                file = pkg_dir + "/srv/" + f
-#                # add to list of messages
-#                print "%s," % f[0:-4],
-#                definition = open(file).readlines()
-#                md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
-#                messages.append( Service(f[0:-4], package, definition, md5sum ) )
-#        print "\n"
+    if (os.path.exists(pkg_dir+"/srv/")):
+        for f in os.listdir(pkg_dir+"/srv"):
+            if f.endswith(".srv"):
+                file = pkg_dir + "/srv/" + f
+                # add to list of messages
+                print "%s," % f[0:-4],
+                definition = open(file).readlines()
+                #md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
+                messages.append( Service(f[0:-4], package, definition ) )
+        print "\n"
 
     # generate for each message
     output_path = output_path + "/" + package

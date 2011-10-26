@@ -46,6 +46,7 @@ namespace ros {
       //Distinguishes between different receiver types
       virtual int _getType()=0;
       virtual const char * getMsgType()=0;
+      virtual const char * getMsgMD5()=0;
       int id_;
       const char * topic_;
   };
