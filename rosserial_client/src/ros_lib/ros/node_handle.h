@@ -57,17 +57,19 @@
 
 namespace ros {
 
-  class NodeOutput_{
+  class NodeHandleBase_{
     public:
-      virtual int publish(int id, Msg* msg)=0;
-  };
+      virtual int publish(int id, const Msg* msg)=0;
+      virtual int spinOnce()=0;
+      virtual bool connected()=0;
+    };
 
 }
 
 #include "publisher.h"
 #include "subscriber.h"
 #include "service_server.h"
-//#include "service_client.h"
+#include "service_client.h"
 
 namespace ros {
 
@@ -79,7 +81,7 @@ namespace ros {
            int MAX_PUBLISHERS=25,
            int INPUT_SIZE=512,
            int OUTPUT_SIZE=512>
-  class NodeHandle_ : public NodeOutput_
+  class NodeHandle_ : public NodeHandleBase_
   {
     protected:
       Hardware hardware_;
@@ -135,7 +137,7 @@ namespace ros {
        *  serial input and callbacks for subscribers.
        */
 
-      virtual void spinOnce(){
+      virtual int spinOnce(){
 
         /* restart if timed out */
         unsigned long c_time = hardware_.time();
@@ -190,12 +192,14 @@ namespace ros {
             if(bytes_ == 0)
               mode_ = MODE_CHECKSUM;
           }else if( mode_ == MODE_CHECKSUM ){ /* do checksum */
+            mode_ = MODE_FIRST_FF;
             if( (checksum_%256) == 255){
               if(topic_ == TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
                 negotiateTopics();
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
+                return -1;
               }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
               }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
@@ -206,7 +210,6 @@ namespace ros {
                   subscribers[topic_-100]->callback( message_in );
               }
             }
-            mode_ = MODE_FIRST_FF;
           }
         }
 
@@ -215,10 +218,12 @@ namespace ros {
           requestSyncTime();
           last_sync_time = c_time;
         }
+
+        return 0;
       }
 
       /* Are we connected to the PC? */
-      bool connected() {
+      virtual bool connected() {
         return configured_;
       };
 
@@ -274,7 +279,7 @@ namespace ros {
           if(publishers[i] == 0){ // empty slot
             publishers[i] = &p;
             p.id_ = i+100+MAX_SUBSCRIBERS;
-            p.no_ = this;
+            p.nh_ = this;
             return true;
           }
         }
@@ -308,12 +313,19 @@ namespace ros {
         return false;
       }
 
-      /* Register a new Service Client 
+      /* Register a new Service Client */
       template<typename MReq, typename MRes>
-      bool advertiseService(ServiceServer<MReq,MRes>& srv){
-        srv.no_ = &no_;
-        return registerReceiver((MsgReceiver*) &srv)
-      }*/
+      bool serviceClient(ServiceClient<MReq, MRes>& srv){
+        bool v = advertise(srv.pub);
+        for(int i = 0; i < MAX_SUBSCRIBERS; i++){
+          if(subscribers[i] == 0){ // empty slot
+            subscribers[i] = (Subscriber_*) &srv;
+            srv.id_ = i+100;
+            return v;
+          }
+        }
+        return false;
+      }
 
       void negotiateTopics()
       {
@@ -347,7 +359,7 @@ namespace ros {
         }
       }
 
-      virtual int publish(int id, Msg * msg)
+      virtual int publish(int id, const Msg * msg)
       {
         if(!configured_) return 0;
 
@@ -377,8 +389,7 @@ namespace ros {
         }
       }
 
-
-      /*
+      /********************************************************************
        * Logging
        */
 
@@ -407,8 +418,8 @@ namespace ros {
         log(rosserial_msgs::Log::FATAL, msg);
       }
 
-      /*
-       * Retrieve Parameters
+      /********************************************************************
+       * Parameters
        */
 
     private:

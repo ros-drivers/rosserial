@@ -4,7 +4,7 @@ uint16 ID_SUBSCRIBER=1
 uint16 ID_SERVICE_SERVER=2
 uint16 ID_SERVICE_CLIENT=4
 uint16 ID_PARAMETER_REQUEST=6
-uint16 ID_LOG=5
+uint16 ID_LOG=7
 uint16 ID_TIME=10
 
 # The endpoint ID for this topic

@@ -1,10 +1,8 @@
-rosserial_arduino/build
 rosserial_arduino/libraries
-rosserial_msgs/build
-rosserial_msgs/msg_gen
 rosserial_msgs/src
 ./*.pyc
 rosserial_python/build
-rosserial_arduino_demos/build
-rosserial_arduino_demos/msg_gen
+rosserial_arduino/src/rosserial_arduino
 ./*/msg_gen
+./*/srv_gen
+./*/build

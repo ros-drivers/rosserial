@@ -400,7 +400,7 @@ class Message:
     def _write_serializer(self, f):
                 # serializer   
         f.write('\n')
-        f.write('    virtual int serialize(unsigned char *outbuffer)\n')
+        f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:

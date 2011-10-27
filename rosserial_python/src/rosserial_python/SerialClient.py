@@ -169,13 +169,13 @@ class ServiceClient:
         self.parent = parent
         
         # find message type
-        package, message = topic_info.message_type.split('/')
-        m = load_pkg_module(package)
-        
-        m2 = getattr(m, 'srv')
-        self.mreq = getattr(m2, message+"Request")
-        self.mres = getattr(m2, message+"Response")
-        srv = getattr(m2, message)
+        package, service = topic_info.message_type.split('/')
+        s = load_pkg_module(package, 'srv')
+        s = getattr(s, 'srv')
+        self.mreq = getattr(s, service+"Request")
+        self.mres = getattr(s, service+"Response")
+        srv = getattr(s, service)
+        rospy.loginfo("Starting service client, waiting for service '" + self.topic + "'")
         rospy.wait_for_service(self.topic)
         self.proxy = rospy.ServiceProxy(self.topic, srv)
 
@@ -363,7 +363,7 @@ class SerialClient:
             except:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
-                self.services[msg.topic_info] = srv
+                self.services[msg.topic_name] = srv
             self.callbacks[msg.topic_id] = srv.handlePacket
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
@@ -378,7 +378,7 @@ class SerialClient:
             except:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
-                self.services[msg.topic_info] = srv
+                self.services[msg.topic_name] = srv
             srv.id = msg.topic_id
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
@@ -442,8 +442,9 @@ class SerialClient:
         """ Send a message on a particular topic to the device. """
         with self.mutex:
             length = len(msg)
-            if length > self.buffer_in:
+            if self.buffer_in > 0 and length > self.buffer_in:
                 rospy.logerr("Message from ROS network dropped: message larger than buffer.")
+                print msg
                 return -1
             else:
                 checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
