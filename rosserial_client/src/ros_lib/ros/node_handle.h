@@ -53,7 +53,17 @@
 
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
-#include "node_output.h"
+#include "msg.h"
+
+namespace ros {
+
+  class NodeOutput_{
+    public:
+      virtual int publish(int id, Msg* msg)=0;
+  };
+
+}
+
 #include "publisher.h"
 #include "subscriber.h"
 #include "service_server.h"
@@ -69,11 +79,10 @@ namespace ros {
            int MAX_PUBLISHERS=25,
            int INPUT_SIZE=512,
            int OUTPUT_SIZE=512>
-  class NodeHandle_
+  class NodeHandle_ : public NodeOutput_
   {
     protected:
       Hardware hardware_;
-      NodeOutput<Hardware, OUTPUT_SIZE> no_;
 
       /* time used for syncing */
       unsigned long rt_time;
@@ -82,6 +91,7 @@ namespace ros {
       unsigned long sec_offset, nsec_offset;
 
       unsigned char message_in[INPUT_SIZE];
+      unsigned char message_out[OUTPUT_SIZE];
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
@@ -90,7 +100,7 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : no_(&hardware_) {}
+      NodeHandle_() : configured_(false) {}
       
       Hardware* getHardware(){
         return &hardware_;
@@ -113,6 +123,8 @@ namespace ros {
       int index_;
       int checksum_;
 
+      bool configured_;
+
       /* used for syncing the time */
       unsigned long last_sync_time;
       unsigned long last_sync_receive_time;
@@ -128,7 +140,7 @@ namespace ros {
         /* restart if timed out */
         unsigned long c_time = hardware_.time();
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
-            no_.setConfigured(false);
+            configured_ = false;
          }
          
         /* reset if message has timed out */
@@ -199,7 +211,7 @@ namespace ros {
         }
 
         /* occasionally sync time */
-        if( no_.configured() && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
+        if( configured_ && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
           requestSyncTime();
           last_sync_time = c_time;
         }
@@ -207,7 +219,7 @@ namespace ros {
 
       /* Are we connected to the PC? */
       bool connected() {
-        return no_.configured();
+        return configured_;
       };
 
       /********************************************************************
@@ -217,7 +229,7 @@ namespace ros {
       void requestSyncTime()
       {
         std_msgs::Time t;
-        no_.publish(TopicInfo::ID_TIME, &t);
+        publish(TopicInfo::ID_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -262,7 +274,7 @@ namespace ros {
           if(publishers[i] == 0){ // empty slot
             publishers[i] = &p;
             p.id_ = i+100+MAX_SUBSCRIBERS;
-            p.no_ = &this->no_;
+            p.no_ = this;
             return true;
           }
         }
@@ -305,7 +317,7 @@ namespace ros {
 
       void negotiateTopics()
       {
-        no_.setConfigured(true);
+        configured_ = true;
 
         rosserial_msgs::TopicInfo ti;
         int i;
@@ -318,7 +330,7 @@ namespace ros {
             ti.message_type = (char *) publishers[i]->msg_->getType();
             ti.md5sum = (char *) publishers[i]->msg_->getMD5();
             ti.buffer_size = OUTPUT_SIZE;
-            no_.publish( publishers[i]->getEndpointType(), &ti );
+            publish( publishers[i]->getEndpointType(), &ti );
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -330,10 +342,41 @@ namespace ros {
             ti.message_type = (char *) subscribers[i]->getMsgType();
             ti.md5sum = (char *) subscribers[i]->getMsgMD5();
             ti.buffer_size = INPUT_SIZE;
-            no_.publish( subscribers[i]->getEndpointType(), &ti );
+            publish( subscribers[i]->getEndpointType(), &ti );
           }
         }
       }
+
+      virtual int publish(int id, Msg * msg)
+      {
+        if(!configured_) return 0;
+
+        /* serialize message */
+        int l = msg->serialize(message_out+6);
+
+        /* setup the header */
+        message_out[0] = 0xff;
+        message_out[1] = 0xff;
+        message_out[2] = (unsigned char) id&255;
+        message_out[3] = (unsigned char) id>>8;
+        message_out[4] = (unsigned char) l&255;
+        message_out[5] = ((unsigned char) l>>8);
+
+        /* calculate checksum */
+        int chk = 0;
+        for(int i =2; i<l+6; i++)
+          chk += message_out[i];
+        l += 6;
+        message_out[l++] = 255 - (chk%256);
+
+        if( l <= OUTPUT_SIZE ){
+          hardware_.write(message_out, l);
+          return l;
+        }else{
+          logerror("Message from device dropped: message larger than buffer.");
+        }
+      }
+
 
       /*
        * Logging
@@ -344,7 +387,7 @@ namespace ros {
         rosserial_msgs::Log l;
         l.level= byte;
         l.msg = (char*)msg;
-        this->no_.publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
+        publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
       }
 
     public:
@@ -364,7 +407,6 @@ namespace ros {
         log(rosserial_msgs::Log::FATAL, msg);
       }
 
-
       /*
        * Retrieve Parameters
        */
@@ -377,7 +419,7 @@ namespace ros {
         param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
-        no_.publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
+        publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
         int end_time = hardware_.time();
         while(!param_recieved ){
           spinOnce();

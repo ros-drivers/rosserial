@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_SERVICE_SERVER_H_
-#define ROS_SERVICE_SERVER_H_
+#ifndef _ROS_SERVICE_SERVER_H_
+#define _ROS_SERVICE_SERVER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
 

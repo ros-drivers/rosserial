@@ -147,9 +147,9 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
-        self.parent.send(self.id, data_buffer.getvalue())
-        while self.response == None:
-            pass
+        if self.parent.send(self.id, data_buffer.getvalue()) > 0:
+            while self.response == None:
+                pass
         return self.response
 
     def handlePacket(self, data):
@@ -220,6 +220,9 @@ class SerialClient:
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
         self.services = dict()    # topic:Service
+
+        self.buffer_out = -1
+        self.buffer_in = -1
                 
         self.callbacks = dict()
         # endpoints for creating new pubs/subs
@@ -283,6 +286,16 @@ class SerialClient:
                     rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
                 rospy.sleep(0.001)
 
+    def setPublishSize(self, bytes):
+        if self.buffer_out < 0:
+            self.buffer_out = bytes
+            rospy.loginfo("Note: publish buffer size is %d bytes" % self.buffer_out)
+
+    def setSubscribeSize(self, bytes):
+        if self.buffer_in < 0:
+            self.buffer_in = bytes
+            rospy.loginfo("Note: subscribe buffer size is %d bytes" % self.buffer_in)
+
     def setupPublisher(self, data):
         """ Register a new publisher. """
         try:
@@ -291,6 +304,7 @@ class SerialClient:
             pub = Publisher(msg)
             self.publishers[msg.topic_id] = pub
             self.callbacks[msg.topic_id] = pub.handlePacket
+            self.setPublishSize(msg.buffer_size)
             rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of publisher failed: %s", e)
@@ -302,6 +316,7 @@ class SerialClient:
             msg.deserialize(data)
             sub = Subscriber(msg, self)
             self.subscribers[msg.topic_name] = sub
+            self.setSubscribeSize(msg.buffer_size)
             rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
@@ -311,6 +326,7 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
+            self.setPublishSize(msg.buffer_size)
             try:
                 srv = self.services[msg.topic_name] 
             except:
@@ -325,6 +341,7 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
+            self.setSubscribeSize(msg.buffer_size)
             try:
                 srv = self.services[msg.topic_name] 
             except:
@@ -340,6 +357,7 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
+            self.setPublishSize(msg.buffer_size)
             try:
                 srv = self.services[msg.topic_name] 
             except:
@@ -354,6 +372,7 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
+            self.setSubscribeSize(msg.buffer_size)
             try:
                 srv = self.services[msg.topic_name] 
             except:
@@ -423,8 +442,13 @@ class SerialClient:
         """ Send a message on a particular topic to the device. """
         with self.mutex:
             length = len(msg)
-            checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-            data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
-            data = data + msg + chr(checksum)
-            self.port.write(data)
+            if length > self.buffer_in:
+                rospy.logerr("Message from ROS network dropped: message larger than buffer.")
+                return -1
+            else:
+                checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
+                data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
+                data = data + msg + chr(checksum)
+                self.port.write(data)
+                return length
 
