@@ -49,27 +49,14 @@ import rospy
 
 import os, sys, subprocess, re
 
-ros_types = {
-    'bool'  :   ('bool',           1),
-    'byte'  :   ('unsigned char',  1),
-    'char'  :   ('char',           1),
-    'int8'  :   ('signed char',    1),
-    'uint8' :   ('unsigned char',  1),
-    'int16' :   ('int',            2),
-    'uint16':   ('unsigned int',   2),
-    'int32':    ('long',           4),
-    'uint32':   ('unsigned long',  4),
-    'float32':  ('float',          4)
-}
-
 def type_to_var(ty):
     lookup = {
-        1 : 'unsigned char',
-        2 : 'unsigned int',
-        4 : 'unsigned long'
+        1 : 'uint8_t',
+        2 : 'uint16_t',
+        4 : 'uint32_t',
+        8 : 'uint64_t',
     }
     return lookup[ty]
-
 
 #####################################################################
 # Data Types
@@ -97,27 +84,34 @@ class PrimitiveDataType:
         f.write('      %s %s;\n' % (self.type, self.name) )
 
     def serialize(self, f):
-        #create a clean name
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
-        f.write('      union {\n')
-        f.write('        %s real;\n' % self.type)
-        f.write('        %s base;\n' % type_to_var(self.bytes))
-        f.write('      } u_%s;\n' % cn)
-        f.write('      u_%s.real = this->%s;\n' % (cn,self.name))
-        for i in range(self.bytes):
-            f.write('      *(outbuffer + offset + %d) = (u_%s.base >> (8 * %d)) & 0xFF;\n' % (i, cn, i) )
+        if self.type != type_to_var(self.bytes):
+            f.write('      union {\n')
+            f.write('        %s real;\n' % self.type)
+            f.write('        %s base;\n' % type_to_var(self.bytes))
+            f.write('      } u_%s;\n' % cn)
+            f.write('      u_%s.real = this->%s;\n' % (cn,self.name))
+            for i in range(self.bytes):
+                f.write('      *(outbuffer + offset + %d) = (u_%s.base >> (8 * %d)) & 0xFF;\n' % (i, cn, i) )
+        else:
+            for i in range(self.bytes):
+                f.write('      *(outbuffer + offset + %d) = (this->%s >> (8 * %d)) & 0xFF;\n' % (i, self.name, i) )
         f.write('      offset += sizeof(this->%s);\n' % self.name)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
-        f.write('      union {\n')
-        f.write('        %s real;\n' % self.type)
-        f.write('        %s base;\n' % type_to_var(self.bytes))
-        f.write('      } u_%s;\n' % cn)
-        f.write('      u_%s.base = 0;\n' % cn)
-        for i in range(self.bytes):
-            f.write('      u_%s.base |= ((typeof(u_%s.base)) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,cn,i,i) )
-        f.write('      this->%s = u_%s.real;\n' % (self.name, cn) )
+        if self.type != type_to_var(self.bytes):
+            f.write('      union {\n')
+            f.write('        %s real;\n' % self.type)
+            f.write('        %s base;\n' % type_to_var(self.bytes))
+            f.write('      } u_%s;\n' % cn)
+            f.write('      u_%s.base = 0;\n' % cn)
+            for i in range(self.bytes):
+                f.write('      u_%s.base |= ((%s) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,type_to_var(self.bytes),i,i) )
+            f.write('      this->%s = u_%s.real;\n' % (self.name, cn) )
+        else:
+            for i in range(self.bytes):
+                f.write('      this->%s |= ((%s) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (self.name,self.type,i,i) )
         f.write('      offset += sizeof(this->%s);\n' % self.name)
 
 
@@ -138,11 +132,11 @@ class Float64DataType(PrimitiveDataType):
     
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      long * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
-        f.write('      long exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
+        f.write('      int32_t * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
+        f.write('      int32_t exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
         f.write('      if(exp_%s != 0)\n' % cn)
         f.write('        exp_%s += 1023-127;\n' % cn)
-        f.write('      long sig_%s = *val_%s;\n' % (cn,cn))
+        f.write('      int32_t sig_%s = *val_%s;\n' % (cn,cn))
         f.write('      *(outbuffer + offset++) = 0;\n') # 29 blank bits
         f.write('      *(outbuffer + offset++) = 0;\n')
         f.write('      *(outbuffer + offset++) = 0;\n')
@@ -155,36 +149,17 @@ class Float64DataType(PrimitiveDataType):
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      unsigned long * val_%s = (unsigned long*) &(this->%s);\n' % (cn,self.name))
+        f.write('      uint32_t * val_%s = (uint32_t*) &(this->%s);\n' % (cn,self.name))
         f.write('      offset += 3;\n') # 29 blank bits
-        f.write('      *val_%s = ((unsigned long)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
-        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
-        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
-        f.write('      *val_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
-        f.write('      unsigned long exp_%s = ((unsigned long)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
-        f.write('      exp_%s |= ((unsigned long)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
+        f.write('      *val_%s = ((uint32_t)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
+        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
+        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
+        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
+        f.write('      uint32_t exp_%s = ((uint32_t)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
+        f.write('      exp_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
         f.write('      if(exp_%s !=0)\n' % cn)
         f.write('        *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
         f.write('      if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
-
-
-class Int64DataType(PrimitiveDataType):
-    """ AVR C/C++ has no native 64-bit support. """
-
-    def make_declaration(self, f):
-        f.write('      long %s;\n' % self.name )
-    
-    def serialize(self, f):
-        for i in range(4):
-            f.write('      *(outbuffer + offset++) = (%s >> (8 * %d)) & 0xFF;\n' % (self.name, i) )
-        for i in range(4):
-            f.write('      *(outbuffer + offset++) = (%s > 0) ? 0: 255;\n' % self.name )
-
-    def deserialize(self, f):
-        f.write('      %s = 0;\n' % self.name)
-        for i in range(4):
-            f.write('      %s += ((long)(*(inbuffer + offset++))) >> (8 * %d);\n' % (self.name, i))
-        f.write('      offset += 4;\n')
 
     
 class StringDataType(PrimitiveDataType):
@@ -195,7 +170,7 @@ class StringDataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      long * length_%s = (long *)(outbuffer + offset);\n' % cn)
+        f.write('      uint32_t * length_%s = (uint32_t *)(outbuffer + offset);\n' % cn)
         f.write('      *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
@@ -207,7 +182,7 @@ class StringDataType(PrimitiveDataType):
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
-        f.write('           }\n')
+        f.write('      }\n')
         f.write('      inbuffer[offset+length_%s-1]=0;\n'%cn)
         f.write('      this->%s = (char *)(inbuffer + offset-1);\n' % self.name)
         f.write('      offset += length_%s;\n' % cn)
@@ -218,8 +193,8 @@ class TimeDataType(PrimitiveDataType):
     def __init__(self, name, ty, bytes):
         self.name = name
         self.type = ty
-        self.sec = PrimitiveDataType(name+'.sec','unsigned long',4)
-        self.nsec = PrimitiveDataType(name+'.nsec','unsigned long',4)
+        self.sec = PrimitiveDataType(name+'.sec','uint32_t',4)
+        self.nsec = PrimitiveDataType(name+'.nsec','uint32_t',4)
 
     def make_declaration(self, f):
         f.write('      %s %s;\n' % (self.type, self.name))
@@ -245,7 +220,7 @@ class ArrayDataType(PrimitiveDataType):
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
-            f.write('      unsigned char %s_length;\n' % self.name)
+            f.write('      uint8_t %s_length;\n' % self.name)
             f.write('      %s st_%s;\n' % (self.type, self.name)) # static instance for copy
             f.write('      %s * %s;\n' % (self.type, self.name))
         else:
@@ -259,12 +234,12 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      *(outbuffer + offset++) = 0;\n')
             f.write('      *(outbuffer + offset++) = 0;\n')
             f.write('      *(outbuffer + offset++) = 0;\n')
-            f.write('      for( unsigned char i = 0; i < %s_length; i++){\n' % self.name)
+            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % self.name)
             c.serialize(f)
             f.write('      }\n')
         else:
             f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
-            f.write('      for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)            
             f.write('      }\n')
         
@@ -272,22 +247,41 @@ class ArrayDataType(PrimitiveDataType):
         if self.size == None:
             c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
-            f.write('      unsigned char %s_lengthT = *(inbuffer + offset++);\n' % self.name)
+            f.write('      uint8_t %s_lengthT = *(inbuffer + offset++);\n' % self.name)
             f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
             f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
             f.write('      offset += 3;\n')
             f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
-            f.write('      for( unsigned char i = 0; i < %s_length; i++){\n' % (self.name) )
+            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % (self.name) )
             c.deserialize(f)
             f.write('        memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))                     
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))    
-            f.write('      for( unsigned char i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      uint8_t * %s_val = (uint8_t*) this->%s;\n' % (self.name, self.name))    
+            f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)            
             f.write('      }\n')
+
+
+ros_to_arduino_types = {
+    'bool'    :   ('bool',              1, PrimitiveDataType, []),
+    'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
+    'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
+    'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
+    'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
+    'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
+    'int64'   :   ('int64_t',           4, PrimitiveDataType, []),
+    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
+    'float32' :   ('float',             4, PrimitiveDataType, []),
+    'float64' :   ('float',             4, Float64DataType, []),
+    'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
+    'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
+    'string'  :   ('char*',             0, StringDataType, []),
+    'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
+}
 
 
 #####################################################################
@@ -343,59 +337,26 @@ class Message:
                     type_array_size = None
                 type_name = type_name[0:type_name.find('[')]
 
-            # convert to C/Arduino type if primitive, expand name otherwise
+            # convert to C type if primitive, expand name otherwise
             try:
-                # primitive type
-                cls = PrimitiveDataType
-                code_type = type_name
-                size = 0
-                if type_package:
-                    cls = MessageDataType                    
-                if type_name == 'float64':
-                    cls = Float64DataType   
-                    code_type = 'float'
-                elif type_name == 'time':
-                    cls = TimeDataType
-                    code_type = 'ros::Time'
-                    if "ros/time" not in self.includes:
-                        self.includes.append("ros/time")
-                elif type_name == 'duration':
-                    cls = TimeDataType
-                    code_type = 'ros::Duration'
-                    if "ros/duration" not in self.includes:
-                        self.includes.append("ros/duration")
-                elif type_name == 'string':
-                    cls = StringDataType
-                    code_type = 'char*'
-                elif type_name == 'uint64' or type_name == 'int64':
-                    cls = Int64DataType
-                    code_type = 'long'
-                else:
-                    code_type = ros_types[type_name][0]
-                    size = ros_types[type_name][1]
-                if type_array:
-                    self.data.append( ArrayDataType(name, code_type, size, cls, type_array_size ) )
-                else:
-                    self.data.append( cls(name, code_type, size) )
+                code_type = ros_to_arduino_types[type_name][0]
+                size = ros_to_arduino_types[type_name][1]
+                cls = ros_to_arduino_types[type_name][2]
+                for include in ros_to_arduino_types[type_name][3]:
+                    if include not in self.includes:
+                        self.includes.append(include)
             except:
-                if type_name == 'Header':
-                    self.data.append( MessageDataType(name, 'std_msgs::Header', 0) )
-                    if "std_msgs/Header" not in self.includes:
-                        self.includes.append("std_msgs/Header")
-                else:
-                    if type_package == None or type_package == package:
-                        type_package = package  
-                        cls = MessageDataType
-                        if self.package+"/"+type_name not in self.includes:
-                            self.includes.append(self.package+"/"+type_name)
-                    if type_package+"/"+type_name not in self.includes:
-                        self.includes.append(type_package+"/"+type_name)
-                    if type_array:
-                        self.data.append( ArrayDataType(name, type_package + "::" + type_name, size, cls, type_array_size) )
-                    else:
-                        self.data.append( MessageDataType(name, type_package + "::" + type_name, 0) )
-        #print ""
-
+                if type_package == None:
+                    type_package = self.package
+                if type_package+"/"+type_name not in self.includes:
+                    self.includes.append(type_package+"/"+type_name)
+                cls = MessageDataType
+                code_type = type_package + "::" + type_name
+                size = 0
+            if type_array:
+                self.data.append( ArrayDataType(name, code_type, size, cls, type_array_size ) )
+            else:
+                self.data.append( cls(name, code_type, size) )
 
     def _write_serializer(self, f):
                 # serializer   
@@ -596,7 +557,6 @@ if __name__=="__main__":
     print "\nExporting to %s" % path
 
     # make libraries
-    packages = sys.argv[2:]
-    for msg_package in packages:
-        MakeLibrary(msg_package, path)
+    for package in sys.argv[2:]:
+        MakeLibrary(package, path)
 

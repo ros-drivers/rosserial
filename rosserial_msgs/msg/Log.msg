@@ -1,10 +1,10 @@
 
 #ROS Logging Levels
-byte DEBUG=0
-byte INFO=1
-byte WARN=2
-byte ERROR=3
-byte FATAL=4
+uint8 DEBUG=0
+uint8 INFO=1
+uint8 WARN=2
+uint8 ERROR=3
+uint8 FATAL=4
 
-byte level
+uint8 level
 string msg
