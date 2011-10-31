@@ -112,7 +112,7 @@ class Subscriber:
         if self.message._md5sum == topic_info.md5sum:
             rospy.Subscriber(self.topic, self.message, self.callback)
         else:
-            raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5_checksum)
+            raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
 
     def callback(self, msg):
         """ Forward message to serial device. """
@@ -333,7 +333,10 @@ class SerialClient:
                 srv = ServiceServer(msg, self)
                 rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
                 self.services[msg.topic_name] = srv
-            self.callbacks[msg.topic_id] = srv.handlePacket
+            if srv.mres._md5sum == msg.md5sum:
+                self.callbacks[msg.topic_id] = srv.handlePacket
+            else:
+                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
     def setupServiceServerSubscriber(self, data):
@@ -348,7 +351,10 @@ class SerialClient:
                 srv = ServiceServer(msg, self)
                 rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
                 self.services[msg.topic_name] = srv
-            srv.id = msg.topic_id
+            if srv.mreq._md5sum == msg.md5sum:
+                srv.id = msg.topic_id
+            else:
+                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
 
@@ -364,7 +370,10 @@ class SerialClient:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
                 self.services[msg.topic_name] = srv
-            self.callbacks[msg.topic_id] = srv.handlePacket
+            if srv.mreq._md5sum == msg.md5sum:
+                self.callbacks[msg.topic_id] = srv.handlePacket
+            else:
+                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
     def setupServiceClientSubscriber(self, data):
@@ -379,7 +388,10 @@ class SerialClient:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
                 self.services[msg.topic_name] = srv
-            srv.id = msg.topic_id
+            if srv.mres._md5sum == msg.md5sum:
+                srv.id = msg.topic_id
+            else:
+                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
 

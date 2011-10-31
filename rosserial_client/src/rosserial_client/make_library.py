@@ -44,7 +44,7 @@ rosrun rosserial_client make_library.py <output_path> pkg_name [pkg2 pkg3 ...]
 """
 
 import roslib; roslib.load_manifest("rosserial_client")
-import roslib.gentools
+import roslib.gentools, roslib.srvs
 import rospy
 
 import os, sys, subprocess, re
@@ -433,7 +433,7 @@ class Message:
         f.write('#endif')
 
 class Service:
-    def __init__(self, name, package, definition):
+    def __init__(self, name, package, definition, md5req, md5res):
         """ 
         @param name -  name of service
         @param package - name of service package
@@ -452,8 +452,8 @@ class Service:
         self.req_def = definition[0:sep_line]
         self.resp_def = definition[sep_line+1:]
         
-        self.req = Message(name+"Request", package, self.req_def, "0")
-        self.resp = Message(name+"Response", package, self.resp_def, "0")
+        self.req = Message(name+"Request", package, self.req_def, md5req)
+        self.resp = Message(name+"Response", package, self.resp_def, md5res)
         
     def make_header(self, f):
         f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
@@ -527,9 +527,12 @@ def MakeLibrary(package, output_path):
                 file = pkg_dir + "/srv/" + f
                 # add to list of messages
                 print "%s," % f[0:-4],
+                definition, service = roslib.srvs.load_from_file(file)
                 definition = open(file).readlines()
+                md5req = roslib.gentools.compute_md5(roslib.gentools.get_dependencies(service.request, package))
+                md5res = roslib.gentools.compute_md5(roslib.gentools.get_dependencies(service.response, package))
                 #md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
-                messages.append( Service(f[0:-4], package, definition ) )
+                messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
         print "\n"
 
     # generate for each message
