@@ -45,6 +45,7 @@ rosrun rosserial_client make_library.py <output_path> pkg_name [pkg2 pkg3 ...]
 
 import roslib; roslib.load_manifest("rosserial_client")
 import roslib.gentools, roslib.srvs
+import roslib.rospack
 import rospy
 
 import os, sys, subprocess, re
@@ -70,7 +71,7 @@ class EnumerationType:
         self.value = value
     
     def make_declaration(self, f):
-        f.write('      enum { %s = %s };\n' % (self.name, str(self.value)))    
+        f.write('      enum { %s = %s };\n' % (self.name, self.value))    
 
 class PrimitiveDataType:
     """ Our datatype is a C/C++ primitive. """    
@@ -308,7 +309,10 @@ class Message:
             if line.find("#") > -1:
                 line = line[0:line.find("#")]
             if line.find("=") > -1:
-                value = int(line[line.find("=")+1:])
+                try:
+                    value = line[line.find("=")+1:]
+                except:
+                    value = '"' + line[line.find("=")+1:] + '"';
                 line = line[0:line.find("=")]
             
             # find package/class name   
@@ -500,14 +504,15 @@ class Service:
 # Make a Library
 
 def MakeLibrary(package, output_path):
-    print "\nExporting " + package + "\n", 
+    print "Exporting " + package + "\n", 
 
     pkg_dir = roslib.packages.get_pkg_dir(package)
         
-    sys.stdout.write('Messages:\n    ')
+    sys.stdout.write('  Messages:')
     # find the messages in this package
     messages = list()
     if os.path.exists(pkg_dir+"/msg"):
+        sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/msg"):
             if f.endswith(".msg"):
                 file = pkg_dir + "/msg/" + f
@@ -516,12 +521,13 @@ def MakeLibrary(package, output_path):
                 definition = open(file).readlines()
                 md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
                 messages.append( Message(f[0:-4], package, definition, md5sum) )
-        print "\n"
+    print "\n"
      
-    sys.stdout.write('Services:\n    ')
+    sys.stdout.write('  Services:')
     # find the services in this package
     services = list()
     if (os.path.exists(pkg_dir+"/srv/")):
+        sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/srv"):
             if f.endswith(".srv"):
                 file = pkg_dir + "/srv/" + f
@@ -531,10 +537,9 @@ def MakeLibrary(package, output_path):
                 definition = open(file).readlines()
                 md5req = roslib.gentools.compute_md5(roslib.gentools.get_dependencies(service.request, package))
                 md5res = roslib.gentools.compute_md5(roslib.gentools.get_dependencies(service.response, package))
-                #md5sum = roslib.gentools.compute_md5(roslib.gentools.get_file_dependencies(file)) 
                 messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
-        print "\n"
-
+    print "\n"
+    
     # generate for each message
     output_path = output_path + "/" + package
     for msg in messages:
@@ -544,6 +549,14 @@ def MakeLibrary(package, output_path):
         msg.make_header(header)
         header.close()
 
+
+def add_depends(packages, package):
+    depend = [package] + roslib.rospack.rospack_depends(package)
+    for p in depend:
+        if not p in packages:
+            packages.append(p)
+            packages = add_depends(packages, p)
+    return packages
     
 if __name__=="__main__":
     
@@ -559,7 +572,12 @@ if __name__=="__main__":
     path += "/ros_lib"
     print "\nExporting to %s" % path
 
+    packages = list()
     # make libraries
     for package in sys.argv[2:]:
+        packages = add_depends(packages, package)
+
+    print packages
+    for package in packages:
         MakeLibrary(package, path)
 
