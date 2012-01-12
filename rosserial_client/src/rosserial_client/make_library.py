@@ -111,8 +111,9 @@ class PrimitiveDataType:
                 f.write('      u_%s.base |= ((%s) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,type_to_var(self.bytes),i,i) )
             f.write('      this->%s = u_%s.real;\n' % (self.name, cn) )
         else:
-            for i in range(self.bytes):
-                f.write('      this->%s |= ((%s) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (self.name,self.type,i,i) )
+            f.write('      this->%s =  ((%s) (*(inbuffer + offset)));\n' % (self.name,self.type) )
+            for i in range(self.bytes-1):
+                f.write('      this->%s |= ((%s) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (self.name,self.type,i+1,i+1) )
         f.write('      offset += sizeof(this->%s);\n' % self.name)
 
 
