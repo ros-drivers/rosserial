@@ -329,8 +329,6 @@ namespace ros {
 
       void negotiateTopics()
       {
-        configured_ = true;
-
         rosserial_msgs::TopicInfo ti;
         int i;
         for(i = 0; i < MAX_PUBLISHERS; i++)
@@ -357,11 +355,12 @@ namespace ros {
             publish( subscribers[i]->getEndpointType(), &ti );
           }
         }
+        configured_ = true;
       }
 
       virtual int publish(int id, const Msg * msg)
       {
-        if(!configured_) return 0;
+        if(id > 100 && !configured_) return 0;
 
         /* serialize message */
         int l = msg->serialize(message_out+6);
