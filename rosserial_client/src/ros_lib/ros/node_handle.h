@@ -360,7 +360,7 @@ namespace ros {
 
       virtual int publish(int id, const Msg * msg)
       {
-        if(id > 100 && !configured_) return 0;
+        if(id >= 100 && !configured_) return 0;
 
         /* serialize message */
         int l = msg->serialize(message_out+6);
