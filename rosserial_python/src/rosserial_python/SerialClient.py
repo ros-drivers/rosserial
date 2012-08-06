@@ -39,6 +39,7 @@ import roslib; roslib.load_manifest("rosserial_python")
 import rospy
 
 import thread
+import multiprocessing
 from serial import *
 import StringIO
 
@@ -46,6 +47,7 @@ from std_msgs.msg import Time
 from rosserial_msgs.msg import *
 from rosserial_msgs.srv import *
 
+import socket
 import time
 import struct
 
@@ -189,7 +191,99 @@ class ServiceClient:
         data_buffer = StringIO.StringIO()
         resp.serialize(data_buffer)
         self.parent.send(self.id, data_buffer.getvalue())
+
+class RosSerialServer:
+    """
+        RosSerialServer waits for a socket connection then passes itself, forked as a
+        new process, to SerialClient which uses it as a serial port. It continues to listen
+        for additional connections. Each forked process is a new ros node, and proxies ros
+        operations (e.g. publish/subscribe) from its connection to the rest of ros. 
+    """
+    def __init__(self, tcp_portnum, fork_server=False):  
+        print "Fork_server is: ", fork_server
+        self.tcp_portnum = tcp_portnum
+        self.fork_server = fork_server
+                
+    def listen(self):
+        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #bind the socket to a public host, and a well-known port
+        self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
+        self.serversocket.listen(1)
         
+        while True:
+            #accept connections
+            print "waiting for socket connection"
+            (clientsocket, address) = self.serversocket.accept()
+
+            #now do something with the clientsocket
+            rospy.loginfo("Established a socket connection from %s on port %s" % (address))
+            self.socket = clientsocket
+            self.isConnected = True
+
+            if (self.fork_server == True):	# if configured to launch server in a separate process
+                rospy.loginfo("Forking a socket server process")
+                process = multiprocessing.Process(target=self.startSocketServer, args=(address))
+                process.daemon = True
+                process.start()
+                rospy.loginfo("launched startSocketServer")
+            else:
+                rospy.init_node("serial_node")
+                rospy.loginfo("ROS Serial Python Node")
+                rospy.loginfo("calling startSerialClient")
+                self.startSerialClient()
+                rospy.loginfo("startSerialClient() exited")
+
+    def startSerialClient(self):
+        client = SerialClient(self)
+        try:
+            client.run()
+        except KeyboardInterrupt:
+            pass
+        except RuntimeError:
+            rospy.loginfo("RuntimeError exception caught")
+            self.isConnected = False
+        except socket.error:
+            rospy.loginfo("socket.error exception caught") 
+            self.isConnected = False
+        finally:
+            self.socket.close()
+            #pass
+
+    def startSocketServer(self, port, address):
+        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % (address,))
+        rospy.init_node("serial_node_%r" % (address,))
+        self.startSerialClient()
+                        
+    def flushInput(self):
+         pass
+
+    def write(self, data):
+        if (self.isConnected == False):
+            return
+        length = len(data)
+        totalsent = 0
+
+        while totalsent < length:
+            sent = self.socket.send(data[totalsent:])
+            if sent == 0:
+                raise RuntimeError("RosSerialServer.write() socket connection broken")
+            totalsent = totalsent + sent
+
+    def read(self, rqsted_length):
+        self.msg = ''
+        if (self.isConnected == False):
+            return self.msg
+
+        while len(self.msg) < rqsted_length:
+            chunk = self.socket.recv(rqsted_length - len(self.msg))
+            if chunk == '':
+                raise RuntimeError("RosSerialServer.read() socket connection broken")
+            self.msg = self.msg + chunk
+        return self.msg
+
+    def close(self):
+        self.port.close()
+
 
 class SerialClient:
     """ 
@@ -202,6 +296,7 @@ class SerialClient:
 
         self.lastsync = rospy.Time.now()
         self.timeout = timeout
+        #import pdb; pdb.set_trace()
 
         if port== None:
             # no port specified, listen for any new port?
@@ -257,6 +352,7 @@ class SerialClient:
                 self.lastsync = rospy.Time.now()    
             
             flag = [0,0]
+            #import pdb; pdb.set_trace()
             flag[0]  = self.port.read(1)
             if (flag[0] != '\xff'):
                 continue

@@ -37,25 +37,48 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
 import roslib; roslib.load_manifest("rosserial_python")
 import rospy
-from rosserial_python import SerialClient
+from rosserial_python import SerialClient, RosSerialServer
+import multiprocessing
 
 import sys
-
+   
 if __name__=="__main__":
-    rospy.init_node("serial_node")
-    rospy.loginfo("ROS Serial Python Node")
 
     port_name = rospy.get_param('~port','/dev/ttyUSB0')
     baud = int(rospy.get_param('~baud','57600'))
+    tcp_portnum = int(rospy.get_param('~tcp_port', '11411'))
+    fork_server = rospy.get_param('~fork_server', True)
 
     sys.argv = rospy.myargv(argv=sys.argv) 
+    #import pdb; pdb.set_trace()
     
     if len(sys.argv) == 2 :
         port_name  = sys.argv[1]
-    rospy.loginfo("Connected on %s at %d baud" % (port_name,baud) )
-    client = SerialClient(port_name, baud)
-    try:
-        client.run()
-    except KeyboardInterrupt:
-        pass
+    if len(sys.argv) == 3 :
+        tcp_portnum = int(sys.argv[2])
+    
+    if port_name == "tcp" :
+        server = RosSerialServer(tcp_portnum, fork_server)
+        rospy.loginfo("Waiting for socket connections on port %d" % tcp_portnum)
+        try:
+            server.listen()
+        except KeyboardInterrupt:
+            rospy.loginfo("got keyboard interrupt")
+        finally:
+            rospy.loginfo("Shutting down")
+            for process in multiprocessing.active_children():
+                rospy.loginfo("Shutting down process %r", process)
+                process.terminate()
+                process.join()
+            rospy.loginfo("All done")
+
+    else :          # Use serial port 
+        rospy.init_node("serial_node")
+        rospy.loginfo("ROS Serial Python Node")
+        rospy.loginfo("Connected on %s at %d baud" % (port_name,baud) )
+        client = SerialClient(port_name, baud)
+        try:
+            client.run()
+        except KeyboardInterrupt:
+            pass
 

@@ -1,0 +1,16 @@
+<package>
+  <description brief="Libraries and examples for ROSserial usage on Embedded Linux Enviroments"/>
+  <author>Paul Bouchier</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rosserial_embeddedlinux</url>  
+
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="rosserial_client"/>
+  
+</package>
+
+
