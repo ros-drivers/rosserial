@@ -1,8 +1,7 @@
 /*
  * VEXProMotor13Subscribe.cpp
- *
- *  Created on: Jul 12, 2012
- *      Author: bouchier
+ * Control motor 13 speed by publishing the desired speed on a ros topic with e.g.
+ * $ rostopic pub my_topic std_msgs/Int32 120
  */
 
 #include <ros.h>
