@@ -46,8 +46,8 @@ if __name__=="__main__":
 
     port_name = rospy.get_param('~port','/dev/ttyUSB0')
     baud = int(rospy.get_param('~baud','57600'))
-    tcp_portnum = int(rospy.get_param('~tcp_port', '11411'))
-    fork_server = rospy.get_param('~fork_server', True)
+    tcp_portnum = int(rospy.get_param('/rosserial_embeddedlinux/tcp_port', '11411'))
+    fork_server = rospy.get_param('/rosserial_embeddedlinux/fork_server', True)
 
     sys.argv = rospy.myargv(argv=sys.argv) 
     #import pdb; pdb.set_trace()
