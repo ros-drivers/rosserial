@@ -1,10 +1,10 @@
 /*
- * VEXProSonar1Publish.cpp
+ * VEXProRangePublish.cpp
  *
  *  Created on: Jul 12, 2012
  *      Author: bouchier
  *
- *  Publish the range from a Sonar connected to digital 1 (Input) &
+ *  Publish the range from an ultrasonic ranging sensor connected to digital 1 (Input) &
  *  digital 2 (Output) on topic sonar1
  */
 

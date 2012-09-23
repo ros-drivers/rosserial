@@ -12,6 +12,10 @@
 /*
  * Control motor 13 speed by publishing the desired speed on a ros topic with e.g.
  * $ rostopic pub my_topic std_msgs/Int32 120
+ * The range of speeds is -255 to +255 (corresponding to full reverse to full forward).
+ * Publish negative speeds using the syntax below:
+ * $ rostopic pub my_topic std_msgs/Int32 -- -120
+ * (This construct tells the shell to feed everything after -- directly to rostopic.)
  */
 
 ros::NodeHandle  nh;
