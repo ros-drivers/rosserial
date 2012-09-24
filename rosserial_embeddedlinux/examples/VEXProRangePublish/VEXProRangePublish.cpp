@@ -18,7 +18,7 @@ ros::NodeHandle  nh;
 std_msgs::Int32 range;
 ros::Publisher sonar1("sonar1", &range);
 
-char *rosSrvrIp = "192.168.1.101";
+char *rosSrvrIp = "192.168.11.9";
 
 #define USPI 150
 #define BIAS 300
@@ -88,9 +88,7 @@ int main()
       sleep(1);		// now really sleep a second
 	  sonar1.publish( &range );
 	  nh.spinOnce();
-
     }
-
 }
 
 

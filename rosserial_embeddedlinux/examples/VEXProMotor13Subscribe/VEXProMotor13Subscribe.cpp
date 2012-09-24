@@ -20,7 +20,7 @@
 
 ros::NodeHandle  nh;
 CQEMotorUser &motor = CQEMotorUser::GetRef();
-char *rosSrvrIp = "192.168.15.149";
+char *rosSrvrIp = "192.168.11.9";
 
 void messageCb(const std_msgs::Int32& motor13_msg){
 	int speed = motor13_msg.data;

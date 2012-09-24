@@ -7,8 +7,8 @@
  *  digital 2 (Output) on topic sonar1. Control motor 13 speed by
  *  publishing the desired speed on a ros topic with e.g.
  * $ rostopic pub my_topic std_msgs/Int32 120.
- * Drives a servo or motor on VEXPro motor1 connection to the requested value: 0 - 255
- *  that is received on subscribed topic servo1
+ * Drives the motor on VEXPro motor13 connection to the requested value: -255 to +255
+ *  that is received on subscribed topic motor1
  *
  * Note: connector labeled "INPUT" on sonar sensor goes to
  * digital 1 (bit 0), and connector labeled "OUTPUT" goes to
@@ -22,16 +22,14 @@
 #include <unistd.h>
 #include <qegpioint.h>
 #include <qemotoruser.h>
-#include <qeservo.h>
 
 ros::NodeHandle  nh;
 std_msgs::Int32 range;
 ros::Publisher sonar1("sonar1", &range);
 CQEMotorUser &motor = CQEMotorUser::GetRef();	// motor singleton
 CQEGpioInt &gpio = CQEGpioInt::GetRef();		// GPIO singleton
-CQEServo &servo = CQEServo::GetRef();			// servo singleton
 
-char *rosSrvrIp = "192.168.1.101";
+char *rosSrvrIp = "192.168.11.9";
 
 #define USPI 150
 #define BIAS 300
@@ -45,16 +43,6 @@ void motorCb(const std_msgs::Int32& motor13_msg){
     motor.SetPWM(0, speed);
 }
 ros::Subscriber<std_msgs::Int32> motorSub("motor13", motorCb );
-
-/*
- * Servo callback - called when new servo position is published
- */
-void servoCb(const std_msgs::Int32& servo1_msg){
-	int position = servo1_msg.data;
-	printf("Received subscribed servo position %d\n", position);
-	servo.SetCommand(0, position);
-}
-ros::Subscriber<std_msgs::Int32> servoSub("servo1", servoCb );
 
 /*
  * Calculate difference in usec between sonar start & end timevals
@@ -104,7 +92,6 @@ int main()
 	nh.initNode(rosSrvrIp);
 	nh.advertise(sonar1);	// advertise sonar range topic
 	nh.subscribe(motorSub);		// subscribe to motor speed topic
-	nh.subscribe(servoSub);		// subscribe to servo position
 
 	// reset bit 0, set as output for sonar trigger
 	gpio.SetData(0x0000);
