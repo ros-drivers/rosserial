@@ -1,5 +1,5 @@
 /*
- * VEXProSonarMotorServo.cpp
+ * VEXProRangeMotorLoop.cpp
  *
  *  Created on: Jul 13, 2012
  *      Author: bouchier
