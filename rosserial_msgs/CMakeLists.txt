@@ -1,12 +1,18 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(rosserial_msgs)
 
-rosbuild_init()
+find_package(catkin REQUIRED COMPONENTS message_generation)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+add_message_files(FILES
+                  Log.msg
+                  TopicInfo.msg
+                 )
 
-rosbuild_genmsg()
-rosbuild_gensrv()
+add_service_files(FILES
+                  RequestParam.srv
+                 )
+
+generate_messages()
+
+catkin_package(CATKIN_DEPENDS message_runtime)
+
