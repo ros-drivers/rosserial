@@ -497,7 +497,7 @@ class Service:
 
         f.write('}\n')
 
-        f.write('#endif')
+        f.write('#endif\n')
         
    
         
