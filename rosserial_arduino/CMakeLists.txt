@@ -1,38 +1,35 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(rosserial_arduino)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS message_generation)
 
-rosbuild_init()
+add_message_files(FILES
+                  Adc.msg
+                 )
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+add_service_files(FILES
+                  Test.srv
+                 )
 
-#uncomment if you have defined messages
-rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
+generate_messages()
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+catkin_package(CATKIN_DEPENDS message_runtime)
 
-file(MAKE_DIRECTORY libraries/ros_lib)
-add_custom_target( make_libraries ALL
-    COMMAND cp -r ./src/ros_lib/* libraries/ros_lib/
-    COMMAND cp -r ../rosserial_client/src/ros_lib/* libraries/ros_lib/
-    COMMAND ../rosserial_client/src/rosserial_client/make_library.py libraries std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs rosserial_msgs tf rosserial_arduino
-    WORKING_DIRECTORY ../
+#add_custom_target( make_libraries ALL
+#    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../rosserial_client/src/rosserial_client/make_library.py ${CATKIN_DEVEL_PREFIX}/#libraries std_msgs diagnostic_msgs geometry_msgs nav_msgs sensor_msgs rosserial_msgs tf rosserial_arduino
+#)
+
+#install(DIRECTORY libraries
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#)
+
+install(DIRECTORY src/ros_lib
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/libraries
 )
+
+install(DIRECTORY ../rosserial_client/src/ros_lib
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/libraries
+)
+
+
+
