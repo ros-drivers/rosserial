@@ -86,5 +86,5 @@ rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
 shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
 
 # generate messages
-rosserial_generate(rospack, path)
+rosserial_generate(rospack, path, ROS_TO_EMBEDDED_TYPES)
 
