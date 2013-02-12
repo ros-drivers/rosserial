@@ -7,7 +7,24 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It is in the proce
  * Moved to catkin build system 
  * Moved rosserial_xbee to experimential stack
  * Created new rosserial metapackage, with depends only on python, client and msgs.
- * rosserial_arduino and rosserial_embeddedlinux are not generating messages right now, will be fixed shortly.
  * Closing tickets:
    * kforge #77: missing newline
    * kforge #78: WProgram.h name
+ * New message generation and workflow:
+   * no longer uses roslib.rospack, or roslib.gentools (and is way, WAY faster)
+   * messages are no longer built at built-time (yeah, sounds ridiculous, but is true, see below for new workflow)
+   * beginnings of easier porting to new platforms (the lookup table is now found in architecture-dependent packages, etc)
+
+## Usage/Workflow
+Workflow is a bit different from in the past. Rather than running the library generator over each package you want to use, you run it once and generate libraries for all installed messages:
+
+      cd <ws>/src
+      git clone https://github.com/ros-drivers/rosserial
+      cd <ws>
+      catkin_make
+      catkin_make install
+      source <ws>/install/setup.bash
+      cd <sketchbook>/libraries
+      rosrun rosserial_arduino make_libraries.py .
+
+Note: currently you will HAVE to run catkin_make install, otherwise portions of the ros_lib directory will be missing. This will hopefully be fixed soon. Also note: you may have to delete <sketchbook>/libraries/ros_lib in order to regenerate as its existence may cause an error.
