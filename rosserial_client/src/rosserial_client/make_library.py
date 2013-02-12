@@ -264,6 +264,7 @@ class ArrayDataType(PrimitiveDataType):
 
 class Message:
     """ Parses message definitions into something we can export. """
+    global ROS_TO_EMBEDDED_TYPES
 
     def __init__(self, name, package, definition, md5):
 
@@ -544,7 +545,11 @@ def get_dependency_sorted_package_list(rospack):
     dependency_list.reverse()
     return dependency_list
 
-def rosserial_generate(rospack, path):
+def rosserial_generate(rospack, path, mapping):
+    # horrible hack -- make this die
+    global ROS_TO_EMBEDDED_TYPES
+    ROS_TO_EMBEDDED_TYPES = mapping
+
     # find and sort all packages
     pkgs = get_dependency_sorted_package_list(rospack)
 
