@@ -16,14 +16,14 @@ generate_messages()
 catkin_package(CATKIN_DEPENDS message_runtime)
 
 install(DIRECTORY src/ros_lib
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/libraries
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
 install(DIRECTORY ../rosserial_client/src/ros_lib
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/libraries
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
-install(PROGRAMS src/rosserial_arduino/make_library.py
+install(PROGRAMS src/rosserial_arduino/make_libraries.py
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
