@@ -52,7 +52,9 @@ import shutil
 
 ROS_TO_EMBEDDED_TYPES = {
     'bool'    :   ('bool',              1, PrimitiveDataType, []),
+    'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
     'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'char'    :   ('uint8_t',           1, PrimitiveDataType, []),
     'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
     'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
     'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
