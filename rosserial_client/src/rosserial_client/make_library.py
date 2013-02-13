@@ -127,7 +127,7 @@ class AVR_Float64DataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      int32_t * val_%s = (long *) &(this->%s);\n' % (cn,self.name))
+        f.write('      int32_t * val_%s = (int32_t *) &(this->%s);\n' % (cn,self.name))
         f.write('      int32_t exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
         f.write('      if(exp_%s != 0)\n' % cn)
         f.write('        exp_%s += 1023-127;\n' % cn)
