@@ -439,10 +439,10 @@ namespace ros {
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        int end_time = hardware_.time();
+        int end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
-          if (end_time > hardware_.time()) return false;
+          if (hardware_.time() > end_time) return false;
         }
         return true;
       }

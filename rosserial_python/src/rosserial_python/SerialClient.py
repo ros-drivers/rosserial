@@ -505,10 +505,16 @@ class SerialClient:
         req = RequestParamRequest()
         req.deserialize(data)
         resp = RequestParamResponse()
-        param = rospy.get_param(req.name)
+        try:
+            param = rospy.get_param(req.name)
+        except KeyError:
+            rospy.logerr("Parameter %s does not exist"%req.name)
+            return
+
         if param == None:
             rospy.logerr("Parameter %s does not exist"%req.name)
             return
+
         if (type(param) == dict):
             rospy.logerr("Cannot send param %s because it is a dictionary"%req.name)
             return
@@ -526,7 +532,6 @@ class SerialClient:
             resp.floats=param
         if (t == str):
             resp.strings = param
-        print resp
         data_buffer = StringIO.StringIO()
         resp.serialize(data_buffer)
         self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer.getvalue())
