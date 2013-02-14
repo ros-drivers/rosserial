@@ -42,7 +42,6 @@ requires the location of your project folder.
 rosrun rosserial_embeddedlinux make_libraries.py <output_path>
 """
 
-import roslib; roslib.load_manifest(THIS_PACKAGE)
 import rospkg
 import rosserial_client
 from rosserial_client.make_library import *
