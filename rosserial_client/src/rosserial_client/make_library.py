@@ -35,7 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("rosserial_client")
+import roslib
 import roslib.srvs
 import roslib.message
 import rospkg
