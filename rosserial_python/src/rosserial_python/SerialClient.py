@@ -35,7 +35,6 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("rosserial_python")
 import rospy
 
 import thread
@@ -47,7 +46,7 @@ from std_msgs.msg import Time
 from rosserial_msgs.msg import *
 from rosserial_msgs.srv import *
 
-import diagnostic_msgs
+import diagnostic_msgs.msg
 
 import socket
 import time
