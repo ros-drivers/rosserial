@@ -47,6 +47,8 @@ from std_msgs.msg import Time
 from rosserial_msgs.msg import *
 from rosserial_msgs.srv import *
 
+import diagnostic_msgs
+
 import socket
 import time
 import struct
@@ -76,13 +78,13 @@ def load_message(package, message):
     return getattr(m2, message)
 
 class Publisher:
-    """ 
+    """
         Publisher forwards messages from the serial device to ROS.
     """
     def __init__(self, topic_info):
-        """ Create a new publisher. """ 
+        """ Create a new publisher. """
         self.topic = topic_info.topic_name
-        
+
         # find message type
         package, message = topic_info.message_type.split('/')
         self.message = load_message(package, message)
@@ -90,7 +92,7 @@ class Publisher:
             self.publisher = rospy.Publisher(self.topic, self.message)
         else:
             raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
-    
+
     def handlePacket(self, data):
         """ Forward message to ROS network. """
         m = self.message()
@@ -99,7 +101,7 @@ class Publisher:
 
 
 class Subscriber:
-    """ 
+    """
         Subscriber forwards messages from ROS to the serial device.
     """
 
@@ -107,7 +109,7 @@ class Subscriber:
         self.topic = topic_info.topic_name
         self.id = topic_info.topic_id
         self.parent = parent
-        
+
         # find message type
         package, message = topic_info.message_type.split('/')
         self.message = load_message(package, message)
@@ -124,14 +126,14 @@ class Subscriber:
 
 
 class ServiceServer:
-    """ 
+    """
         ServiceServer responds to requests from ROS.
     """
 
     def __init__(self, topic_info, parent):
         self.topic = topic_info.topic_name
         self.parent = parent
-        
+
         # find message type
         package, service = topic_info.message_type.split('/')
         s = load_pkg_module(package, 'srv')
@@ -162,14 +164,14 @@ class ServiceServer:
 
 
 class ServiceClient:
-    """ 
+    """
         ServiceServer responds to requests from ROS.
     """
 
     def __init__(self, topic_info, parent):
         self.topic = topic_info.topic_name
         self.parent = parent
-        
+
         # find message type
         package, service = topic_info.message_type.split('/')
         s = load_pkg_module(package, 'srv')
@@ -197,19 +199,19 @@ class RosSerialServer:
         RosSerialServer waits for a socket connection then passes itself, forked as a
         new process, to SerialClient which uses it as a serial port. It continues to listen
         for additional connections. Each forked process is a new ros node, and proxies ros
-        operations (e.g. publish/subscribe) from its connection to the rest of ros. 
+        operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
-    def __init__(self, tcp_portnum, fork_server=False):  
+    def __init__(self, tcp_portnum, fork_server=False):
         print "Fork_server is: ", fork_server
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
-                
+
     def listen(self):
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
         self.serversocket.listen(1)
-        
+
         while True:
             #accept connections
             print "waiting for socket connection"
@@ -243,7 +245,7 @@ class RosSerialServer:
             rospy.loginfo("RuntimeError exception caught")
             self.isConnected = False
         except socket.error:
-            rospy.loginfo("socket.error exception caught") 
+            rospy.loginfo("socket.error exception caught")
             self.isConnected = False
         finally:
             self.socket.close()
@@ -253,7 +255,7 @@ class RosSerialServer:
         rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % (address,))
         rospy.init_node("serial_node_%r" % (address,))
         self.startSerialClient()
-                        
+     
     def flushInput(self):
          pass
 
@@ -286,7 +288,7 @@ class RosSerialServer:
 
 
 class SerialClient:
-    """ 
+    """
         ServiceServer responds to requests from the serial device.
     """
 
@@ -294,9 +296,11 @@ class SerialClient:
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
 
-        self.lastsync = rospy.Time.now()
+        self.lastsync = rospy.Time(0)
+        self.lastsync_lost = rospy.Time(0)
         self.timeout = timeout
-        #import pdb; pdb.set_trace()
+
+        self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
 
         if port== None:
             # no port specified, listen for any new port?
@@ -306,19 +310,24 @@ class SerialClient:
             self.port=port
         else:
             # open a specific port
-            self.port = Serial(port, baud, timeout=self.timeout*0.5)
-        
+            try:
+                self.port = Serial(port, baud, timeout=self.timeout*0.5)
+            except SerialException as e:
+                rospy.logerr("Error opening serial: %s", e)
+                rospy.signal_shutdown("Error opening serial: %s" % e)
+                raise SystemExit
+
         self.port.timeout = 0.01  # Edit the port timeout
-        
+
         time.sleep(0.1)           # Wait for ready (patch for Uno)
-        
+
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
         self.services = dict()    # topic:Service
 
         self.buffer_out = -1
         self.buffer_in = -1
-                
+
         self.callbacks = dict()
         # endpoints for creating new pubs/subs
         self.callbacks[TopicInfo.ID_PUBLISHER] = self.setupPublisher
@@ -348,16 +357,18 @@ class SerialClient:
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 rospy.logerr("Lost sync with device, restarting...")
+                self.lastsync_lost = rospy.Time.now()
+                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
                 self.requestTopics()
-                self.lastsync = rospy.Time.now()    
-            
+                self.lastsync = rospy.Time.now()
+
             flag = [0,0]
-            #import pdb; pdb.set_trace()
             flag[0]  = self.port.read(1)
             if (flag[0] != '\xff'):
                 continue
             flag[1] = self.port.read(1)
             if ( flag[1] != '\xff'):
+                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Failed Packet Flags")
                 rospy.loginfo("Failed Packet Flags ")
                 continue
             # topic id (2 bytes)
@@ -365,10 +376,11 @@ class SerialClient:
             if (len(header) != 4):
                 #self.port.flushInput()
                 continue
-            
+
             topic_id, msg_length = struct.unpack("<hh", header)
             msg = self.port.read(msg_length)
             if (len(msg) != msg_length):
+                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
                 #self.port.flushInput()
                 continue
@@ -404,7 +416,7 @@ class SerialClient:
             rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of publisher failed: %s", e)
-            
+
     def setupSubscriber(self, data):
         """ Register a new subscriber. """
         try:
@@ -416,7 +428,7 @@ class SerialClient:
             rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
-            
+
     def setupServiceServerPublisher(self, data):
         """ Register a new service server. """
         try:
@@ -424,7 +436,7 @@ class SerialClient:
             msg.deserialize(data)
             self.setPublishSize(msg.buffer_size)
             try:
-                srv = self.services[msg.topic_name] 
+                srv = self.services[msg.topic_name]
             except:
                 srv = ServiceServer(msg, self)
                 rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
@@ -442,7 +454,7 @@ class SerialClient:
             msg.deserialize(data)
             self.setSubscribeSize(msg.buffer_size)
             try:
-                srv = self.services[msg.topic_name] 
+                srv = self.services[msg.topic_name]
             except:
                 srv = ServiceServer(msg, self)
                 rospy.loginfo("Setup service server on %s [%s]" % (msg.topic_name, msg.message_type) )
@@ -461,7 +473,7 @@ class SerialClient:
             msg.deserialize(data)
             self.setPublishSize(msg.buffer_size)
             try:
-                srv = self.services[msg.topic_name] 
+                srv = self.services[msg.topic_name]
             except:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
@@ -479,7 +491,7 @@ class SerialClient:
             msg.deserialize(data)
             self.setSubscribeSize(msg.buffer_size)
             try:
-                srv = self.services[msg.topic_name] 
+                srv = self.services[msg.topic_name]
             except:
                 srv = ServiceClient(msg, self)
                 rospy.loginfo("Setup service client on %s [%s]" % (msg.topic_name, msg.message_type) )
@@ -525,7 +537,7 @@ class SerialClient:
         for p in param:
             if t!= type(p):
                 rospy.logerr('All Paramers in the list %s must be of the same type'%req.name)
-                return      
+                return
         if (t == int):
             resp.ints= param
         if (t == float):
@@ -550,7 +562,7 @@ class SerialClient:
             rospy.logerr(msg.msg)
         elif(msg.level==Log.FATAL):
             rospy.logfatal(msg.msg)
-        
+
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
         with self.mutex:
@@ -565,4 +577,27 @@ class SerialClient:
                 data = data + msg + chr(checksum)
                 self.port.write(data)
                 return length
+
+    def sendDiagnostics(self, level, msg_text):
+        msg = diagnostic_msgs.msg.DiagnosticArray()
+        status = diagnostic_msgs.msg.DiagnosticStatus()
+        status.name = "rosserial_python"
+        msg.header.stamp = rospy.Time.now()
+        msg.status.append(status)
+
+        status.message = msg_text
+        status.level = level
+
+        status.values.append(diagnostic_msgs.msg.KeyValue())
+        status.values[0].key="last sync"
+        if self.lastsync.to_sec()>0:
+            status.values[0].value=time.ctime(self.lastsync.to_sec())
+        else:
+            status.values[0].value="never"
+
+        status.values.append(diagnostic_msgs.msg.KeyValue())
+        status.values[1].key="last sync lost"
+        status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
+
+        self.pub_diagnostics.publish(msg)
 
