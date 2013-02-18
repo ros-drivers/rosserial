@@ -35,6 +35,8 @@
 #ifndef _ROS_DURATION_H_
 #define _ROS_DURATION_H_
 
+#include <math.h>
+
 namespace ros {
 
   void normalizeSecNSecSigned(long& sec, long& nsec);
