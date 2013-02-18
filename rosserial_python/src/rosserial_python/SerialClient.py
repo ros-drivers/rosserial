@@ -310,7 +310,12 @@ class SerialClient:
             self.port=port
         else:
             # open a specific port
-            self.port = Serial(port, baud, timeout=self.timeout*0.5)
+            try:
+                self.port = Serial(port, baud, timeout=self.timeout*0.5)
+            except SerialException as e:
+                rospy.logerr("Error opening serial: %s", e)
+                rospy.signal_shutdown("Error opening serial: %s" % e)
+                raise SystemExit
 
         self.port.timeout = 0.01  # Edit the port timeout
 

@@ -75,7 +75,7 @@ if __name__=="__main__":
     else :          # Use serial port 
         rospy.init_node("serial_node")
         rospy.loginfo("ROS Serial Python Node")
-        rospy.loginfo("Connected on %s at %d baud" % (port_name,baud) )
+        rospy.loginfo("Connecting to %s at %d baud" % (port_name,baud) )
         client = SerialClient(port_name, baud)
         try:
             client.run()
