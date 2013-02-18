@@ -7,9 +7,7 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It is in the proce
  * Moved to catkin build system 
  * Moved rosserial_xbee to experimential stack
  * Created new rosserial metapackage, with depends only on python, client and msgs.
- * Closing tickets:
-   * kforge #77: missing newline
-   * kforge #78: WProgram.h name
+ * Closed, integrated and/or moved all tickets to github.
  * New message generation and workflow:
    * no longer uses roslib.rospack, or roslib.gentools (and is way, WAY faster)
    * messages are no longer built at built-time (yeah, sounds ridiculous, but is true, see below for new workflow)
