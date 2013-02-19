@@ -411,7 +411,7 @@ namespace ros {
 
     public:
       void logdebug(const char* msg){
-        log(rosserial_msgs::Log::DEBUG, msg);
+        log(rosserial_msgs::Log::ROSDEBUG, msg);
       }
       void loginfo(const char * msg){
         log(rosserial_msgs::Log::INFO, msg);
