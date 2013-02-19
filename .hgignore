@@ -1,8 +1,0 @@
-rosserial_arduino/libraries
-rosserial_msgs/src
-./*.pyc
-rosserial_python/build
-rosserial_arduino/src/rosserial_arduino
-./*/msg_gen
-./*/srv_gen
-./*/build
