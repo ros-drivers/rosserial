@@ -35,6 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
+import roslib;
 import rospy
 
 import thread
