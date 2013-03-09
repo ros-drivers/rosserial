@@ -555,7 +555,7 @@ def rosserial_generate(rospack, path, mapping):
 
     # gimme messages
     for p in pkgs:
-        if p == "object_recognition_msgs" or p == "wiimote":
+        if p == "object_recognition_msgs" or p == "wiimote" or p == "kobuki_testsuite":
             continue
         MakeLibrary(p, path, rospack)
 
