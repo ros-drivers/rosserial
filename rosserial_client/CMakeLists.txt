@@ -7,5 +7,5 @@ catkin_package()
 catkin_python_setup()
 
 install(DIRECTORY src/ros_lib
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
