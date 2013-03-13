@@ -43,6 +43,9 @@ import rospy
 
 import os, sys, subprocess, re
 
+# for copying files
+import shutil
+
 def type_to_var(ty):
     lookup = {
         1 : 'uint8_t',
@@ -558,4 +561,21 @@ def rosserial_generate(rospack, path, mapping):
         if p == "object_recognition_msgs" or p == "wiimote" or p == "kobuki_testsuite":
             continue
         MakeLibrary(p, path, rospack)
+
+def rosserial_client_copy_files(rospack, path):
+    files = ['duration.cpp',
+             'time.cpp',
+             'ros/duration.h',
+             'ros/msg.h',
+             'ros/node_handle.h',
+             'ros/publisher.h',
+             'ros/service_client.h',
+             'ros/service_server.h',
+             'ros/subscriber.h',
+             'ros/time.h',
+             'tf/tf.h',
+             'tf/transform_broadcaster.h']
+    mydir = rospack.get_path("rosserial_client")
+    for f in files:
+        shutil.copy(mydir+"/src/ros_lib/"+f, path+f)
 
