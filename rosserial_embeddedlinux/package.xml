@@ -5,7 +5,7 @@
     Libraries and examples for ROSserial usage on Embedded Linux Enviroments
   </description>
   <author>Paul Bouchier</author>
-  <maintainer email="paul@fixme.com">Paul Bouchier</maintainer>
+  <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial_embeddedlinux</url>
 
