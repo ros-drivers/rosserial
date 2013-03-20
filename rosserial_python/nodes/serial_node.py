@@ -35,7 +35,6 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib; roslib.load_manifest("rosserial_python")
 import rospy
 from rosserial_python import SerialClient, RosSerialServer
 import multiprocessing
