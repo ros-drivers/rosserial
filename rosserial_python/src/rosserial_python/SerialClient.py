@@ -344,6 +344,7 @@ class SerialClient:
 
         rospy.sleep(2.0) # TODO
         self.requestTopics()
+        self.lastsync = rospy.Time.now()
 
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
