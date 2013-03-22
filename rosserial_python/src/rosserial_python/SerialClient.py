@@ -553,7 +553,7 @@ class SerialClient:
         """ Forward logging information from serial device into ROS. """
         msg = Log()
         msg.deserialize(data)
-        if (msg.level == Log.DEBUG):
+        if (msg.level == Log.ROSDEBUG):
             rospy.logdebug(msg.msg)
         elif(msg.level== Log.INFO):
             rospy.loginfo(msg.msg)
