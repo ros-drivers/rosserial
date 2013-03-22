@@ -563,6 +563,8 @@ def rosserial_generate(rospack, path, mapping):
         MakeLibrary(p, path, rospack)
 
 def rosserial_client_copy_files(rospack, path):
+    os.makedirs(path+"/ros")
+    os.makedirs(path+"/tf")
     files = ['duration.cpp',
              'time.cpp',
              'ros/duration.h',
