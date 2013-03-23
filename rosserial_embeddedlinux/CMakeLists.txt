@@ -8,7 +8,7 @@ install(DIRECTORY src/ros_lib
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
-install(DIRECTORY examples
+install(DIRECTORY src/examples
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
