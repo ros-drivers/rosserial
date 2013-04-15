@@ -9,6 +9,8 @@
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial</url>
 
+  <buildtool_depend>catkin</buildtool_depend>
+
   <run_depend>rosserial_msgs</run_depend>
   <run_depend>rosserial_client</run_depend>
   <run_depend>rosserial_python</run_depend>
