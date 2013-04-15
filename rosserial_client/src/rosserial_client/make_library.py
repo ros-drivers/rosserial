@@ -33,6 +33,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
 import roslib
@@ -486,14 +488,14 @@ def MakeLibrary(package, output_path, rospack):
     # find the messages in this package
     messages = list()
     if os.path.exists(pkg_dir+"/msg"):
-        print("Exporting %s\n"%package)
+        print('Exporting %s\n'%package)
         sys.stdout.write('  Messages:')
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/msg"):
             if f.endswith(".msg"):
                 file = pkg_dir + "/msg/" + f
                 # add to list of messages
-                print "%s," % f[0:-4],
+                print('%s,'%f[0:-4], end='')
                 definition = open(file).readlines()
                 md5sum = roslib.message.get_message_class(package+'/'+f[0:-4])._md5sum
                 messages.append( Message(f[0:-4], package, definition, md5sum) )
@@ -502,22 +504,22 @@ def MakeLibrary(package, output_path, rospack):
     services = list()
     if (os.path.exists(pkg_dir+"/srv/")):
         if messages == list():
-            print("Exporting %s\n"%package)
+            print('Exporting %s\n'%package)
         else:
-            print "\n"
+            print('\n')
         sys.stdout.write('  Services:')
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/srv"):
             if f.endswith(".srv"):
                 file = pkg_dir + "/srv/" + f
                 # add to list of messages
-                print "%s," % f[0:-4],
+                print('%s,'%f[0:-4], end='')
                 definition, service = roslib.srvs.load_from_file(file)
                 definition = open(file).readlines()
                 md5req = roslib.message.get_service_class(package+'/'+f[0:-4])._request_class._md5sum
                 md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
                 messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
-        print "\n"
+        print('\n')
 
     # generate for each message
     output_path = output_path + "/" + package
@@ -544,7 +546,7 @@ def get_dependency_sorted_package_list(rospack):
             if not dependent:
                 dependency_list.append(p)
         except rospkg.common.ResourceNotFound:
-            print("[%s]:Not Found"%p)
+            print('[%s]:Not Found'%p)
     dependency_list.reverse()
     return dependency_list
 
@@ -557,10 +559,18 @@ def rosserial_generate(rospack, path, mapping):
     pkgs = get_dependency_sorted_package_list(rospack)
 
     # gimme messages
+    failed = []
     for p in pkgs:
-        if p == "object_recognition_msgs" or p == "wiimote" or p == "kobuki_testsuite":
-            continue
-        MakeLibrary(p, path, rospack)
+        try:
+            MakeLibrary(p, path, rospack)
+        except:
+            failed.append(p)
+    print('\n')
+    if len(failed) > 0:
+        print('*** Warning, failed to generate libraries for the following packages: ***')
+        for f in failed:
+            print('    %s'%f)
+    print('\n')
 
 def rosserial_client_copy_files(rospack, path):
     os.makedirs(path+"/ros")
