@@ -229,8 +229,6 @@ class RosSerialServer:
                 process.start()
                 rospy.loginfo("launched startSocketServer")
             else:
-                rospy.init_node("serial_node")
-                rospy.loginfo("ROS Serial Python Node")
                 rospy.loginfo("calling startSerialClient")
                 self.startSerialClient()
                 rospy.loginfo("startSerialClient() exited")
