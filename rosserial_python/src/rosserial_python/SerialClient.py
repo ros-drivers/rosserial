@@ -348,7 +348,10 @@ class SerialClient:
         """ Determine topics to subscribe/publish. """
         self.port.flushInput()
         # request topic sync
-        self.port.write("\xff\xff\x00\x00\x00\x00\xff")
+        #modefied frame
+        self.port.write("\xff\xff\x00\x00\xff\x00\x00\xff")
+        #old frame
+        #self.port.write("\xff\xff\x00\x00\x00\x00\xff")
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -361,30 +364,51 @@ class SerialClient:
                 self.requestTopics()
                 self.lastsync = rospy.Time.now()
 
+
             flag = [0,0]
             flag[0]  = self.port.read(1)
-            if (flag[0] != '\xff'):
+            if (flag[0] != '\xff'):                
                 continue
             flag[1] = self.port.read(1)
             if ( flag[1] != '\xff'):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Failed Packet Flags")
                 rospy.loginfo("Failed Packet Flags ")
-                continue
-            # topic id (2 bytes)
-            header = self.port.read(4)
-            if (len(header) != 4):
-                #self.port.flushInput()
+                rospy.loginfo("Second Packet Header Failed, %s " %(flag[1]))
                 continue
 
-            topic_id, msg_length = struct.unpack("<hh", header)
+
+            msg_len_bytes = self.port.read(2)
+            if len(msg_len_bytes) != 2:
+                continue
+
+            msg_length, = struct.unpack("<h", msg_len_bytes)
+
+            # checksum of msg_len
+            msg_len_chk = self.port.read(1)
+            msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
+
+            if msg_len_checksum%256 != 255:
+                rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
+                rospy.loginfo("chk is %d" %(ord(msg_len_chk)))
+                continue
+
+            # topic id (2 bytes)
+            topic_id_header = self.port.read(2)
+            if len(topic_id_header)!=2:
+                continue
+            topic_id, = struct.unpack("<h", topic_id_header)
+
             msg = self.port.read(msg_length)
             if (len(msg) != msg_length):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
+                rospy.loginfo("msg len is %d",len(msg))
                 #self.port.flushInput()
                 continue
+
+            # checksum for topic id and msg
             chk = self.port.read(1)
-            checksum = sum(map(ord,header) ) + sum(map(ord, msg)) + ord(chk)
+            checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
                 try:
@@ -571,10 +595,18 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-                data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
-                data = data + msg + chr(checksum)
+                #modefied frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
+                msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
+                msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
+                data = '\xff\xff'  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                data = data + msg + chr(msg_checksum)
                 self.port.write(data)
+
+                #old frame  
+                # checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
+                # data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
+                # data = data + msg + chr(checksum)
+                # self.port.write(data)
                 return length
 
     def sendDiagnostics(self, level, msg_text):
