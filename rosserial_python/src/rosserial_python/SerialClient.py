@@ -151,7 +151,7 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
-        if self.parent.send(self.id, data_buffer.getvalue()) > 0:
+        if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
             while self.response == None:
                 pass
         return self.response
