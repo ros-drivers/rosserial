@@ -151,7 +151,7 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
-        if self.parent.send(self.id, data_buffer.getvalue()) > 0:
+        if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
             while self.response == None:
                 pass
         return self.response
@@ -443,7 +443,7 @@ class SerialClient:
             if srv.mres._md5sum == msg.md5sum:
                 self.callbacks[msg.topic_id] = srv.handlePacket
             else:
-                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mres._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
     def setupServiceServerSubscriber(self, data):
@@ -461,7 +461,7 @@ class SerialClient:
             if srv.mreq._md5sum == msg.md5sum:
                 srv.id = msg.topic_id
             else:
-                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mreq._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
 
@@ -480,7 +480,7 @@ class SerialClient:
             if srv.mreq._md5sum == msg.md5sum:
                 self.callbacks[msg.topic_id] = srv.handlePacket
             else:
-                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mreq._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
     def setupServiceClientSubscriber(self, data):
@@ -498,7 +498,7 @@ class SerialClient:
             if srv.mres._md5sum == msg.md5sum:
                 srv.id = msg.topic_id
             else:
-                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mres._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
 
