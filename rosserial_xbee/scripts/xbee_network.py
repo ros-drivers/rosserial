@@ -33,10 +33,6 @@
 
 __author__ = "astambler@willowgarage.com (Adam Stambler)"
 
-
-import roslib; roslib.load_manifest('rosserial_xbee')
-roslib.load_manifest('rosserial_xbee')
-
 from xbee import XBee
 import serial
 
