@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/balto/rosbuild_ws/rosserial-experimental/rosserial_xbee/build/devel/setup.sh
