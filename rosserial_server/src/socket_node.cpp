@@ -2,11 +2,15 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 
+#include <ros/ros.h>
+
 #include "Session.h"
+#include "AsyncOkPoll.h"
 
 
 using boost::asio::ip::tcp;
 typedef Session<tcp::socket> SocketSession;
+
 
 class Server
 {
@@ -46,14 +50,23 @@ private:
   tcp::acceptor acceptor_;
 };
 
+
 int main(int argc, char* argv[])
 {
+  boost::asio::io_service io_service;
+
+  // Initialize ROS.
+  ros::init(argc, argv, "rosserial_server_socket_node");
+  ros::AsyncSpinner ros_spinner(1);
+  ros_spinner.start();
+
+  // Monitor ROS for shutdown, and stop the io_service accordingly.
+  AsyncOkPoll ok_poll(io_service, boost::posix_time::seconds(0.5), ros::ok);
+
   try
   {
     int port = 11411;
-    boost::asio::io_service io_service;
     Server s(io_service, port);
-
     std::cout << "Listening on port " << port << "\n";
     io_service.run();
   }

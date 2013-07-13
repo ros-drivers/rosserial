@@ -9,8 +9,9 @@ template<typename AsyncReadStream>
 class AsyncReadBuffer
 {
 public:
-  AsyncReadBuffer(AsyncReadStream& s, size_t capacity)
-       : stream_(s), start_(0), size_(0) {
+  AsyncReadBuffer(AsyncReadStream& s, size_t capacity,
+                  boost::function<void(const boost::system::error_code&)> error_callback)
+       : stream_(s), start_(0), size_(0), error_callback_(error_callback) {
     mem_.resize(capacity);
   }
 
@@ -39,7 +40,9 @@ private:
   void read_cb(const boost::system::error_code& error, size_t bytes_transferred,
                boost::function<void(ros::serialization::IStream)> callback, size_t read_count) {
     if (error) {
-      // TODO: handle error code.
+      if (error_callback_) {
+        error_callback_(error);
+      }
     } else {
       size_ += bytes_transferred;
 
@@ -64,6 +67,8 @@ private:
 
   size_t start_;  // Index of next char to be removed/returned
   size_t size_;  // Number of bytes in buffer at present.
+                  
+  boost::function<void(const boost::system::error_code&)> error_callback_;
 };
 
 

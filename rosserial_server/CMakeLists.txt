@@ -4,7 +4,7 @@ project(rosserial_server)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rosserial_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp rosserial_msgs topic_tools)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -65,18 +65,13 @@ include_directories(include
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(rosserial_server
-#   src/${PROJECT_NAME}/rosserial_server.cpp
-# )
-
 ## Declare a cpp executable
 add_executable(rosserial_server_serial_node src/serial_node.cpp)
 add_executable(rosserial_server_socket_node src/socket_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(rosserial_server_node rosserial_server_generate_messages_cpp)
+#add_dependencies(rosserial_server_node rosserial_server_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(rosserial_server_serial_node ${catkin_LIBRARIES})
