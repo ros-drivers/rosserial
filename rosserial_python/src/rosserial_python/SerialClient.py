@@ -324,7 +324,7 @@ class SerialClient:
 	# The protocol version is sent as the 2nd sync byte emitted by each end
         self.protocol_ver1 = '\xff'
         self.protocol_ver2 = '\xfe'
-	self.protocol_ver = self.protocol_ver2
+        self.protocol_ver = self.protocol_ver2
 
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
@@ -362,10 +362,10 @@ class SerialClient:
         data = ''
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
-	        if (self.synced == True):
-		    rospy.logerr("Lost sync with device, restarting...")
+                if (self.synced == True):
+                    rospy.logerr("Lost sync with device, restarting...")
 		else:
-		    rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
+                    rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
                 self.lastsync_lost = rospy.Time.now()
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
                 self.requestTopics()
@@ -601,7 +601,7 @@ class SerialClient:
                 return -1
             else:
                 #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-		# second byte of header is protocol version
+                # second byte of header is protocol version
                 msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
                 msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
                 data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)

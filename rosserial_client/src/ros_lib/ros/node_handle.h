@@ -197,8 +197,8 @@ namespace ros {
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
-	      if (configured_ == false)
-	         requestSyncTime(); 	/* send a msg back showing our protocol version */
+              if (configured_ == false)
+                  requestSyncTime(); 	/* send a msg back showing our protocol version */
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
