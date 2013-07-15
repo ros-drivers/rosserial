@@ -43,7 +43,18 @@
 #define SYNC_SECONDS        5
 
 #define MODE_FIRST_FF       0
-#define MODE_SECOND_FF      1
+/*
+ * The second sync byte is a protocol version. It's value is 0xff for the first
+ * version of the rosserial protocol (used up to hydro), 0xfe for the second version
+ * (introduced in hydro), 0xfd for the next, and so on. Its purpose is to enable
+ * detection of mismatched protocol versions (e.g. hydro rosserial_python with groovy
+ * rosserial_arduino. It must be changed in both this file and in
+ * rosserial_python/src/rosserial_python/SerialClient.py
+ */
+#define MODE_PROTOCOL_VER   1
+#define PROTOCOL_VER1		0xff // through groovy
+#define PROTOCOL_VER2		0xfe // in hydro
+#define PROTOCOL_VER 		PROTOCOL_VER2
 #define MODE_SIZE_L         2   
 #define MODE_SIZE_H         3
 #define MODE_SIZE_CHECKSUM  4   // checksum for msg size received from size L and H
@@ -181,11 +192,13 @@ namespace ros {
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
             }
-          }else if( mode_ == MODE_SECOND_FF ){
-            if(data == 0xff){
+          }else if( mode_ == MODE_PROTOCOL_VER ){
+            if(data == PROTOCOL_VER){
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
+              if (configured_ == false)
+                  requestSyncTime(); 	/* send a msg back showing our protocol version */
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
@@ -199,7 +212,7 @@ namespace ros {
             if( (checksum_%256) == 255)
 	      mode_++;
 	    else 
-	      mode_ = MODE_FIRST_FF;          /* abondan the frame if the msg len is wrong */
+	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
@@ -387,7 +400,7 @@ namespace ros {
 
         /* setup the header */
         message_out[0] = 0xff;
-        message_out[1] = 0xff;
+        message_out[1] = PROTOCOL_VER;
         message_out[2] = (unsigned char) l&255;
         message_out[3] = (unsigned char) l>>8;
 	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
