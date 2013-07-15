@@ -61,19 +61,19 @@ int main(int argc, char* argv[])
   ros_spinner.start();
 
   // Monitor ROS for shutdown, and stop the io_service accordingly.
-  AsyncOkPoll ok_poll(io_service, boost::posix_time::seconds(0.5), ros::ok);
+  AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
 
-  try
-  {
+  //try
+  //{
     int port = 11411;
     Server s(io_service, port);
     std::cout << "Listening on port " << port << "\n";
     io_service.run();
-  }
+  /*}
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
-  }
+  }*/
 
   return 0;
 }

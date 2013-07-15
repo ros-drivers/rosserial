@@ -8,8 +8,8 @@ public:
   AsyncOkPoll(boost::asio::io_service& io_service,
                     boost::posix_time::time_duration interval,
                     boost::function<bool()> ok_fn)
-      : io_service_(io_service), timer_(io_service), 
-        interval_(interval), fn_(ok_fn) {
+      : io_service_(io_service), interval_(interval), fn_(ok_fn),
+        timer_(io_service) {
     if (!fn_) {
       return;
     }
@@ -19,14 +19,17 @@ public:
 private:
   void set() {
     timer_.expires_from_now(interval_);
-    timer_.async_wait(boost::bind(&AsyncOkPoll::handler, this));
+    timer_.async_wait(boost::bind(&AsyncOkPoll::handler, this,
+          boost::asio::placeholders::error));
   }
 
-  void handler() {
-    if (!fn_()) {
-      io_service_.stop();
-    } else {
-      set();
+  void handler(const boost::system::error_code& error) {
+    if (!error) {
+      if (!fn_()) {
+        io_service_.stop();
+      } else {
+        set();
+      }
     }
   }
 
