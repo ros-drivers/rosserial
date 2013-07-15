@@ -2,8 +2,8 @@
 Changelog for package rosserial_xbee
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.0 (2013-07-15)
+------------------
 * manually merge `#53 <https://github.com/ros-drivers/rosserial/issues/53>`_, revive catkinized rosserial_xbee
 
 0.4.5 (2013-07-02)

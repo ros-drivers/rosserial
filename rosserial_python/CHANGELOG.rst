@@ -2,10 +2,11 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.0 (2013-07-15)
+------------------
 * Merge branch 'rosserial_bakui' of git://github.com/tongtybj/rosserial into tongtybj-rosserial_bakui
-* Modefied the frame structure for serial communication, particularly add the checksum for msg_len
+  * Modified the frame structure for serial communication, particularly add the checksum for msg_len
+* Incorporate protocol version in message. Try to detect protocol version mismatch and give appropriate hints.
 
 0.4.5 (2013-07-02)
 ------------------
