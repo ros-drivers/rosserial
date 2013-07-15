@@ -30,6 +30,11 @@ public:
 
   }
 
+  ~Session()
+  {
+    ROS_INFO("Ending session.");  
+  }
+
   Socket& socket()
   {
     return socket_;
@@ -37,7 +42,7 @@ public:
 
   void start()
   {
-    std::cout << "Starting\n";
+    ROS_INFO("Starting session.");
 
     request_topics();
     buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
@@ -58,7 +63,6 @@ private:
   }
 
   void read_sync_first(ros::serialization::IStream& stream) {
-    std::cout << "a";
     uint8_t sync;
     stream >> sync;
     if (sync == 0xff) {
@@ -69,7 +73,6 @@ private:
   }
   
   void read_sync_second(ros::serialization::IStream& stream) {
-    std::cout << "b";
     uint8_t sync;
     stream >> sync;
     if (sync == 0xff) {
@@ -80,7 +83,6 @@ private:
   }
 
   void read_id_length(ros::serialization::IStream& stream) {
-    std::cout << "c";
     uint16_t topic_id, length;
     stream >> topic_id >> length;
     // printf("rx %d %d\n", topic_id, length);
@@ -92,17 +94,17 @@ private:
 
 
   void read_body(ros::serialization::IStream& stream, uint16_t topic_id) {
-    std::cout << "d";
-    uint8_t computed_checksum = message_checksum(stream.getData(), stream.getLength() - 1, topic_id);
-    uint8_t given_checksum = stream.getData()[stream.getLength() - 1];
-
-    if (given_checksum != computed_checksum) {
-      ROS_WARN("Received message with bad checksum. Computed %x, received %x.", computed_checksum, given_checksum);
+    ROS_DEBUG("Received body of length %d for message on topic %d.", stream.getLength(), topic_id);
+    
+    ros::serialization::IStream checksum_stream(stream.getData(), stream.getLength());
+    if (message_checksum(checksum_stream, topic_id) != 0xff) {
+      ROS_WARN("Received message on topicId=%d, length=%d with bad checksum.", topic_id, stream.getLength());
     } else {
       if (callbacks_.count(topic_id) == 1) {
         callbacks_[topic_id](stream);
       } else {
-        // TODO: Handle unrecognized topic_id.
+        ROS_WARN("Received message with unrecognized topicId (%d).", topic_id);
+        // TODO: Resynchronize?
       }
     }
 
@@ -110,23 +112,20 @@ private:
     buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
   }
 
-  void write_message(const std::vector<uint8_t>& message, const uint16_t topic_id) {
+  void write_message(std::vector<uint8_t>& message, const uint16_t topic_id) {
     uint16_t length = 7 + message.size();
     boost::shared_ptr< std::vector<uint8_t> > buffer_ptr(new std::vector<uint8_t>(length));
 
-    const uint8_t* message_data_ptr = 0;
-    if (message.size() > 0) message_data_ptr = &message[0];
-    uint8_t checksum = message_checksum(message_data_ptr, message.size(), topic_id);
+    //const uint8_t* message_data_ptr = 0;
+    ros::serialization::IStream checksum_stream(
+        message.size() > 0 ? &message[0] : NULL, message.size());
+    uint8_t checksum = message_checksum(checksum_stream, topic_id);
 
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size()); 
     stream << (uint16_t)0xffff << topic_id << (uint16_t)message.size();
     memcpy(stream.advance(message.size()), &message[0], message.size());
     stream << checksum;
 
-    for (int i = 0; i < buffer_ptr->size(); i++) {
-      printf(" %x", buffer_ptr->at(i));
-    }
-    printf("\n");
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
@@ -141,10 +140,10 @@ private:
 
   //// HELPERS ////
 
-  static uint8_t message_checksum(const uint8_t* data_ptr, const uint16_t length, const uint16_t topic_id) {
-    uint8_t sum = (topic_id >> 8) + topic_id + (length >> 8) + length;
-    for (uint16_t i = 0; i < length; ++i) {
-      sum += data_ptr[i];
+  static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
+    uint8_t sum = (topic_id >> 8) + topic_id + (stream.getLength() >> 8) + stream.getLength();
+    for (uint16_t i = 0; i < stream.getLength(); ++i) {
+      sum += stream.getData()[i];
     }
     return 255 - sum;
   }
@@ -154,7 +153,7 @@ private:
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
-    std::cout << topic_info;
+    //std::cout << topic_info;
 
     uint16_t t_id = topic_info.topic_id;
     boost::shared_ptr<Publisher> pub(new Publisher(nh_, topic_info));

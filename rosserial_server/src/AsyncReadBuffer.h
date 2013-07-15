@@ -15,7 +15,7 @@ public:
     mem_.resize(capacity);
   }
 
-  void read(size_t read_count, boost::function<void(ros::serialization::IStream)> callback) {
+  void read(size_t read_count, boost::function<void(ros::serialization::IStream&)> callback) {
     // Objective is to ensure that the buffer contains number of bytes,
     // contiguously, that the caller wishes.
     // If it does already, then call the callback immediately. If not, then
@@ -25,6 +25,19 @@ public:
       read_cb(boost::system::errc::make_error_code(boost::system::errc::success), 
               0, callback, read_count);
       return;
+    }
+
+    if (size_ == 0) {
+      // Reset pointer to beginning of buffer space when the buffer is empty.
+      start_ = 0;
+    }
+
+    if (read_count > size_ + headroom()) {
+      // TODO: If there's insufficient room in the buffer for the requested bytes,
+      // shift what we do have back to the beginning of it. If there's still 
+      // insufficient room, throw an exception.
+      ROS_WARN("Cannot complete read. Buffer contains %ld bytes with %ld headroom, caller has requested %ld bytes.", size_, headroom(), read_count);
+      error_callback_(boost::system::errc::make_error_code(boost::system::errc::no_buffer_space));
     }
 
     boost::asio::async_read(stream_,
@@ -38,7 +51,7 @@ public:
 
 private:
   void read_cb(const boost::system::error_code& error, size_t bytes_transferred,
-               boost::function<void(ros::serialization::IStream)> callback, size_t read_count) {
+               boost::function<void(ros::serialization::IStream&)> callback, size_t read_count) {
     if (error) {
       if (error_callback_) {
         error_callback_(error);
