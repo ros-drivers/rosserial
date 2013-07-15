@@ -321,7 +321,7 @@ class SerialClient:
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
         # hydro introduces protocol ver2 which must match node_handle.h
-	# The protocol version is sent as the 2nd sync byte emitted by each end
+        # The protocol version is sent as the 2nd sync byte emitted by each end
         self.protocol_ver1 = '\xff'
         self.protocol_ver2 = '\xfe'
         self.protocol_ver = self.protocol_ver2
@@ -364,7 +364,7 @@ class SerialClient:
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if (self.synced == True):
                     rospy.logerr("Lost sync with device, restarting...")
-		else:
+                else:
                     rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
                 self.lastsync_lost = rospy.Time.now()
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
@@ -379,7 +379,12 @@ class SerialClient:
             if ( flag[1] != self.protocol_ver):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                 rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                rospy.loginfo("Protocol version was %s, expected %s " % (flag[1], self.protocol_ver))
+                protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                if (flag[1] in protocol_ver_msgs):
+                    found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
+                else:
+                    found_ver_msg = "Protocol version of client is unrecognized"
+                rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                 continue
             msg_len_bytes = self.port.read(2)
             if len(msg_len_bytes) != 2:
