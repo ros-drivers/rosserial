@@ -5,6 +5,9 @@ Changelog for package rosserial_arduino
 Forthcoming
 -----------
 
+0.5.0 (2013-07-15)
+------------------
+
 0.4.5 (2013-07-02)
 ------------------
 * Fixed a bug in ros_lib install logic which took an exception because it copied files to themselves

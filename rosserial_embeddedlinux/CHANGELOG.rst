@@ -5,6 +5,9 @@ Changelog for package rosserial_embeddedlinux
 Forthcoming
 -----------
 
+0.5.0 (2013-07-15)
+------------------
+
 0.4.5 (2013-07-02)
 ------------------
 * rosserial_embeddedlinux: Fix CMakeLists.txt ...

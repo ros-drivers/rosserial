@@ -5,6 +5,9 @@ Changelog for package rosserial
 Forthcoming
 -----------
 
+0.5.0 (2013-07-15)
+------------------
+
 0.4.5 (2013-07-02)
 ------------------
 * fixes catkin warnings (`#40 <https://github.com/ros-drivers/rosserial/issues/40>`_)
