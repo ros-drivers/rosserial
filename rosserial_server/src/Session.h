@@ -24,7 +24,9 @@ public:
   {
     callbacks_[rosserial_msgs::TopicInfo::ID_PUBLISHER]
         = boost::bind(&Session::setup_publisher, this, _1);
-    //callbacks_[rosserial_msgs::TopicInfo::ID_SUBSCRIBER] = boost::bind(&Session::setup_subscriber, this, _1);
+
+    callbacks_[rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
+        = boost::bind(&Session::setup_subscriber, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_TIME]
         = boost::bind(&Session::handle_time, this, _1);
 
@@ -153,12 +155,18 @@ private:
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
-    //std::cout << topic_info;
 
-    uint16_t t_id = topic_info.topic_id;
     boost::shared_ptr<Publisher> pub(new Publisher(nh_, topic_info));
-    callbacks_[t_id] = boost::bind(&Publisher::handle, pub, _1);
-    publishers_[t_id] = pub;
+    publishers_[topic_info.topic_id] = pub;
+    callbacks_[topic_info.topic_id] = boost::bind(&Publisher::handle, pub, _1);
+  }
+  
+  void setup_subscriber(ros::serialization::IStream& stream) {
+    rosserial_msgs::TopicInfo topic_info;
+    ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
+
+    boost::shared_ptr<Subscriber> sub(new Subscriber(nh_, topic_info));
+    subscribers_[topic_info.topic_id] = sub;
   }
 
   void handle_time(ros::serialization::IStream& stream) {
@@ -181,6 +189,7 @@ private:
 
   std::map< uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
   std::map< uint16_t, boost::shared_ptr<Publisher> > publishers_;
+  std::map< uint16_t, boost::shared_ptr<Subscriber> > subscribers_;
 };
 
 
