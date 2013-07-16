@@ -9,13 +9,14 @@
 
 
 using boost::asio::ip::tcp;
-typedef Session<tcp::socket> SocketSession;
+//typedef Session<tcp::socket> SocketSession;
 
 
-class Server
+template<typename Session>
+class TcpServer
 {
 public:
-  Server(boost::asio::io_service& io_service, short port)
+  TcpServer(boost::asio::io_service& io_service, short port)
     : io_service_(io_service),
       acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
   {
@@ -25,13 +26,13 @@ public:
 private:
   void start_accept()
   {
-    SocketSession* new_session = new SocketSession(io_service_);
+    Session* new_session = new Session(io_service_);
     acceptor_.async_accept(new_session->socket(),
-        boost::bind(&Server::handle_accept, this, new_session,
+        boost::bind(&TcpServer::handle_accept, this, new_session,
           boost::asio::placeholders::error));
   }
 
-  void handle_accept(SocketSession* new_session,
+  void handle_accept(Session* new_session,
       const boost::system::error_code& error)
   {
     if (!error)
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
 
   // Start listening for rosserial TCP connections.
   int port = 11411;
-  Server s(io_service, port);
+  TcpServer< Session<tcp::socket> > s(io_service, port);
   std::cout << "Listening on port " << port << "\n";
   io_service.run();
 
