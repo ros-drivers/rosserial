@@ -46,8 +46,8 @@ public:
   {
     ROS_INFO("Starting session.");
 
-    request_topics();
     read_sync_header();
+    request_topics();
   }
 
 private:

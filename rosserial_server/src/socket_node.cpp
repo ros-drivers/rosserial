@@ -63,17 +63,11 @@ int main(int argc, char* argv[])
   // Monitor ROS for shutdown, and stop the io_service accordingly.
   AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
 
-  //try
-  //{
-    int port = 11411;
-    Server s(io_service, port);
-    std::cout << "Listening on port " << port << "\n";
-    io_service.run();
-  /*}
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }*/
+  // Start listening for rosserial TCP connections.
+  int port = 11411;
+  Server s(io_service, port);
+  std::cout << "Listening on port " << port << "\n";
+  io_service.run();
 
   return 0;
 }
