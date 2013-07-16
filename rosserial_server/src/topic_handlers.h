@@ -24,8 +24,9 @@ private:
 
 class Subscriber {
 public:
-  Subscriber(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info)
-      : topic_id_(topic_info.topic_id) {
+  Subscriber(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
+      boost::function<void(std::vector<uint8_t> buffer)> write_fn) 
+    : write_fn_(write_fn) {
     ros::SubscribeOptions opts;
     opts.init<topic_tools::ShapeShifter>(
         topic_info.topic_name, 1, boost::bind(&Subscriber::handle, this, _1));
@@ -36,12 +37,15 @@ public:
 
 private:
   void handle(const boost::shared_ptr<topic_tools::ShapeShifter const>& msg) {
-    // Called on asynchronous ROS thread.
-    // ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, message_);
-    // publisher_.publish(message_);
+    size_t length = ros::serialization::serializationLength(*msg);
+    std::vector<uint8_t> buffer(length);
+
+    ros::serialization::OStream ostream(&buffer[0], length);
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, *msg); 
+ 
+    write_fn_(buffer);
   }
 
   ros::Subscriber subscriber_;
-  uint16_t topic_id_;
-  //topic_tools::ShapeShifter message_;
+  boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
 };

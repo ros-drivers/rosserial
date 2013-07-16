@@ -47,30 +47,23 @@ public:
     ROS_INFO("Starting session.");
 
     request_topics();
-    buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+    read_sync_header();
   }
 
 private:
-  void request_topics() {
-    std::vector<uint8_t> message(0);
-    write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER);
+  //// RECEIVING MESSAGES ////
+  
+  void read_sync_header() {
+    buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
   }
-
-  void read_failed(const boost::system::error_code& error) {
-    if (error) {
-      // When a read error has occurred, delete the whole session, which destroys
-      // all publishers and subscribers.
-      delete this;
-    }
-  }
-
+  
   void read_sync_first(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
     if (sync == 0xff) {
       buffer_.read(1, boost::bind(&Session::read_sync_second, this, _1));
     } else {
-      buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+      read_sync_header();
     }
   }
   
@@ -80,20 +73,18 @@ private:
     if (sync == 0xff) {
       buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
     } else {
-      buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+      read_sync_header();
     }
   }
 
   void read_id_length(ros::serialization::IStream& stream) {
     uint16_t topic_id, length;
     stream >> topic_id >> length;
-    // printf("rx %d %d\n", topic_id, length);
-    // TODO: Check length against expected for known fixed-length messages.
+    // TODO: Check length against expected for known fixed-length messages (?)
 
     buffer_.read(length + 1, boost::bind(&Session::read_body, this,
                                          _1, topic_id));
   }
-
 
   void read_body(ros::serialization::IStream& stream, uint16_t topic_id) {
     ROS_DEBUG("Received body of length %d for message on topic %d.", stream.getLength(), topic_id);
@@ -111,14 +102,23 @@ private:
     }
 
     // Kickoff next message read.
-    buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+    read_sync_header();
   }
+
+  void read_failed(const boost::system::error_code& error) {
+    if (error) {
+      // When a read error has occurred, delete the whole session, which destroys
+      // all publishers and subscribers.
+      delete this;
+    }
+  }
+
+  //// SENDING MESSAGES ////
 
   void write_message(std::vector<uint8_t>& message, const uint16_t topic_id) {
     uint16_t length = 7 + message.size();
     boost::shared_ptr< std::vector<uint8_t> > buffer_ptr(new std::vector<uint8_t>(length));
 
-    //const uint8_t* message_data_ptr = 0;
     ros::serialization::IStream checksum_stream(
         message.size() > 0 ? &message[0] : NULL, message.size());
     uint8_t checksum = message_checksum(checksum_stream, topic_id);
@@ -128,6 +128,15 @@ private:
     memcpy(stream.advance(message.size()), &message[0], message.size());
     stream << checksum;
 
+    // Will call immediately if we are already on the io_service thread. Otherwise,
+    // the request is queued up and executed on that thread.
+    socket_.get_io_service().dispatch(
+        boost::bind(&Session::write_buffer, this, buffer_ptr));
+  }
+
+  // Function which is dispatched onto the io_service thread by write_message, so that 
+  // write_message may be safely called directly from the ROS background spinning thread.
+  void write_buffer(boost::shared_ptr< std::vector<uint8_t> > buffer_ptr) {
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
@@ -142,6 +151,11 @@ private:
 
   //// HELPERS ////
 
+  void request_topics() {
+    std::vector<uint8_t> message(0);
+    write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER);
+  }
+
   static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
     uint8_t sum = (topic_id >> 8) + topic_id + (stream.getLength() >> 8) + stream.getLength();
     for (uint16_t i = 0; i < stream.getLength(); ++i) {
@@ -150,7 +164,7 @@ private:
     return 255 - sum;
   }
 
-  //// HANDLERS ////
+  //// RECEIVED MESSAGE HANDLERS ////
 
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
@@ -165,7 +179,8 @@ private:
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-    boost::shared_ptr<Subscriber> sub(new Subscriber(nh_, topic_info));
+    boost::shared_ptr<Subscriber> sub(new Subscriber(nh_, topic_info,
+        boost::bind(&Session::write_message, this, _1, topic_info.topic_id)));
     subscribers_[topic_info.topic_id] = sub;
   }
 
