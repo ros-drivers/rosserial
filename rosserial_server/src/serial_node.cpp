@@ -17,6 +17,11 @@ int main(int argc, char* argv[])
 
   // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_serial_node");
+  ros::NodeHandle nh("~");
+  std::string port; nh.param<std::string>("port", port, "/dev/ttyUSB0");
+  int baud; nh.param<int>("baud", baud, 11411);
+
+  // ROS background thread.
   ros::AsyncSpinner ros_spinner(1);
   ros_spinner.start();
 
@@ -28,13 +33,13 @@ int main(int argc, char* argv[])
 
   // Set up serial port specifics.
   boost::system::error_code ec;
-  s.socket().open("/dev/ttyUSB0", ec);
+  s.socket().open(port, ec);
   if (ec) {
     // Todo: repeated reattempts.
-    ROS_FATAL("Unable to open port.");
+    ROS_FATAL_STREAM("Unable to open port " << port);
     return 1;
   }
-  s.socket().set_option(boost::asio::serial_port_base::baud_rate(57600));
+  s.socket().set_option(boost::asio::serial_port_base::baud_rate(baud));
   s.socket().set_option(boost::asio::serial_port_base::character_size(8));
   s.socket().set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
   s.socket().set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));

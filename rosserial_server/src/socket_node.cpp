@@ -9,7 +9,6 @@
 
 
 using boost::asio::ip::tcp;
-//typedef Session<tcp::socket> SocketSession;
 
 
 template<typename Session>
@@ -58,6 +57,9 @@ int main(int argc, char* argv[])
 
   // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_socket_node");
+  ros::NodeHandle nh("~");
+
+  // ROS background thread.
   ros::AsyncSpinner ros_spinner(1);
   ros_spinner.start();
 
@@ -65,7 +67,8 @@ int main(int argc, char* argv[])
   AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
 
   // Start listening for rosserial TCP connections.
-  int port = 11411;
+  int port;
+  nh.param<int>("port", port, 11411);
   TcpServer< Session<tcp::socket> > s(io_service, port);
   std::cout << "Listening on port " << port << "\n";
   io_service.run();
