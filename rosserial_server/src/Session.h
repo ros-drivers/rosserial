@@ -17,7 +17,7 @@ class Session
 {
 public:
   Session(boost::asio::io_service& io_service)
-    : socket_(io_service), 
+    : socket_(io_service), client_version(PROTOCOL_UNKNOWN),
       buffer_(socket_, buffer_max, 
               boost::bind(&Session::read_failed, this,
                           boost::asio::placeholders::error))
@@ -50,6 +50,12 @@ public:
     request_topics();
   }
 
+  enum Version {
+    PROTOCOL_UNKNOWN = 0,
+    PROTOCOL_VER1 = 1,
+    PROTOCOL_VER2 = 2
+  };
+
 private:
   //// RECEIVING MESSAGES ////
   
@@ -70,8 +76,19 @@ private:
   void read_sync_second(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
-    if (sync == 0xff) {
+    if (client_version == PROTOCOL_UNKNOWN) {
+      if (sync == 0xff) {
+        ROS_WARN("Attached client is using protocol VER1");
+        client_version = PROTOCOL_VER1;
+      } else if (sync == 0xfe) {
+        ROS_INFO("Attached client is using protocol VER2");
+        client_version = PROTOCOL_VER2;
+      }
+    }
+    if (sync == 0xff && client_version == PROTOCOL_VER1) {
       buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
+    } else if (sync == 0xfe && client_version == PROTOCOL_VER2) {
+      buffer_.read(5, boost::bind(&Session::read_id_length, this, _1)); 
     } else {
       read_sync_header();
     }
@@ -79,9 +96,19 @@ private:
 
   void read_id_length(ros::serialization::IStream& stream) {
     uint16_t topic_id, length;
+    uint8_t length_checksum;
     stream >> topic_id >> length;
-    // TODO: Check length against expected for known fixed-length messages (?)
-
+    if (client_version == PROTOCOL_VER2) {
+      // Protocol VER2 introduced a new checksum byte for the message length.
+      stream >> length_checksum;
+      uint8_t length_checksum_computed = 255 - (((length & 255) + (length >> 8)) % 256);
+      if (length_checksum != length_checksum_computed) {
+        ROS_WARN("Bad message header length checksum. Dropping message from client.");
+        read_sync_header();
+        return;
+      }
+    }
+    // Read message length + checksum byte.
     buffer_.read(length + 1, boost::bind(&Session::read_body, this,
                                          _1, topic_id));
   }
@@ -115,8 +142,18 @@ private:
 
   //// SENDING MESSAGES ////
 
-  void write_message(std::vector<uint8_t>& message, const uint16_t topic_id) {
-    uint16_t length = 7 + message.size();
+  void write_message(std::vector<uint8_t>& message,
+                     const uint16_t topic_id, 
+                     Session::Version version) {
+    uint8_t overhead_bytes = 0;
+    switch(version) {
+      case PROTOCOL_VER1: overhead_bytes = 7; break;
+      case PROTOCOL_VER2: overhead_bytes = 8; break;
+      default:
+        ROS_WARN("Aborting write_message: protocol unspecified.");
+    }
+
+    uint16_t length = overhead_bytes + message.size();
     boost::shared_ptr< std::vector<uint8_t> > buffer_ptr(new std::vector<uint8_t>(length));
 
     ros::serialization::IStream checksum_stream(
@@ -153,7 +190,7 @@ private:
 
   void request_topics() {
     std::vector<uint8_t> message(0);
-    write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER);
+    write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER1);
   }
 
   static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
@@ -180,7 +217,7 @@ private:
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
     boost::shared_ptr<Subscriber> sub(new Subscriber(nh_, topic_info,
-        boost::bind(&Session::write_message, this, _1, topic_info.topic_id)));
+        boost::bind(&Session::write_message, this, _1, topic_info.topic_id, client_version)));
     subscribers_[topic_info.topic_id] = sub;
   }
 
@@ -194,13 +231,17 @@ private:
     ros::serialization::OStream ostream(&message[0], length);
     ros::serialization::Serializer<std_msgs::Time>::write(ostream, time); 
  
-    write_message(message, rosserial_msgs::TopicInfo::ID_TIME);
+    write_message(message, rosserial_msgs::TopicInfo::ID_TIME, client_version);
   }
 
   Socket socket_;
   AsyncReadBuffer<Socket> buffer_;
   enum { buffer_max = 1023 };
   ros::NodeHandle nh_;
+
+  Session::Version client_version;
+  ros::Time last_attempted_sync;
+  ros::Time last_successful_sync;
 
   std::map< uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
   std::map< uint16_t, boost::shared_ptr<Publisher> > publishers_;
