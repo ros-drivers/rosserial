@@ -121,7 +121,16 @@ private:
       ROS_WARN("Received message on topicId=%d, length=%d with bad checksum.", topic_id, stream.getLength());
     } else {
       if (callbacks_.count(topic_id) == 1) {
-        callbacks_[topic_id](stream);
+        try {
+          callbacks_[topic_id](stream);
+        } catch(ros::serialization::StreamOverrunException e) {
+          if (topic_id < 100) {
+            ROS_ERROR("Buffer overrun when attempting to parse setup message.");
+            ROS_ERROR_ONCE("Is this firmware from a pre-Groovy rosserial?");
+          } else {
+            ROS_WARN("Buffer overrun when attempting to parse user message.");
+          }
+        }
       } else {
         ROS_WARN("Received message with unrecognized topicId (%d).", topic_id);
         // TODO: Resynchronize?
@@ -203,6 +212,9 @@ private:
 
   //// RECEIVED MESSAGE HANDLERS ////
 
+  /**
+   * 
+   */
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);

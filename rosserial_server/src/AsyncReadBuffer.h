@@ -21,6 +21,7 @@ public:
     // If it does already, then call the callback immediately. If not, then
     // command an asynchronous read on the socket, which will call
     // the callback.
+    ROS_DEBUG("Requested %ld bytes, %ld bytes available in buffer.", read_count, size_);
     if (read_count <= size_) {
       read_cb(boost::system::errc::make_error_code(boost::system::errc::success), 
               0, callback, read_count);
@@ -40,6 +41,7 @@ public:
       error_callback_(boost::system::errc::make_error_code(boost::system::errc::no_buffer_space));
     }
 
+    ROS_DEBUG("Requesting transfer of %ld bytes", read_count - size_);
     boost::asio::async_read(stream_,
         boost::asio::buffer(&mem_[start_ + size_], headroom()),
         boost::asio::transfer_at_least(read_count - size_),
@@ -52,6 +54,7 @@ public:
 private:
   void read_cb(const boost::system::error_code& error, size_t bytes_transferred,
                boost::function<void(ros::serialization::IStream&)> callback, size_t read_count) {
+    ROS_DEBUG("Transferred %ld bytes.", bytes_transferred);
     if (error) {
       if (error_callback_) {
         error_callback_(error);
