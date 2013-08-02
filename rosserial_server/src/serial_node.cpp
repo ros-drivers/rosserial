@@ -8,7 +8,61 @@
 #include "AsyncOkPoll.h"
 
 
-typedef Session<boost::asio::serial_port> SerialSession;
+class SerialSession : public Session<boost::asio::serial_port>
+{
+public:
+  SerialSession(boost::asio::io_service& io_service, std::string port, int baud)
+    : Session(io_service), port_(port), baud_(baud), // io_service_(io_service),
+      timer_(io_service), interval_(boost::posix_time::milliseconds(1000))
+  {
+    connect_with_reconnection();
+  }
+
+private:
+  ~SerialSession() {
+    if (ros::ok()) {
+      new SerialSession(socket().get_io_service(), port_, baud_);
+    }
+  }
+
+  bool attempt_connection(bool log_errors = true)
+  {
+    if (log_errors) ROS_INFO("Opening serial port.");
+    boost::system::error_code ec;
+    socket().open(port_, ec);
+    if (ec) {
+      if (log_errors) ROS_ERROR_STREAM("Unable to open port " << port_);
+      return false;
+    }
+
+    typedef boost::asio::serial_port_base serial;
+    socket().set_option(serial::baud_rate(baud_));
+    socket().set_option(serial::character_size(8));
+    socket().set_option(serial::stop_bits(serial::stop_bits::one));
+    socket().set_option(serial::parity(serial::parity::none));
+    socket().set_option(serial::flow_control(serial::flow_control::none));
+
+    // Kick off the session.
+    start();
+    return true;
+  }
+
+  void connect_with_reconnection(bool log_errors = true) {
+    if (!attempt_connection(log_errors)) {  
+      if (log_errors) {
+        ROS_INFO("Attempting reconnection every %ld ms.", interval_.total_milliseconds());
+      }
+      timer_.expires_from_now(interval_);
+      timer_.async_wait(boost::bind(&SerialSession::connect_with_reconnection, this, false));
+    } else {
+    }
+  }
+
+  std::string port_;
+  int baud_;
+  boost::posix_time::time_duration interval_;
+  boost::asio::deadline_timer timer_;
+};
 
 
 int main(int argc, char* argv[])
@@ -28,28 +82,7 @@ int main(int argc, char* argv[])
   // Monitor ROS for shutdown, and stop the io_service accordingly.
   AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
 
-  // Begin rosserial session with serial port. 
-  SerialSession s(io_service);
-
-  // Set up serial port specifics.
-  ROS_INFO("Opening serial port.");
-  boost::system::error_code ec;
-  s.socket().open(port, ec);
-  if (ec) {
-    // Todo: repeated reattempts.
-    ROS_FATAL_STREAM("Unable to open port " << port);
-    return 1;
-  }
-
-  typedef boost::asio::serial_port_base serial;
-  s.socket().set_option(serial::baud_rate(baud));
-  s.socket().set_option(serial::character_size(8));
-  s.socket().set_option(serial::stop_bits(serial::stop_bits::one));
-  s.socket().set_option(serial::parity(serial::parity::none));
-  s.socket().set_option(serial::flow_control(serial::flow_control::none));
-
-  // Kick off the session.
-  s.start();
+  new SerialSession(io_service, port, baud);
   io_service.run();
 
   return 0;
