@@ -39,7 +39,7 @@ private:
     if (error) {
       error_callback_(error);
     } else {
-      ROS_DEBUG_NAMED("async_read", "Transferred %ld bytes.", bytes_transferred);
+      ROS_DEBUG_NAMED("async_read", "Transferred %ld byte(s).", bytes_transferred);
 
       ros::serialization::IStream stream(&mem_[0], bytes_transferred);
       ROS_ASSERT_MSG(callback, "Bad read callback function.");

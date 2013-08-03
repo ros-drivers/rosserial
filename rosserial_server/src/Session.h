@@ -20,6 +20,7 @@ class Session
 public:
   Session(boost::asio::io_service& io_service)
     : socket_(io_service), client_version(PROTOCOL_UNKNOWN),
+      client_version_try(PROTOCOL_VER2),
       timeout_interval_(boost::posix_time::milliseconds(5000)),
       attempt_interval_(boost::posix_time::milliseconds(1000)),
       sync_timer_(io_service), 
@@ -56,7 +57,8 @@ public:
   enum Version {
     PROTOCOL_UNKNOWN = 0,
     PROTOCOL_VER1 = 1,
-    PROTOCOL_VER2 = 2
+    PROTOCOL_VER2 = 2,
+    PROTOCOL_MAX
   };
 
 private:
@@ -187,9 +189,16 @@ private:
     ros::serialization::IStream checksum_stream(
         message.size() > 0 ? &message[0] : NULL, message.size());
     uint8_t checksum = message_checksum(checksum_stream, topic_id);
+    uint8_t msg_len_checksum = 255 - (((message.size() & 255) + (message.size() >> 8)) % 256);
 
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size()); 
-    stream << (uint16_t)0xffff << topic_id << (uint16_t)message.size();
+    if (version == PROTOCOL_VER2) {
+      stream << (uint16_t)0xfffe << topic_id << (uint16_t)message.size() << msg_len_checksum;
+    } else if (version == PROTOCOL_VER1) {
+      stream << (uint16_t)0xffff << topic_id << (uint16_t)message.size();
+    } else {
+      ROS_ASSERT_MSG(false, "Protocol not specified for write_message.");
+    }
     memcpy(stream.advance(message.size()), &message[0], message.size());
     stream << checksum;
 
@@ -239,9 +248,25 @@ private:
 
   //// HELPERS ////
   void request_topics() {
-    ROS_DEBUG("Sending request topics message for VER1 protocol.");
+    // Once this session has previously connected using a given protocol version,
+    // always attempt that one. If not, though, cycle between available options.
+    if (client_version != PROTOCOL_UNKNOWN) client_version_try = client_version;
+
     std::vector<uint8_t> message(0);
-    write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER1);
+    switch(client_version_try) {
+      case PROTOCOL_VER1:
+        ROS_DEBUG("Sending request topics message for VER1 protocol.");
+        write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER1);
+        client_version_try = PROTOCOL_VER2;
+        break;
+      case PROTOCOL_VER2:
+        ROS_DEBUG("Sending request topics message for VER2 protocol.");
+        write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER2);
+        client_version_try = PROTOCOL_VER1;
+        break;
+      default:
+        client_version_try = PROTOCOL_VER2;
+    }
   }
 
   static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
@@ -302,6 +327,7 @@ private:
   ros::NodeHandle nh_;
 
   Session::Version client_version;
+  Session::Version client_version_try;
   boost::posix_time::time_duration timeout_interval_;
   boost::posix_time::time_duration attempt_interval_;
   boost::asio::deadline_timer sync_timer_;
