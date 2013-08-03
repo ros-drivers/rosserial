@@ -1,6 +1,12 @@
-## ROSserial for Groovy+
+## ROSserial for Hydro
 
-This repo is ported from https://kforge.ros.org/rosserial/hg. It is in the process of being catkinized and updated for ROS Groovy and newer.
+This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkinized and updated for ROS Groovy and newer.
+
+## Changes for Hydro
+
+ * Wire protocol change to add checksum to message length
+ * Support empty requests
+ * Re-integrate rosserial_xbee
 
 ## Changes for Groovy/Catkin
 

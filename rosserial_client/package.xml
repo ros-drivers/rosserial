@@ -1,12 +1,12 @@
 <package>
   <name>rosserial_client</name>
-  <version>0.4.4</version>
+  <version>0.5.2</version>
   <description>
     Generalized client side source for rosserial.
   </description>
   <author>Michael Ferguson</author>
   <author>Adam Stambler</author>
-  <maintainer email="mferguson@willowgarage.com">Michael Ferguson</maintainer>
+  <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial_client</url>
 

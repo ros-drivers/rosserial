@@ -1,11 +1,11 @@
 <package>
   <name>rosserial_msgs</name>
-  <version>0.4.4</version>
+  <version>0.5.2</version>
   <description>
     Messages for automatic topic configuration using rosserial.
   </description>
   <author>Michael Ferguson</author>
-  <maintainer email="mferguson@willowgarage.com">Michael Ferguson</maintainer>
+  <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial_msgs</url>
   

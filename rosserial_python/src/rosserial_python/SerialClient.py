@@ -151,7 +151,7 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
-        if self.parent.send(self.id, data_buffer.getvalue()) > 0:
+        if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
             while self.response == None:
                 pass
         return self.response
@@ -297,6 +297,7 @@ class SerialClient:
         self.lastsync = rospy.Time(0)
         self.lastsync_lost = rospy.Time(0)
         self.timeout = timeout
+        self.synced = False
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
 
@@ -318,6 +319,12 @@ class SerialClient:
         self.port.timeout = 0.01  # Edit the port timeout
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
+
+        # hydro introduces protocol ver2 which must match node_handle.h
+        # The protocol version is sent as the 2nd sync byte emitted by each end
+        self.protocol_ver1 = '\xff'
+        self.protocol_ver2 = '\xfe'
+        self.protocol_ver = self.protocol_ver2
 
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
@@ -348,14 +355,17 @@ class SerialClient:
         """ Determine topics to subscribe/publish. """
         self.port.flushInput()
         # request topic sync
-        self.port.write("\xff\xff\x00\x00\x00\x00\xff")
+        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
-                rospy.logerr("Lost sync with device, restarting...")
+                if (self.synced == True):
+                    rospy.logerr("Lost sync with device, restarting...")
+                else:
+                    rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
                 self.lastsync_lost = rospy.Time.now()
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
                 self.requestTopics()
@@ -363,30 +373,54 @@ class SerialClient:
 
             flag = [0,0]
             flag[0]  = self.port.read(1)
-            if (flag[0] != '\xff'):
+            if (flag[0] != '\xff'):                
                 continue
             flag[1] = self.port.read(1)
-            if ( flag[1] != '\xff'):
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Failed Packet Flags")
-                rospy.loginfo("Failed Packet Flags ")
+            if ( flag[1] != self.protocol_ver):
+                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                if (flag[1] in protocol_ver_msgs):
+                    found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
+                else:
+                    found_ver_msg = "Protocol version of client is unrecognized"
+                rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                 continue
-            # topic id (2 bytes)
-            header = self.port.read(4)
-            if (len(header) != 4):
-                #self.port.flushInput()
+            msg_len_bytes = self.port.read(2)
+            if len(msg_len_bytes) != 2:
                 continue
 
-            topic_id, msg_length = struct.unpack("<hh", header)
+            msg_length, = struct.unpack("<h", msg_len_bytes)
+
+            # checksum of msg_len
+            msg_len_chk = self.port.read(1)
+            msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
+
+            if msg_len_checksum%256 != 255:
+                rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
+                rospy.loginfo("chk is %d" %(ord(msg_len_chk)))
+                continue
+
+            # topic id (2 bytes)
+            topic_id_header = self.port.read(2)
+            if len(topic_id_header)!=2:
+                continue
+            topic_id, = struct.unpack("<h", topic_id_header)
+
             msg = self.port.read(msg_length)
             if (len(msg) != msg_length):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
+                rospy.loginfo("msg len is %d",len(msg))
                 #self.port.flushInput()
                 continue
+
+            # checksum for topic id and msg
             chk = self.port.read(1)
-            checksum = sum(map(ord,header) ) + sum(map(ord, msg)) + ord(chk)
+            checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
+                self.synced = True
                 try:
                     self.callbacks[topic_id](msg)
                 except KeyError:
@@ -443,7 +477,7 @@ class SerialClient:
             if srv.mres._md5sum == msg.md5sum:
                 self.callbacks[msg.topic_id] = srv.handlePacket
             else:
-                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mres._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
     def setupServiceServerSubscriber(self, data):
@@ -461,7 +495,7 @@ class SerialClient:
             if srv.mreq._md5sum == msg.md5sum:
                 srv.id = msg.topic_id
             else:
-                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mreq._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
 
@@ -480,7 +514,7 @@ class SerialClient:
             if srv.mreq._md5sum == msg.md5sum:
                 self.callbacks[msg.topic_id] = srv.handlePacket
             else:
-                raise Exception('Checksum does not match: ' + srv.req._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mreq._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
     def setupServiceClientSubscriber(self, data):
@@ -498,7 +532,7 @@ class SerialClient:
             if srv.mres._md5sum == msg.md5sum:
                 srv.id = msg.topic_id
             else:
-                raise Exception('Checksum does not match: ' + srv.res._md5sum + ',' + msg.md5sum)
+                raise Exception('Checksum does not match: ' + srv.mres._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
 
@@ -571,9 +605,12 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                checksum = 255 - ( ((topic&255) + (topic>>8) + (length&255) + (length>>8) + sum([ord(x) for x in msg]))%256 )
-                data = '\xff\xff'+ chr(topic&255) + chr(topic>>8) + chr(length&255) + chr(length>>8)
-                data = data + msg + chr(checksum)
+                #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
+                # second byte of header is protocol version
+                msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
+                msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
+                data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                data = data + msg + chr(msg_checksum)
                 self.port.write(data)
                 return length
 
