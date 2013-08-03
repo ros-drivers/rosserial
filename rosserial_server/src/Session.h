@@ -103,24 +103,22 @@ private:
   void read_id_length(ros::serialization::IStream& stream) {
     uint16_t topic_id, length;
     uint8_t length_checksum;
-    stream >> topic_id >> length;
     if (client_version == PROTOCOL_VER2) {
-      // Protocol VER2 introduced a new checksum byte for the message length.
-      stream >> length_checksum;
-      uint8_t length_checksum_computed = 255 - (((length & 255) + (length >> 8)) % 256);
-      if (length_checksum != length_checksum_computed) {
-        ROS_WARN("Bad message header length checksum. Dropping message from client.");
+      // Complex header with checksum byte for length field.
+      stream >> length >> length_checksum;
+      if (length_checksum + checksum(length) != 0xff) {
+        uint8_t csl = checksum(length);
+        ROS_WARN("Bad message header length checksum. Dropping message from client. T%d L%d C%d %d", topic_id, length, length_checksum, csl);
         read_sync_header();
         return;
+      } else {
+        stream >> topic_id;
       }
+    } else if (client_version == PROTOCOL_VER1) {
+      // Simple header in VER1 protocol.
+      stream >> topic_id >> length;
     }
     ROS_DEBUG("Received message header with length %d and topic_id=%d", length, topic_id);
-
-    if (length > INT16_MAX) {
-        ROS_WARN("Declared length is %d, in excess of maximum %d. Dropping message from client.", length, INT16_MAX);
-        read_sync_header();
-        return;
-    }
 
     // Read message length + checksum byte.
     buffer_.read(length + 1, boost::bind(&Session::read_body, this,
@@ -131,8 +129,14 @@ private:
     ROS_DEBUG("Received body of length %d for message on topic %d.", stream.getLength(), topic_id);
     
     ros::serialization::IStream checksum_stream(stream.getData(), stream.getLength());
-    if (message_checksum(checksum_stream, topic_id) != 0xff) {
-      ROS_WARN("Received message on topicId=%d, length=%d with bad checksum.", topic_id, stream.getLength());
+
+    uint8_t msg_checksum = checksum(checksum_stream) + checksum(topic_id);
+    if (client_version == PROTOCOL_VER1) {
+      msg_checksum += checksum(stream.getLength() - 1);
+    }
+
+    if (msg_checksum != 0xff) {
+      ROS_WARN("Rejecting message on topicId=%d, length=%d with bad checksum.", topic_id, stream.getLength());
     } else {
       if (callbacks_.count(topic_id) == 1) {
         try {
@@ -177,8 +181,8 @@ private:
                      Session::Version version) {
     uint8_t overhead_bytes = 0;
     switch(version) {
-      case PROTOCOL_VER1: overhead_bytes = 7; break;
       case PROTOCOL_VER2: overhead_bytes = 8; break;
+      case PROTOCOL_VER1: overhead_bytes = 7; break;
       default:
         ROS_WARN("Aborting write_message: protocol unspecified.");
     }
@@ -186,21 +190,20 @@ private:
     uint16_t length = overhead_bytes + message.size();
     boost::shared_ptr< std::vector<uint8_t> > buffer_ptr(new std::vector<uint8_t>(length));
 
-    ros::serialization::IStream checksum_stream(
-        message.size() > 0 ? &message[0] : NULL, message.size());
-    uint8_t checksum = message_checksum(checksum_stream, topic_id);
-    uint8_t msg_len_checksum = 255 - (((message.size() & 255) + (message.size() >> 8)) % 256);
-
+    uint8_t msg_checksum;
+    ros::serialization::IStream checksum_stream(message.size() > 0 ? &message[0] : NULL, message.size());
+   
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size()); 
     if (version == PROTOCOL_VER2) {
-      stream << (uint16_t)0xfffe << topic_id << (uint16_t)message.size() << msg_len_checksum;
+      uint8_t msg_len_checksum = 255 - checksum(message.size());
+      stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
+      msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
     } else if (version == PROTOCOL_VER1) {
       stream << (uint16_t)0xffff << topic_id << (uint16_t)message.size();
-    } else {
-      ROS_ASSERT_MSG(false, "Protocol not specified for write_message.");
+      msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id) + checksum(message.size()));
     }
     memcpy(stream.advance(message.size()), &message[0], message.size());
-    stream << checksum;
+    stream << msg_checksum;
 
     // Will call immediately if we are already on the io_service thread. Otherwise,
     // the request is queued up and executed on that thread.
@@ -253,28 +256,36 @@ private:
     if (client_version != PROTOCOL_UNKNOWN) client_version_try = client_version;
 
     std::vector<uint8_t> message(0);
-    switch(client_version_try) {
-      case PROTOCOL_VER1:
-        ROS_DEBUG("Sending request topics message for VER1 protocol.");
-        write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER1);
-        client_version_try = PROTOCOL_VER2;
-        break;
-      case PROTOCOL_VER2:
+    if (client_version_try == PROTOCOL_VER2) {
         ROS_DEBUG("Sending request topics message for VER2 protocol.");
         write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER2);
         client_version_try = PROTOCOL_VER1;
-        break;
-      default:
+    } else if (client_version_try == PROTOCOL_VER1) {
+        ROS_DEBUG("Sending request topics message for VER1 protocol.");
+        write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER1);
+        client_version_try = PROTOCOL_VER2;
+    } else {
         client_version_try = PROTOCOL_VER2;
     }
   }
 
-  static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
-    uint8_t sum = (topic_id >> 8) + topic_id + (stream.getLength() >> 8) + stream.getLength();
+  /*static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
+    uint8_t sum = (topic_id >> 8) + topic_id; //+ (stream.getLength() >> 8) + stream.getLength();
     for (uint16_t i = 0; i < stream.getLength(); ++i) {
       sum += stream.getData()[i];
     }
     return 255 - sum;
+  }*/
+  static uint8_t checksum(ros::serialization::IStream& stream) {
+    uint8_t sum = 0;
+    for (uint16_t i = 0; i < stream.getLength(); ++i) {
+      sum += stream.getData()[i];
+    }
+    return sum;
+  }
+
+  static uint8_t checksum(uint16_t val) {
+    return (val >> 8) | val;
   }
 
   //// RECEIVED MESSAGE HANDLERS ////
