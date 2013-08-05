@@ -1,13 +1,33 @@
 
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
+#include <rosserial_msgs/RequestMessageInfo.h>
 #include <topic_tools/shape_shifter.h>
 
 
 class Publisher {
 public:
   Publisher(ros::NodeHandle& nh, const rosserial_msgs::TopicInfo& topic_info) {
-    message_.morph(topic_info.md5sum, topic_info.message_type, "", "false");
+    if (!message_service_.isValid()) {
+      // lazy-initialize the service caller.
+      message_service_ = nh.serviceClient<rosserial_msgs::RequestMessageInfo>("message_info");
+      if (!message_service_.waitForExistence(ros::Duration(5.0))) {
+        ROS_WARN("Timed out waiting for message_info service to become available.");
+      }
+    }
+
+    rosserial_msgs::RequestMessageInfo info;
+    info.request.type = topic_info.message_type;
+    if (message_service_.call(info)) {
+      if (info.response.md5 != topic_info.md5sum) {
+        ROS_WARN_STREAM("Message" << topic_info.message_type  << "MD5 sum from client does not match that in system. Will avoid using system's message definition.");
+        info.response.definition = "";
+      }
+    } else {
+      ROS_WARN("Failed to call message_info service. Proceeding without full message definition.");
+    }
+
+    message_.morph(topic_info.md5sum, topic_info.message_type, info.response.definition, "false");
     publisher_ = message_.advertise(nh, topic_info.topic_name, 1);
   }
 
@@ -19,7 +39,11 @@ public:
 private:
   ros::Publisher publisher_;
   topic_tools::ShapeShifter message_;
+
+  static ros::ServiceClient message_service_;
 };
+
+ros::ServiceClient Publisher::message_service_;
 
 
 class Subscriber {
