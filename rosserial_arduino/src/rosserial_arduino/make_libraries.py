@@ -84,6 +84,8 @@ rospack = rospkg.RosPack()
 
 # copy ros_lib stuff in
 rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
+rosserial_client_dir = rospack.get_path("rosserial_client")
+print "/n path: %s" % rosserial_client_dir
 shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
 
