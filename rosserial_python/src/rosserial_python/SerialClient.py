@@ -316,7 +316,7 @@ class SerialClient:
                 rospy.signal_shutdown("Error opening serial: %s" % e)
                 raise SystemExit
 
-        self.port.timeout = 0.01  # Edit the port timeout
+        self.port.timeout = 0.05  # Edit the port timeout was 0.01
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
