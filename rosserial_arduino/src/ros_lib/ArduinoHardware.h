@@ -40,12 +40,18 @@
 #else
 #include <WProgram.h> // Arduino 0022
 #endif
+#ifdef _SAM3XA_ // Arduino Due
+#include <UARTClass.h>
+#define SERIAL_CLASS UARTClass
+#else
 #include <HardwareSerial.h>
+#define SERIAL_CLASS HardwareSerial
+#endif
 
 class ArduinoHardware {
   public:
     ArduinoHardware(HardwareSerial* io , long baud= 57600){
-      iostream = io;
+      iostream = static_cast<SERIAL_CLASS*>(io);
       baud_ = baud;
     }
     ArduinoHardware()
@@ -77,7 +83,7 @@ class ArduinoHardware {
     unsigned long time(){return millis();}
 
   protected:
-    HardwareSerial* iostream;
+    SERIAL_CLASS* iostream;
     long baud_;
 };
 
