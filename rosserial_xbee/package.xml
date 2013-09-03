@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_xbee</name>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
   <description>
 
      rosserial_xbee provides tools to do point to multipoint communication
@@ -13,7 +13,7 @@
 
   </description>
   <author>Adam Stambler</author>
-  <maintainer email="mferguson@willowgarage.com">Michael Ferguson</maintainer>
+  <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial_xbee</url>
 

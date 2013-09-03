@@ -2,7 +2,12 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.5.0 (2013-07-15)
+0.5.2 (2013-07-17)
+------------------
+
+* Fix release version
+
+0.5.1 (2013-07-15)
 ------------------
 * Modified the return value of publish()
 * Modified the frame structure for serial communication, particularly add the checksum for msg_len
