@@ -266,7 +266,7 @@ namespace ros {
           }
         }
 
-        char bf[10];
+        char bf[20];
         isnprintf(bf,20,"SPIN-%d-%d-T%d",chars_read,chars_flushed,topic_);
         loginfo(bf);
 
