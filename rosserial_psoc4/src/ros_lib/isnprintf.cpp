@@ -25,7 +25,7 @@ static char* change(uint32_t Index)
 }
 
 
-int isnprintf(char *s, int buf_len, char *pszFmt,...)
+int isnprintf(char *s, int buf_len, const char *pszFmt,...)
 {
     int chars_generated=0;
     char *pszVal;
