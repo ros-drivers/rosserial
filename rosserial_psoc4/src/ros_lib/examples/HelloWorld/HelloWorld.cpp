@@ -7,6 +7,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
 
+#include "isnprintf.h"
 #include "Uarts.h"
 extern Uart Uart0;
 
@@ -23,10 +24,10 @@ ros::Publisher chatter("chatter", &str_msg);
 
 char hello[13] = "hello world!";
 
+
 void setup()
 {
   nh.initNode();
-  Uart0.write('X');
   nh.advertise(chatter);
   nh.subscribe(sub);
 }
@@ -34,6 +35,7 @@ void setup()
 void loop()
 {
   str_msg.data = hello;
+  isnprintf(hello+5, 7, "%d", (uint32_t)nh.now().sec);
   chatter.publish( &str_msg );
   nh.spinOnce();
   delay(1000);
