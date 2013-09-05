@@ -170,15 +170,21 @@ class StringDataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t * length_%s = (uint32_t *)(outbuffer + offset);\n' % cn)
-        f.write('      *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
-        f.write('      offset += 4;\n')
-        f.write('      memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
-        f.write('      offset += *length_%s;\n' % cn)
+        f.write('      uint32_t length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
+        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,0))
+        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,1))
+        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,2))
+        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,3))
+        f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
+        f.write('      offset += length_%s;\n' % cn)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = *(uint32_t *)(inbuffer + offset);\n' % cn)
+        f.write('      uint32_t length_%s = 0;\n' % cn)
+        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,0,0) )
+        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,1,1) )
+        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,2,2) )
+        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,3,3) )
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
