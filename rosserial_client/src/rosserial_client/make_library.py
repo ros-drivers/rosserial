@@ -188,6 +188,7 @@ class StringDataType(PrimitiveDataType):
         f.write('      this->%s = (char *)(inbuffer + offset-1);\n' % self.name)
         f.write('      offset += length_%s;\n' % cn)
 
+
 class TimeDataType(PrimitiveDataType):
 
     def __init__(self, name, ty, bytes):
