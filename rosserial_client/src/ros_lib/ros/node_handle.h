@@ -35,10 +35,16 @@
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
+#undef PARAMETER_SUPPORT
+
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 #include "rosserial_msgs/Log.h"
+#ifdef PARAMETER_SUPPORT
 #include "rosserial_msgs/RequestParam.h"
+#endif
+
+#include "isnprintf.h"
 
 #define SYNC_SECONDS        5
 
@@ -65,7 +71,7 @@
 
 
 
-#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
+#define MSG_TIMEOUT 200  // was 20 milliseconds to recieve all of message data
 
 #include "msg.h"
 
@@ -84,9 +90,10 @@ namespace ros {
 #include "service_server.h"
 #include "service_client.h"
 
+
 namespace ros {
 
-  using rosserial_msgs::TopicInfo;
+//  using rosserial_msgs::TopicInfo; // what was this doing, anything??
 
   /* Node Handle */
   template<class Hardware,
@@ -167,20 +174,25 @@ namespace ros {
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             configured_ = false;
          }
+
          
         /* reset if message has timed out */
         if ( mode_ != MODE_FIRST_FF){ 
           if (c_time > last_msg_timeout_time){
             mode_ = MODE_FIRST_FF;
+            loginfo("MSGTO");
           }
         }
 
         /* while available buffer, read data */
+        uint32_t chars_read = 0;
+        uint32_t chars_flushed = 0;
         while( true )
         {
           int data = hardware_.read();
           if( data < 0 )
             break;
+          chars_read++;
           checksum_ += data;
           if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
             message_in[index_++] = data;
@@ -191,6 +203,9 @@ namespace ros {
             if(data == 0xff){
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
+              topic_=999;
+            } else {
+              chars_flushed++;
             }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
@@ -212,6 +227,7 @@ namespace ros {
             if( (checksum_%256) == 255)
 	      mode_++;
 	    else 
+              //loginfo("CHEK1");
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
@@ -225,24 +241,34 @@ namespace ros {
           }else if( mode_ == MODE_MSG_CHECKSUM ){ /* do checksum */
             mode_ = MODE_FIRST_FF;
             if( (checksum_%256) == 255){
-              if(topic_ == TopicInfo::ID_PUBLISHER){
+              if(topic_ == rosserial_msgs::TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
+                loginfo("ABCD");
                 negotiateTopics();
+                loginfo("EFGH");
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
                 return -1;
-              }else if(topic_ == TopicInfo::ID_TIME){
+              }else if(topic_ == rosserial_msgs::TopicInfo::ID_TIME){
                 syncTime(message_in);
-              }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
+#ifdef PARAMETER_SUPPORT
+              }else if (topic_ == rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
+#endif
               }else{
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
               }
+            } else { //failed msg checksum
+              loginfo("CHEK2");
             }
           }
         }
+
+        char bf[10];
+        isnprintf(bf,20,"SPIN-%d-%d-T%d",chars_read,chars_flushed,topic_);
+        loginfo(bf);
 
         /* occasionally sync time */
         if( configured_ && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
@@ -259,6 +285,7 @@ namespace ros {
         return configured_;
       };
 
+
       /********************************************************************
        * Time functions
        */
@@ -266,7 +293,7 @@ namespace ros {
       void requestSyncTime()
       {
         std_msgs::Time t;
-        publish(TopicInfo::ID_TIME, &t);
+        publish(rosserial_msgs::TopicInfo::ID_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -298,7 +325,9 @@ namespace ros {
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
+        loginfo("SETN");
       }
+
 
       /********************************************************************
        * Topic Management 
@@ -365,14 +394,19 @@ namespace ros {
         int i;
         for(i = 0; i < MAX_PUBLISHERS; i++)
         {
+          loginfo("publoop");
           if(publishers[i] != 0) // non-empty slot
           {
             ti.topic_id = publishers[i]->id_;
             ti.topic_name = (char *) publishers[i]->topic_;
+            loginfo(ti.topic_name);
             ti.message_type = (char *) publishers[i]->msg_->getType();
+            loginfo(ti.message_type);
             ti.md5sum = (char *) publishers[i]->msg_->getMD5();
+            loginfo(ti.md5sum);
             ti.buffer_size = OUTPUT_SIZE;
             publish( publishers[i]->getEndpointType(), &ti );
+
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -390,10 +424,12 @@ namespace ros {
         configured_ = true;
       }
 
+
       virtual int publish(int id, const Msg * msg)
       {
         if(id >= 100 && !configured_) 
 	  return 0;
+
 
         /* serialize message */
         int l = msg->serialize(message_out+7);
@@ -413,19 +449,19 @@ namespace ros {
           chk += message_out[i];
         l += 7;
         message_out[l++] = 255 - (chk%256);
-
         if( l <= OUTPUT_SIZE ){
           hardware_.write(message_out, l);
           return l;
         }else{
-          logerror("Message from device dropped: message larger than buffer.");
+//          logerror("Message from device dropped: message larger than buffer.");  //TBD: does this make publish reentrant?
+          return 0;
         }
+
       }
 
       /********************************************************************
        * Logging
        */
-
     private:
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;
@@ -451,16 +487,18 @@ namespace ros {
         log(rosserial_msgs::Log::FATAL, msg);
       }
 
+#ifdef PARAMETER_SUPPORT
       /********************************************************************
        * Parameters
        */
-
     private:
       bool param_recieved;
+
       rosserial_msgs::RequestParamResponse req_param_resp;
 
+
       bool requestParam(const char * name, int time_out =  1000){
-        param_recieved = false;
+         param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
@@ -505,9 +543,12 @@ namespace ros {
           }
         }
         return false;
-      }  
+      } 
+#endif // PARAMETER_SUPPORT
   };
 
 }
+
+
 
 #endif

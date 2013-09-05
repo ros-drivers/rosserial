@@ -357,9 +357,14 @@ class SerialClient:
         # request topic sync
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
+        print "requesting topics.."
+
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
+
+        import binascii 
+
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if (self.synced == True):
@@ -373,9 +378,11 @@ class SerialClient:
 
             flag = [0,0]
             flag[0]  = self.port.read(1)
-            if (flag[0] != '\xff'):                
+            if (flag[0] != '\xff'): 
                 continue
+            print "flag[0]:", binascii.hexlify(flag[0])
             flag[1] = self.port.read(1)
+            print "flag[1]:", binascii.hexlify(flag[1])
             if ( flag[1] != self.protocol_ver):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                 rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
@@ -387,6 +394,7 @@ class SerialClient:
                 rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                 continue
             msg_len_bytes = self.port.read(2)
+            print "message_len_bytes ", binascii.hexlify(msg_len_bytes)
             if len(msg_len_bytes) != 2:
                 continue
 
@@ -394,6 +402,7 @@ class SerialClient:
 
             # checksum of msg_len
             msg_len_chk = self.port.read(1)
+            print "msg_len_chk ", binascii.hexlify(msg_len_chk)
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
             if msg_len_checksum%256 != 255:
@@ -403,11 +412,15 @@ class SerialClient:
 
             # topic id (2 bytes)
             topic_id_header = self.port.read(2)
+            print "topic_id_header ", binascii.hexlify(topic_id_header)
             if len(topic_id_header)!=2:
                 continue
             topic_id, = struct.unpack("<h", topic_id_header)
 
+            print "topic id %d"%topic_id
+
             msg = self.port.read(msg_length)
+            print "msg  ", binascii.hexlify(msg)
             if (len(msg) != msg_length):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
@@ -417,6 +430,7 @@ class SerialClient:
 
             # checksum for topic id and msg
             chk = self.port.read(1)
+            print "chk  ", binascii.hexlify(chk)
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
@@ -544,6 +558,7 @@ class SerialClient:
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
+        print "sending syncTime msg", t.data.to_sec()
 
     def handleParameterRequest(self, data):
         """ Send parameters to device. Supports only simple datatypes and arrays of such. """
