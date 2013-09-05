@@ -115,7 +115,12 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : configured_(false) {}
+      NodeHandle_() : configured_(false) {
+        memset(publishers, 0, sizeof(publishers));
+        memset(subscribers, 0, sizeof(subscribers));
+        memset(message_in, 0, sizeof(message_in));
+        memset(message_out,0, sizeof(message_out));
+      }
       
       Hardware* getHardware(){
         return &hardware_;
