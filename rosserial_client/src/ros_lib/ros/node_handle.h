@@ -266,9 +266,9 @@ namespace ros {
           }
         }
 
-        char bf[20];
-        isnprintf(bf,20,"SPIN-%d-%d-T%d",chars_read,chars_flushed,topic_);
-        loginfo(bf);
+        //char bf[20];
+        //isnprintf(bf,20,"SPIN-%d-%d-T%d",chars_read,chars_flushed,topic_);
+        //loginfo(bf);
 
         /* occasionally sync time */
         if( configured_ && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
@@ -325,7 +325,7 @@ namespace ros {
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
-        loginfo("SETN");
+        //loginfo("SETN");
       }
 
 
