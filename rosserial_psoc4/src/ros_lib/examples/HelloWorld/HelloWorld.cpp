@@ -8,8 +8,6 @@
 #include <std_msgs/Empty.h>
 
 #include "isnprintf.h"
-#include "Uarts.h"
-extern Uart Uart0;
 
 ros::NodeHandle  nh;
 
