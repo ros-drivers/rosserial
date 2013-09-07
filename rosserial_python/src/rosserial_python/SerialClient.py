@@ -437,7 +437,7 @@ class SerialClient:
             except Exception, e:
                 # Catch exception, e.g. Resource temporarily unavailable
                 # If this is a keyboard exception, the app will still exit here.
-                rospy.logerr("Caught general exception, please note its type.")
+                rospy.logerr("Caught exception "+str(e))
                 print 'Exception Information:',e
                 rospy.sleep(0.5)
                 continue		
