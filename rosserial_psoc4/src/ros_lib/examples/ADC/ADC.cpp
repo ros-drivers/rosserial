@@ -6,47 +6,38 @@
  * an analog value into ROS in a pinch.
  */
 
-
 #include <ros.h>
-
-#include "isnprintf.h"
 #include <rosserial_psoc4/Adc.h>
+#include "ADC_psoc4.h"
 
 ros::NodeHandle nh;
 
 rosserial_psoc4::Adc adc_msg;
 ros::Publisher p("adc", &adc_msg);
 
-uint32_t t;
-// dummy data
-int analogRead(int pin) {
-  return pin*100 + t;
-}
-
-//We average the analog reading to elminate some of the noise
-int averageAnalog(int pin){
-  int v=0;
-  for(int i=0; i<4; i++) v+= analogRead(pin);
-  return v/4;
-}
-
-uint32_t when; 
-
+uint32_t next_report_time;
+const uint32_t kReportIntervalMs = 250;
 
 void setup()
 { 
   nh.initNode();
   nh.advertise(p);
-  when = SysTimer::millis();
-  t = 0;
+  next_report_time = SysTimer::millis();
+  adc_setup();
 }
 
+//We average the analog reading to elminate some of the noise
+int averageAnalog(int pin){
+  int v=0;
+  for(int i=0; i<4; i++) v += analogRead(pin);
+  if(v<0) v = 0;
+  return v/4;
+}
 
 void loop()
 {
-  if ((int32_t)(SysTimer::millis()-when) > 0) {
-    when += 2000;
-    t++;
+  if ((int32_t)(SysTimer::millis()-next_report_time) > 0) {
+    next_report_time += kReportIntervalMs;
 
     adc_msg.adc0 = averageAnalog(0);
     adc_msg.adc1 = averageAnalog(1);
