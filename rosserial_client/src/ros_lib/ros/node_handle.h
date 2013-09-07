@@ -44,7 +44,6 @@
 #include "rosserial_msgs/RequestParam.h"
 #endif
 
-#include "isnprintf.h"
 
 #define SYNC_SECONDS        5
 
@@ -180,7 +179,7 @@ namespace ros {
         if ( mode_ != MODE_FIRST_FF){ 
           if (c_time > last_msg_timeout_time){
             mode_ = MODE_FIRST_FF;
-            loginfo("MSGTO");
+            logwarn("MsgTimeout");
           }
         }
 
@@ -227,7 +226,6 @@ namespace ros {
             if( (checksum_%256) == 255)
 	      mode_++;
 	    else 
-              //loginfo("CHEK1");
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
@@ -243,9 +241,7 @@ namespace ros {
             if( (checksum_%256) == 255){
               if(topic_ == rosserial_msgs::TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
-                loginfo("ABCD");
                 negotiateTopics();
-                loginfo("EFGH");
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
                 return -1;
@@ -261,14 +257,10 @@ namespace ros {
                   subscribers[topic_-100]->callback( message_in );
               }
             } else { //failed msg checksum
-              loginfo("CHEK2");
+              //logwarn("BadMsgChksum");
             }
           }
         }
-
-        //char bf[20];
-        //isnprintf(bf,20,"SPIN-%d-%d-T%d",chars_read,chars_flushed,topic_);
-        //loginfo(bf);
 
         /* occasionally sync time */
         if( configured_ && ((c_time-last_sync_time) > (SYNC_SECONDS*500) )){
@@ -325,7 +317,6 @@ namespace ros {
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
-        //loginfo("SETN");
       }
 
 
@@ -394,19 +385,14 @@ namespace ros {
         int i;
         for(i = 0; i < MAX_PUBLISHERS; i++)
         {
-          loginfo("publoop");
           if(publishers[i] != 0) // non-empty slot
           {
             ti.topic_id = publishers[i]->id_;
             ti.topic_name = (char *) publishers[i]->topic_;
-            loginfo(ti.topic_name);
             ti.message_type = (char *) publishers[i]->msg_->getType();
-            loginfo(ti.message_type);
             ti.md5sum = (char *) publishers[i]->msg_->getMD5();
-            loginfo(ti.md5sum);
             ti.buffer_size = OUTPUT_SIZE;
             publish( publishers[i]->getEndpointType(), &ti );
-
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
