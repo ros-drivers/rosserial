@@ -1,19 +1,21 @@
 # Makefile for building rosserial PSoC4 example apps
 # 
+# Set APP= to a name from catkin_ws/src/rosserial/rosserial_psoc4/src/ros_lib/examples
 # Run make from within the catkin_ws/src/rosserial/rosserial_psoc4/src/Cypress directory
 #  then copy output files to the Windows PSoC Creator environment:
-#    exec.ihx to <project name>.cydsn/CortexM0/ARM_GCC_441/Debug/exec.ihx
+#    exec.ihx to <project name>.cydsn/exec.ihx
 #    makehex.bat to <project name>.cydsn/makehex.bat
 #  From <project name>.cydsn/ , run makehex.bat
 #  Use PSoC Creator "program" function (ctrl-F5) to program the Pioneer Kit board.
 
-APP=ADC
-CREATORDIR=./rosserial_psoc4/ADC.cydsn
+APP=HelloWorld # name of example application
+
+CREATORDIR=./rosserial_psoc4/$(APP).cydsn
 
 PROJECT=$(APP)
 ODIR=./out/
 GENSRCDIR=$(CREATORDIR)/Generated_Source/PSoC4/
-COMPONENTLIB=/home/chuck/Cypress/CyComponentLibrary.a
+COMPONENTLIB=./CyComponentLibrary.a
 PROJLIB=$(ODIR)$(PROJECT).a
 
 CC=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-gcc
@@ -74,7 +76,9 @@ exec.elf: $(OBJECTS) $(PROJLIB) $(ODIR)Cm0Start.o $(ODIR)init.o $(ODIR)$(APP).o
 
 exec.ihx: exec.elf
 	$(OBJCOPY) -O ihex $< $@
-	echo cyhextool -o ./CortexM0/ARM_GCC_441/Debug/$(APP).hex -f ./CortexM0/ARM_GCC_441/Debug/exec.ihx -prot ./Generated_Source/PSoC4/protect.hex -id 4C81193 -a EEPROM=90200000:0,PROGRAM=00000000:8000,CONFIG=80000000:1000,PROTECT=90400000:40 -meta 1101 -chipProt 01 | tr "/" "\\\\" > makehex.bat
+	echo cyhextool -o ./CortexM0/ARM_GCC_441/Debug/$(APP).hex -f exec.ihx -prot ./Generated_Source/PSoC4/protect.hex -id 4C81193 -a EEPROM=90200000:0,PROGRAM=00000000:8000,CONFIG=80000000:1000,PROTECT=90400000:40 -meta 1101 -chipProt 01 | tr "/" "\\\\" > makehex.bat
+#	cp exec.ihx $(WINDOWS_SHARE)$(APP).cydsn
+#	cp makehex.bat $(WINDOWS_SHARE)$(APP).cydsn
 
 .PHONY: clean
 
