@@ -8,9 +8,11 @@
 #  From <project name>.cydsn/ , run makehex.bat
 #  Use PSoC Creator "program" function (ctrl-F5) to program the Pioneer Kit board.
 
-APP=HelloWorld # name of example application
+# name of example application
+APP=HelloWorld
 
 CREATORDIR=./rosserial_psoc4/$(APP).cydsn
+$(info Using creator directory $(CREATORDIR))
 
 PROJECT=$(APP)
 ODIR=./out/
