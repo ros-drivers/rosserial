@@ -381,9 +381,9 @@ class SerialClient:
                 flag[0]  = self.port.read(1)
                 if (flag[0] != '\xff'): 
                     continue
-                print "flag[0]:", binascii.hexlify(flag[0])
+                #print "flag[0]:", binascii.hexlify(flag[0])
                 flag[1] = self.port.read(1)
-                print "flag[1]:", binascii.hexlify(flag[1])
+                #print "flag[1]:", binascii.hexlify(flag[1])
                 if ( flag[1] != self.protocol_ver):
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                     rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
@@ -395,7 +395,7 @@ class SerialClient:
                     rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                     continue
                 msg_len_bytes = self.port.read(2)
-                print "message_len_bytes ", binascii.hexlify(msg_len_bytes)
+                #print "message_len_bytes ", binascii.hexlify(msg_len_bytes)
                 if len(msg_len_bytes) != 2:
                     continue
 
@@ -403,7 +403,7 @@ class SerialClient:
 
                 # checksum of msg_len
                 msg_len_chk = self.port.read(1)
-                print "msg_len_chk ", binascii.hexlify(msg_len_chk)
+                #print "msg_len_chk ", binascii.hexlify(msg_len_chk)
                 msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
                 if msg_len_checksum%256 != 255:
@@ -413,7 +413,7 @@ class SerialClient:
 
                 # topic id (2 bytes)
                 topic_id_header = self.port.read(2)
-                print "topic_id_header ", binascii.hexlify(topic_id_header)
+                #print "topic_id_header ", binascii.hexlify(topic_id_header)
                 if len(topic_id_header)!=2:
                     continue
                 topic_id, = struct.unpack("<h", topic_id_header)
@@ -421,7 +421,7 @@ class SerialClient:
                 print "topic id %d"%topic_id
 
                 msg = self.port.read(msg_length)
-                print "msg  ", binascii.hexlify(msg)
+                #print "msg  ", binascii.hexlify(msg)
                 if (len(msg) != msg_length):
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
@@ -431,7 +431,7 @@ class SerialClient:
     
                 # checksum for topic id and msg
                 chk = self.port.read(1)
-                print "chk  ", binascii.hexlify(chk)
+                #print "chk  ", binascii.hexlify(chk)
                 checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             except Exception, e:
