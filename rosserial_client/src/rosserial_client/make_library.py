@@ -57,6 +57,7 @@ def type_to_var(ty):
     }
     return lookup[ty]
 
+
 #####################################################################
 # Data Types
 
@@ -215,7 +216,8 @@ class TimeDataType(PrimitiveDataType):
 
 
 class ArrayDataType(PrimitiveDataType):
-
+    global USE_MALLOC
+    #TODO (8-Sep-2013) test variable-size arrays more thoroughly with USE_MALLOC logic
     def __init__(self, name, ty, bytes, cls, array_size=None):
         self.name = name
         self.type = ty
@@ -254,14 +256,17 @@ class ArrayDataType(PrimitiveDataType):
             c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
             f.write('      uint8_t %s_lengthT = *(inbuffer + offset++);\n' % self.name)
-            f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
-            f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
+            if USE_MALLOC:
+                f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
+                f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
+                f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
             f.write('      offset += 3;\n')
-            f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
-            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % (self.name) )
+            f.write('      for( uint8_t i = 0; i < %s_lengthT; i++){\n' % (self.name) )
             c.deserialize(f)
-            f.write('        memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))
+            f.write('      if (i < %s_length) {\n' % self.name)
+            f.write('          memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))
+            f.write('      }\n')
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
@@ -556,11 +561,16 @@ def get_dependency_sorted_package_list(rospack):
     dependency_list.reverse()
     return dependency_list
 
-def rosserial_generate(rospack, path, mapping):
+def rosserial_generate(rospack, path, mapping, use_malloc=True):
     # horrible hack -- make this die
     global ROS_TO_EMBEDDED_TYPES
     ROS_TO_EMBEDDED_TYPES = mapping
 
+    # more of same horribleness
+    # for very constrained systems, use_malloc=False; variable-size arrays will be clipped
+    global USE_MALLOC
+    USE_MALLOC = use_malloc
+    
     # find and sort all packages
     pkgs = get_dependency_sorted_package_list(rospack)
 
