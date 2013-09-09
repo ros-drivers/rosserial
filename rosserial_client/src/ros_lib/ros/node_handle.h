@@ -92,8 +92,6 @@ namespace ros {
 
 namespace ros {
 
-//  using rosserial_msgs::TopicInfo; // what was this doing, anything??
-
   /* Node Handle */
   template<class Hardware,
            int MAX_SUBSCRIBERS=25,
@@ -116,6 +114,27 @@ namespace ros {
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
+
+    public:
+      /* diagnostic array */
+      typedef enum {
+        msg_starts,
+        msg_timeouts,
+        missed_flags,
+        reconfigures,
+        msg_len_checksum_fails,
+        msg_body_checksum_fails,
+        chars_read,
+        chars_flushed,
+        NUM_DIAGNOSTICS
+      } NhDiagnosticType;
+      #ifdef NH_DIAGNOSTICS
+        uint16_t nh_diagnostics[NUM_DIAGNOSTICS];
+        #define INCREMENT_DIAGNOSTIC(n) ++nh_diagnostics[(n)]
+      #else
+        #define INCREMENT_DIAGNOSTIC(n) { }
+      #endif
+
 
       /*
        * Setup Functions
@@ -179,19 +198,17 @@ namespace ros {
         if ( mode_ != MODE_FIRST_FF){ 
           if (c_time > last_msg_timeout_time){
             mode_ = MODE_FIRST_FF;
-            logwarn("MsgTimeout");
+            INCREMENT_DIAGNOSTIC(msg_timeouts);
           }
         }
 
         /* while available buffer, read data */
-        uint32_t chars_read = 0;
-        uint32_t chars_flushed = 0;
         while( true )
         {
           int data = hardware_.read();
           if( data < 0 )
             break;
-          chars_read++;
+          INCREMENT_DIAGNOSTIC(chars_read);
           checksum_ += data;
           if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
             message_in[index_++] = data;
@@ -202,17 +219,20 @@ namespace ros {
             if(data == 0xff){
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
-              topic_=999;
+              INCREMENT_DIAGNOSTIC(msg_starts);
             } else {
-              chars_flushed++;
+              INCREMENT_DIAGNOSTIC(chars_flushed);
             }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
-              if (configured_ == false)
+              INCREMENT_DIAGNOSTIC(missed_flags);
+              if (configured_ == false) {
                   requestSyncTime(); 	/* send a msg back showing our protocol version */
+                  INCREMENT_DIAGNOSTIC(reconfigures);
+              }
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
@@ -225,8 +245,10 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else 
+	    else {
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
+              INCREMENT_DIAGNOSTIC(msg_len_checksum_fails);
+            }
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
@@ -257,7 +279,7 @@ namespace ros {
                   subscribers[topic_-100]->callback( message_in );
               }
             } else { //failed msg checksum
-              //logwarn("BadMsgChksum");
+              INCREMENT_DIAGNOSTIC(msg_body_checksum_fails);
             }
           }
         }
@@ -313,6 +335,9 @@ namespace ros {
 
       void setNow( Time & new_now )
       {
+        #ifdef NH_DIAGNOSTICS
+        // TODO: check for big time jumps
+        #endif
         unsigned long ms = hardware_.time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
@@ -439,7 +464,7 @@ namespace ros {
           hardware_.write(message_out, l);
           return l;
         }else{
-//          logerror("Message from device dropped: message larger than buffer.");  //TBD: does this make publish reentrant?
+          logerror("Message from device dropped: message larger than buffer.");
           return 0;
         }
 
@@ -487,7 +512,7 @@ namespace ros {
          param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
-        publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
+        publish(rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, &req);
         int end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
