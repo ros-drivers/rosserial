@@ -290,13 +290,14 @@ class SerialClient:
         ServiceServer responds to requests from the serial device.
     """
 
-    def __init__(self, port=None, baud=57600, timeout=5.0):
+    def __init__(self, port=None, baud=57600, timeout=5.0, writeTimeout=0.1):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
 
         self.lastsync = rospy.Time(0)
         self.lastsync_lost = rospy.Time(0)
         self.timeout = timeout
+        self.writeTimeout = writeTimeout
         self.synced = False
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
@@ -310,7 +311,7 @@ class SerialClient:
         else:
             # open a specific port
             try:
-                self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                self.port = Serial(port, baud, timeout=self.timeout*0.5, writeTimeout=self.writeTimeout)
             except SerialException as e:
                 rospy.logerr("Error opening serial: %s", e)
                 rospy.signal_shutdown("Error opening serial: %s" % e)
@@ -629,13 +630,18 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-                # second byte of header is protocol version
-                msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
-                msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
-                data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
-                data = data + msg + chr(msg_checksum)
-                self.port.write(data)
+                try:
+                    # second byte of header is protocol version
+                    msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
+                    msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
+                    data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                    data = data + msg + chr(msg_checksum)
+                    self.port.write(data)
+                except SerialTimeoutException:
+                    rospy.logerr("Write to port %s timed out" % self.port)
+                    print "msg topic %d, length %d"%(topic,length)
+                    rospy.sleep(0.5)
+                    return -1
                 return length
 
     def sendDiagnostics(self, level, msg_text):
