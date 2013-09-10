@@ -24,6 +24,7 @@ CC=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-gcc
 AR=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-ar
 ASM=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-as
 OBJCOPY=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-objcopy
+SIZE=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-size
 
 PROJLIBCFLAGS= -I. -Wno-main -I$(GENSRCDIR) -mcpu=cortex-m0 -mthumb -Wall -g -D DEBUG -ffunction-sections
 PROJLIBASMFLAGS= -I. -I$(GENSRCDIR) -mcpu=cortex-m0 -mthumb -g 
@@ -81,6 +82,7 @@ exec.ihx: exec.elf
 	echo cyhextool -o ./CortexM0/ARM_GCC_441/Debug/$(APP).hex -f exec.ihx -prot ./Generated_Source/PSoC4/protect.hex -id 4C81193 -a EEPROM=90200000:0,PROGRAM=00000000:8000,CONFIG=80000000:1000,PROTECT=90400000:40 -meta 1101 -chipProt 01 | tr "/" "\\\\" > makehex.bat
 #	cp exec.ihx $(WINDOWS_SHARE)$(APP).cydsn
 #	cp makehex.bat $(WINDOWS_SHARE)$(APP).cydsn
+	$(SIZE) $<
 
 .PHONY: clean
 
