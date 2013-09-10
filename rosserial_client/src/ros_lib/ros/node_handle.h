@@ -35,14 +35,10 @@
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
-#undef PARAMETER_SUPPORT
-
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 #include "rosserial_msgs/Log.h"
-#ifdef PARAMETER_SUPPORT
 #include "rosserial_msgs/RequestParam.h"
-#endif
 
 
 #define SYNC_SECONDS        5
@@ -269,11 +265,9 @@ namespace ros {
                 return -1;
               }else if(topic_ == rosserial_msgs::TopicInfo::ID_TIME){
                 syncTime(message_in);
-#ifdef PARAMETER_SUPPORT
               }else if (topic_ == rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
-#endif
               }else{
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
@@ -498,7 +492,6 @@ namespace ros {
         log(rosserial_msgs::Log::FATAL, msg);
       }
 
-#ifdef PARAMETER_SUPPORT
       /********************************************************************
        * Parameters
        */
@@ -555,7 +548,6 @@ namespace ros {
         }
         return false;
       } 
-#endif // PARAMETER_SUPPORT
   };
 
 }
