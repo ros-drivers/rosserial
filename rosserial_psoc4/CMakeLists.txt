@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation)
 
 add_message_files(FILES
                   Adc.msg
+                  Nh_diag.msg
                  )
 
 add_service_files(FILES
