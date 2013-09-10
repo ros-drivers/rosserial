@@ -1,0 +1,31 @@
+<package>
+  <name>rosserial_psoc4</name>
+  <version>0.5.1</version>
+  <description>
+    Libraries and examples for ROSserial usage on Cypress PSoC4 Platforms.
+  </description>
+  <author>Michael Ferguson</author>
+  <author>Adam Stambler</author>
+  <author>Chuck Harrison</author>
+  <maintainer email="cfharr@gmail.com">Chuck Harrison</maintainer>
+  <license>BSD</license>
+  <url></url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>arm-none-eabi-gcc</build_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>rosserial_client</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>rosserial_msgs</run_depend>
+  <run_depend>rosserial_client</run_depend>
+  <run_depend>message_runtime</run_depend>
+</package>
+
+

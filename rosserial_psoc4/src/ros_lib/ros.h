@@ -32,59 +32,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_ARDUINO_HARDWARE_H_
-#define ROS_ARDUINO_HARDWARE_H_
+#ifndef _ROS_H_
+#define _ROS_H_
 
-#if ARDUINO>=100
-#include <Arduino.h> // Arduino 1.0
-#else
-#include <WProgram.h> // Arduino 0022
-#endif
-#ifdef _SAM3XA_ // Arduino Due
-#include <UARTClass.h>
-#define SERIAL_CLASS UARTClass
-#else
-#include <HardwareSerial.h>
-#define SERIAL_CLASS HardwareSerial
-#endif
+#include "ros/node_handle.h"
+//
+#include <stdint.h>
+//#include <string.h>
+//#include <stdlib.h>
+//
 
-class ArduinoHardware {
-  public:
-    ArduinoHardware(HardwareSerial* io , long baud= 57600){
-      iostream = static_cast<SERIAL_CLASS*>(io);
-      baud_ = baud;
-    }
-    ArduinoHardware()
-    {
-      iostream = &Serial;
-      baud_ = 57600;
-    }
-    ArduinoHardware(ArduinoHardware& h){
-      this->iostream = iostream;
-      this->baud_ = h.baud_;
-    }
-  
-    void setBaud(long baud){
-      this->baud_= baud;
-    }
-  
-    int getBaud(){return baud_;}
 
-    void init(){
-      iostream->begin(baud_);
-    }
+#include "Psoc4Hardware.h"
 
-    int read(){return iostream->read();};
-    void write(uint8_t* data, int length){
-      for(int i=0; i<length; i++)
-        iostream->write(data[i]);
-    }
+namespace ros
+{
 
-    unsigned long time(){return millis();}
-
-  protected:
-    SERIAL_CLASS* iostream;
-    long baud_;
-};
+  typedef NodeHandle_<Psoc4Hardware, 6, 6, 200, 200> NodeHandle;
+ 
+}
 
 #endif

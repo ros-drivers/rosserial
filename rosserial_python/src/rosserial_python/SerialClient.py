@@ -290,13 +290,14 @@ class SerialClient:
         ServiceServer responds to requests from the serial device.
     """
 
-    def __init__(self, port=None, baud=57600, timeout=5.0):
+    def __init__(self, port=None, baud=57600, timeout=5.0, writeTimeout=0.1):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
 
         self.lastsync = rospy.Time(0)
         self.lastsync_lost = rospy.Time(0)
         self.timeout = timeout
+        self.writeTimeout = writeTimeout
         self.synced = False
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
@@ -310,13 +311,13 @@ class SerialClient:
         else:
             # open a specific port
             try:
-                self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                self.port = Serial(port, baud, timeout=self.timeout*0.5, writeTimeout=self.writeTimeout)
             except SerialException as e:
                 rospy.logerr("Error opening serial: %s", e)
                 rospy.signal_shutdown("Error opening serial: %s" % e)
                 raise SystemExit
 
-        self.port.timeout = 0.01  # Edit the port timeout
+        self.port.timeout = 0.05  # Edit the port timeout was 0.01
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
@@ -357,67 +358,90 @@ class SerialClient:
         # request topic sync
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
+        print "requesting topics.."
+
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
+
+        import binascii 
+
         while not rospy.is_shutdown():
-            if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
-                if (self.synced == True):
-                    rospy.logerr("Lost sync with device, restarting...")
-                else:
-                    rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
-                self.lastsync_lost = rospy.Time.now()
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
-                self.requestTopics()
-                self.lastsync = rospy.Time.now()
+            try:
+                if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
+                    if (self.synced == True):
+                        rospy.logerr("Lost sync with device, restarting...")
+                    else:
+                        rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
+                    self.lastsync_lost = rospy.Time.now()
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
+                    self.requestTopics()
+                    self.lastsync = rospy.Time.now()
 
-            flag = [0,0]
-            flag[0]  = self.port.read(1)
-            if (flag[0] != '\xff'):                
-                continue
-            flag[1] = self.port.read(1)
-            if ( flag[1] != self.protocol_ver):
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
-                if (flag[1] in protocol_ver_msgs):
-                    found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
-                else:
-                    found_ver_msg = "Protocol version of client is unrecognized"
-                rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
-                continue
-            msg_len_bytes = self.port.read(2)
-            if len(msg_len_bytes) != 2:
-                continue
+                flag = [0,0]
+                flag[0]  = self.port.read(1)
+                if (flag[0] != '\xff'): 
+                    continue
+                #print "flag[0]:", binascii.hexlify(flag[0])
+                flag[1] = self.port.read(1)
+                #print "flag[1]:", binascii.hexlify(flag[1])
+                if ( flag[1] != self.protocol_ver):
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                    rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                    if (flag[1] in protocol_ver_msgs):
+                        found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
+                    else:
+                        found_ver_msg = "Protocol version of client is unrecognized"
+                    rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
+                    continue
+                msg_len_bytes = self.port.read(2)
+                #print "message_len_bytes ", binascii.hexlify(msg_len_bytes)
+                if len(msg_len_bytes) != 2:
+                    continue
 
-            msg_length, = struct.unpack("<h", msg_len_bytes)
+                msg_length, = struct.unpack("<h", msg_len_bytes)
 
-            # checksum of msg_len
-            msg_len_chk = self.port.read(1)
-            msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
+                # checksum of msg_len
+                msg_len_chk = self.port.read(1)
+                #print "msg_len_chk ", binascii.hexlify(msg_len_chk)
+                msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
-            if msg_len_checksum%256 != 255:
-                rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
-                rospy.loginfo("chk is %d" %(ord(msg_len_chk)))
-                continue
+                if msg_len_checksum%256 != 255:
+                    rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
+                    rospy.loginfo("chk is %d" %(ord(msg_len_chk)))
+                    continue
 
-            # topic id (2 bytes)
-            topic_id_header = self.port.read(2)
-            if len(topic_id_header)!=2:
-                continue
-            topic_id, = struct.unpack("<h", topic_id_header)
+                # topic id (2 bytes)
+                topic_id_header = self.port.read(2)
+                #print "topic_id_header ", binascii.hexlify(topic_id_header)
+                if len(topic_id_header)!=2:
+                    continue
+                topic_id, = struct.unpack("<h", topic_id_header)
 
-            msg = self.port.read(msg_length)
-            if (len(msg) != msg_length):
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
-                rospy.loginfo("Packet Failed :  Failed to read msg data")
-                rospy.loginfo("msg len is %d",len(msg))
-                #self.port.flushInput()
-                continue
+                print "topic id %d"%topic_id
 
-            # checksum for topic id and msg
-            chk = self.port.read(1)
-            checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
+                msg = self.port.read(msg_length)
+                #print "msg  ", binascii.hexlify(msg)
+                if (len(msg) != msg_length):
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
+                    rospy.loginfo("Packet Failed :  Failed to read msg data")
+                    rospy.loginfo("msg len is %d",len(msg))
+                    #self.port.flushInput()
+                    continue
+    
+                # checksum for topic id and msg
+                chk = self.port.read(1)
+                #print "chk  ", binascii.hexlify(chk)
+                checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
+
+            except Exception, e:
+                # Catch exception, e.g. Resource temporarily unavailable
+                # If this is a keyboard exception, the app will still exit here.
+                rospy.logerr("Caught exception "+str(e))
+                print 'Exception Information:',e
+                rospy.sleep(0.5)
+                continue		
 
             if checksum%256 == 255:
                 self.synced = True
@@ -544,6 +568,7 @@ class SerialClient:
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
+        print "sending syncTime msg", t.data.to_sec()
 
     def handleParameterRequest(self, data):
         """ Send parameters to device. Supports only simple datatypes and arrays of such. """
@@ -605,13 +630,18 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-                # second byte of header is protocol version
-                msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
-                msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
-                data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
-                data = data + msg + chr(msg_checksum)
-                self.port.write(data)
+                try:
+                    # second byte of header is protocol version
+                    msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
+                    msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
+                    data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                    data = data + msg + chr(msg_checksum)
+                    self.port.write(data)
+                except SerialTimeoutException:
+                    rospy.logerr("Write to port %s timed out" % self.port)
+                    print "msg topic %d, length %d"%(topic,length)
+                    rospy.sleep(0.5)
+                    return -1
                 return length
 
     def sendDiagnostics(self, level, msg_text):

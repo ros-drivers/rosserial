@@ -11,15 +11,15 @@ ros::NodeHandle  nh;
 bool ledOn;
 void messageCb( const std_msgs::Empty& toggle_msg){
   ledOn = !ledOn;
-  digitalWrite(13, ledOn ? HIGH : LOW);   // blink the led
+  //digitalWrite(13, ledOn ? HIGH : LOW);   // blink the led
 }
 
 ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
 
 void setup()
 { 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  //pinMode(13, OUTPUT);
+  //digitalWrite(13, LOW);
   ledOn = false;
   nh.initNode();
   nh.subscribe(sub);

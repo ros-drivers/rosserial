@@ -3,6 +3,8 @@
  *
  * Copyright (c) 2011, Willow Garage, Inc.
  * All rights reserved.
+ * Mods from ArduinoHardware.h for Cypress PSoC4  (c) 2013 C. Harrison
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,34 +34,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_ARDUINO_HARDWARE_H_
-#define ROS_ARDUINO_HARDWARE_H_
+#ifndef ROS_PSOC4_HARDWARE_H_
+#define ROS_PSOC4_HARDWARE_H_
 
-#if ARDUINO>=100
-#include <Arduino.h> // Arduino 1.0
-#else
-#include <WProgram.h> // Arduino 0022
-#endif
-#ifdef _SAM3XA_ // Arduino Due
-#include <UARTClass.h>
-#define SERIAL_CLASS UARTClass
-#else
-#include <HardwareSerial.h>
-#define SERIAL_CLASS HardwareSerial
-#endif
+extern "C" {
+void  CyDelay(uint32_t milliseconds);
+}
+inline void delay(uint32_t milliseconds) { CyDelay(milliseconds); };
 
-class ArduinoHardware {
+#include "HardwareSerial.h"
+#include "Uarts.h"
+#include "SysTimer.h"
+
+#define DEFAULT_SERIAL Uart0
+
+class Psoc4Hardware {
   public:
-    ArduinoHardware(HardwareSerial* io , long baud= 57600){
-      iostream = static_cast<SERIAL_CLASS*>(io);
+    Psoc4Hardware(HardwareSerial* io , long baud= 57600){
+      iostream = io;
       baud_ = baud;
     }
-    ArduinoHardware()
+
+
+    Psoc4Hardware() 
     {
-      iostream = &Serial;
+      iostream = &DEFAULT_SERIAL;
       baud_ = 57600;
     }
-    ArduinoHardware(ArduinoHardware& h){
+
+    Psoc4Hardware(Psoc4Hardware& h){
       this->iostream = iostream;
       this->baud_ = h.baud_;
     }
@@ -74,16 +77,18 @@ class ArduinoHardware {
       iostream->begin(baud_);
     }
 
-    int read(){return iostream->read();};
+    int read() { return iostream->read(); }
+
     void write(uint8_t* data, int length){
       for(int i=0; i<length; i++)
         iostream->write(data[i]);
     }
 
-    unsigned long time(){return millis();}
+
+    unsigned long time() {return SysTimer::millis();}
 
   protected:
-    SERIAL_CLASS* iostream;
+    HardwareSerial* iostream;
     long baud_;
 };
 
