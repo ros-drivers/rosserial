@@ -11,21 +11,18 @@ catkin_package(
 ## Build ##
 ###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp executable
 add_executable(${PROJECT_NAME}_serial_node src/serial_node.cpp)
-add_executable(${PROJECT_NAME}_socket_node src/socket_node.cpp)
-
-## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_serial_node ${catkin_LIBRARIES})
-target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES})
+set_target_properties(${PROJECT_NAME}_serial_node PROPERTIES OUTPUT_NAME serial_node PREFIX "")
 
+add_executable(${PROJECT_NAME}_socket_node src/socket_node.cpp)
+target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES})
+set_target_properties(${PROJECT_NAME}_socket_node PROPERTIES OUTPUT_NAME socket_node PREFIX "")
 
 #############
 ## Install ##
