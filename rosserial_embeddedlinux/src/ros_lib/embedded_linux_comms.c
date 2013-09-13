@@ -26,13 +26,13 @@
 
 #define DEFAULT_PORTNUM 11411
 
-void error(const char *msg)
+inline void error(const char *msg)
 {
     perror(msg);
     exit(0);
 }
 
-void set_nonblock(int socket)
+inline void set_nonblock(int socket)
 {
 int flags;
 flags = fcntl(socket,F_GETFL,0);
@@ -40,7 +40,7 @@ assert(flags != -1);
 fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
-int elCommInit(char *portName, int baud)
+inline int elCommInit(char *portName, int baud)
 {
 	struct termios options;
 	int fd;
@@ -130,7 +130,7 @@ int elCommInit(char *portName, int baud)
 	return -1;
 }
 
-int elCommRead(int fd)
+inline int elCommRead(int fd)
 {
 	unsigned char c;
 	unsigned int i;
@@ -146,7 +146,7 @@ int elCommRead(int fd)
 	return rv;				// return -1 or 0 either if we read nothing, or if read returned negative
 }
 
-int elCommWrite(int fd, uint8_t* data, int len)
+inline int elCommWrite(int fd, uint8_t* data, int len)
 {
 	int rv;
 	int length = len;
