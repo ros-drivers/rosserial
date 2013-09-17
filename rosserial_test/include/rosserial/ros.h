@@ -4,6 +4,7 @@
 #include "rosserial/ros/node_handle.h"
 #include "rosserial/duration.cpp"
 #include "rosserial/time.cpp"
+#include <iostream>
 
 class ClientComms {
 public:
@@ -15,11 +16,12 @@ public:
   // dependent on the passage of time.
   static unsigned long millis;
 
-  void init() {};
+  void init() {
+  }
   int read() {
-    char ch;
-    ::read(fd, &ch, 1);
-    return ch;
+    unsigned char ch;
+    ssize_t ret = ::read(fd, &ch, 1);
+    return ret == 1 ? ch : -1;
   }
   void write(uint8_t* data, int length) {
     ::write(fd, data, length);

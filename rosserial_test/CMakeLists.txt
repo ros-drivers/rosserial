@@ -6,39 +6,6 @@ project(rosserial_test)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rosserial_client rosserial_python rosserial_server rostest)
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -65,6 +32,7 @@ add_custom_command(
   COMMAND rosrun rosserial_test generate_client_ros_lib ${PROJECT_BINARY_DIR}/include
 )
 add_custom_target(${PROJECT_NAME}_rosserial_lib DEPENDS ${PROJECT_BINARY_DIR}/include/rosserial)
+add_dependencies(${PROJECT_NAME}_rosserial_lib std_msgs_genpy rosserial_msgs_genpy)
 
 include_directories(
   include ${PROJECT_BINARY_DIR}/include ${catkin_INCLUDE_DIRS}
@@ -76,9 +44,10 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(${PROJECT_NAME}_publisher src/test_publisher)
-add_dependencies(${PROJECT_NAME}_publisher ${PROJECT_NAME}_rosserial_lib)
-target_link_libraries(${PROJECT_NAME}_publisher gtest util ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_publish_subscribe src/publish_subscribe)
+add_dependencies(${PROJECT_NAME}_publish_subscribe ${PROJECT_NAME}_rosserial_lib)
+target_link_libraries(${PROJECT_NAME}_publish_subscribe gtest util ${catkin_LIBRARIES})
+add_rostest(test/rosserial_server_socket.test)
 
 #############
 ## Install ##
