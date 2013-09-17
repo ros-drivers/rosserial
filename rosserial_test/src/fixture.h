@@ -6,15 +6,30 @@
 #include <netinet/in.h>
 #include <arpa/inet.h> 
 
-class ClientFixture : public ::testing::Test {
-protected:
-  virtual void SetUp() {
-    // TODO: Check an arg or parameter for whether we should create a serial
-    // or a socket loopback. For now, the socket logic is just included here.
+#include "ros/ros.h"
 
-    rosserial::ClientComms::fd = socket(AF_INET, SOCK_STREAM, 0); 
-    ASSERT_GE(rosserial::ClientComms::fd, 0);
-    fcntl(rosserial::ClientComms::fd, F_SETFL, O_NONBLOCK);
+namespace rosserial {
+#include "rosserial/ros.h"
+}
+
+class AbstractSetup {
+public:
+  virtual void SetUp()=0;
+  int fd;
+};
+
+class SerialSetup : public AbstractSetup {
+public:
+  virtual void SetUp() {
+  } 
+};
+
+class SocketSetup : public AbstractSetup {
+public:
+  virtual void SetUp() {
+    fd = socket(AF_INET, SOCK_STREAM, 0); 
+    ASSERT_GE(fd, 0);
+    fcntl(fd, F_SETFL, O_NONBLOCK);
 
     memset(&serv_addr, '0', sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -24,14 +39,37 @@ protected:
     // Try a bunch of times; we don't know how long it will take for the
     // server to come up.
     for (int attempt = 0; attempt < 10; attempt++) {
-      if (connect(rosserial::ClientComms::fd, 
-          (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0) {
+      if (connect(fd, 
+          (struct sockaddr *)&serv_addr, 
+          sizeof(serv_addr)) >= 0) {
         // Connection successful.
         return;  
       }
       ros::Duration(0.5).sleep();
     } 
-    ASSERT_TRUE(false) << "Unable to connect to roserial server.";
+    FAIL() << "Unable to connect to rosserial socket server.";
+  }
+  struct sockaddr_in serv_addr; 
+};
+
+class ClientFixture : public ::testing::Test {
+public:
+  static void SetMode(std::string& mode) {
+    ROS_INFO_STREAM("Using test mode [" << mode << "]");
+    if (mode == "socket") {
+      setup = new SocketSetup();
+    } else if (mode == "serial") {
+      setup = new SerialSetup();
+    } else {
+      FAIL() << "Mode specified other than 'serial' or 'socket'.";
+    }
+  }
+
+protected:
+  virtual void SetUp() {
+    ASSERT_TRUE(setup != NULL) << "ClientFixture's setup helper pointer is null. Be sure to invoke the tests with the 'socket' or 'serial' arg.";
+    setup->SetUp();
+    rosserial::ClientComms::fd = setup->fd;
   }
   virtual void TearDown() {
     close(rosserial::ClientComms::fd);
@@ -39,7 +77,8 @@ protected:
 
   rosserial::ros::NodeHandle client_nh; 
   ros::NodeHandle nh;
-  struct sockaddr_in serv_addr; 
+  static AbstractSetup* setup;
 };
+AbstractSetup* ClientFixture::setup = NULL;
 
 
