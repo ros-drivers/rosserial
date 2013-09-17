@@ -1,4 +1,4 @@
 <launch>
-  <node pkg="rosserial_server" type="rosserial_server_socket_node" name="rosserial_server_socket_node" />
-  <node pkg="rosserial_python" type="message_info_service.py" name="rosserial_service_message_info" />
+  <node pkg="rosserial_server" type="socket_node" name="rosserial_server" />
+  <node pkg="rosserial_python" type="message_info_service.py" name="rosserial_message_info" />
 </launch>
