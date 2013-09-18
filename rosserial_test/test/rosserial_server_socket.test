@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find rosserial_server)/launch/socket.launch" />
+  <test test-name="rosserial_server_socket_test_publish_subscribe" pkg="rosserial_test"
+        type="rosserial_test_publish_subscribe" time-limit="10.0">
+    <param name="mode" value="socket" />
+  </test>
+</launch>
