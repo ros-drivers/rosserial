@@ -10,6 +10,7 @@ add_message_files(FILES
 
 add_service_files(FILES
                   RequestParam.srv
+                  RequestMessageInfo.srv
                  )
 
 generate_messages()
