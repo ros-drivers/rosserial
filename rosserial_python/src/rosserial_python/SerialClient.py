@@ -114,9 +114,13 @@ class Subscriber:
         package, message = topic_info.message_type.split('/')
         self.message = load_message(package, message)
         if self.message._md5sum == topic_info.md5sum:
-            rospy.Subscriber(self.topic, self.message, self.callback)
+            self.sub = rospy.Subscriber(self.topic, self.message, self.callback)
         else:
             raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
+
+    def unregister(self):
+        rospy.loginfo("Removing subscriber: %s", self.topic)
+        self.sub.unregister()            
 
     def callback(self, msg):
         """ Forward message to serial device. """
@@ -145,6 +149,10 @@ class ServiceServer:
 
         # response message
         self.data = None
+
+    def unregister(self):
+        rospy.loginfo("Removing service: %s", self.topic)
+        self.service.shutdown()                    
 
     def callback(self, req):
         """ Forward request to serial device. """
@@ -247,6 +255,10 @@ class RosSerialServer:
             self.isConnected = False
         finally:
             self.socket.close()
+            for sub in client.subscribers.values():
+                sub.unregister()
+            for srv in client.services.values():
+                srv.unregister()
             #pass
 
     def startSocketServer(self, port, address):
