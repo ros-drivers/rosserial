@@ -15,13 +15,28 @@ namespace rosserial {
 class AbstractSetup {
 public:
   virtual void SetUp()=0;
+  virtual void TearDown()=0;
   int fd;
 };
 
 class SerialSetup : public AbstractSetup {
 public:
   virtual void SetUp() {
+    ASSERT_NE(-1, fd = posix_openpt( O_RDWR | O_NOCTTY | O_NDELAY ));
+    ASSERT_NE(-1, grantpt(fd));
+    ASSERT_NE(-1, unlockpt(fd));
+
+    char* pty_name;
+    ASSERT_TRUE((pty_name = ptsname(fd)) != NULL);    
+
+    ros::param::get("~port", symlink_name);
+    symlink(pty_name, symlink_name.c_str());
   } 
+  virtual void TearDown() {
+    unlink(symlink_name.c_str());
+    close(fd);
+  } 
+  std::string symlink_name;
 };
 
 class SocketSetup : public AbstractSetup {
@@ -49,12 +64,17 @@ public:
     } 
     FAIL() << "Unable to connect to rosserial socket server.";
   }
+  virtual void TearDown() {
+    close(fd);
+  } 
   struct sockaddr_in serv_addr; 
 };
 
-class ClientFixture : public ::testing::Test {
-public:
-  static void SetMode(std::string& mode) {
+class SingleClientFixture : public ::testing::Test {
+protected:
+  static void SetModeFromParam() {
+    std::string mode;
+    ros::param::get("~mode", mode);
     ROS_INFO_STREAM("Using test mode [" << mode << "]");
     if (mode == "socket") {
       setup = new SocketSetup();
@@ -64,21 +84,19 @@ public:
       FAIL() << "Mode specified other than 'serial' or 'socket'.";
     }
   }
-
-protected:
   virtual void SetUp() {
-    ASSERT_TRUE(setup != NULL) << "ClientFixture's setup helper pointer is null. Be sure to invoke the tests with the 'socket' or 'serial' arg.";
+    if (setup == NULL) SetModeFromParam();
     setup->SetUp();
     rosserial::ClientComms::fd = setup->fd;
   }
   virtual void TearDown() {
-    close(rosserial::ClientComms::fd);
+    setup->TearDown();
   }
 
   rosserial::ros::NodeHandle client_nh; 
   ros::NodeHandle nh;
   static AbstractSetup* setup;
 };
-AbstractSetup* ClientFixture::setup = NULL;
+AbstractSetup* SingleClientFixture::setup = NULL;
 
 

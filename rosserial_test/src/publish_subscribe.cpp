@@ -10,7 +10,7 @@ namespace rosserial {
 #include "fixture.h"
 #include "helpers.h"
 
-TEST_F(ClientFixture, basic_publish) {
+TEST_F(SingleClientFixture, basic_publish) {
   // Rosserial client setup
   rosserial::std_msgs::String string_msg;
   rosserial::ros::Publisher client_pub("chatter", &string_msg);
@@ -37,9 +37,6 @@ TEST_F(ClientFixture, basic_publish) {
 int main(int argc, char **argv){
   ros::init(argc, argv, "test_publish_subscribe");
   ros::start();
-  std::string mode;
-  ros::param::get("~mode", mode);
-  ClientFixture::SetMode(mode); 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
