@@ -38,17 +38,15 @@ include_directories(
   include ${PROJECT_BINARY_DIR}/include ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(rosserial_test
-#   src/${PROJECT_NAME}/rosserial_test.cpp
-# )
-
 ## Declare a cpp executable
 add_executable(${PROJECT_NAME}_publish_subscribe src/publish_subscribe)
 add_dependencies(${PROJECT_NAME}_publish_subscribe ${PROJECT_NAME}_rosserial_lib)
 target_link_libraries(${PROJECT_NAME}_publish_subscribe gtest util ${catkin_LIBRARIES})
+
 add_rostest(test/rosserial_server_socket.test)
+add_rostest(test/rosserial_server_serial.test)
 add_rostest(test/rosserial_python_socket.test)
+add_rostest(test/rosserial_python_serial.test)
 
 #############
 ## Install ##
