@@ -119,16 +119,16 @@ namespace ros {
         char * ptr;
 
 				ptr = (char *)publishers;
-        for(int i=0; i< sizeof(publishers); i++) *ptr = 0;
+        for(unsigned int i=0; i< sizeof(publishers); i++) *ptr = 0;
 
 				ptr = (char *)subscribers;
-        for(int i=0; i< sizeof(subscribers); i++) *ptr = 0;
+        for(unsigned int i=0; i< sizeof(subscribers); i++) *ptr = 0;
 
 				ptr = (char *)message_in;
-        for(int i=0; i< sizeof(message_in); i++) *ptr = 0;
+        for(unsigned int i=0; i< sizeof(message_in); i++) *ptr = 0;
 
 				ptr = (char *) message_out;
-        for(int i=0; i< sizeof(message_out); i++) *ptr = 0;
+        for(unsigned int i=0; i< sizeof(message_out); i++) *ptr = 0;
 
         req_param_resp.ints_length = 0;
         req_param_resp.ints = NULL;
@@ -440,6 +440,7 @@ namespace ros {
           return l;
         }else{
           logerror("Message from device dropped: message larger than buffer.");
+          return -1;
         }
       }
 
@@ -485,7 +486,7 @@ namespace ros {
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        int end_time = hardware_.time() + time_out;
+        unsigned int end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
           if (hardware_.time() > end_time) return false;
