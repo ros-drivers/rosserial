@@ -37,7 +37,7 @@
 
 namespace ros
 {
-  void normalizeSecNSecSigned(long &sec, long &nsec)
+  inline void normalizeSecNSecSigned(long &sec, long &nsec)
   {
     long nsec_part = nsec;
     long sec_part = sec;
@@ -56,7 +56,7 @@ namespace ros
     nsec = nsec_part;
   }
 
-  Duration& Duration::operator+=(const Duration &rhs)
+  inline Duration& Duration::operator+=(const Duration &rhs)
   {
     sec += rhs.sec;
     nsec += rhs.nsec;
@@ -64,14 +64,14 @@ namespace ros
     return *this;
   }
 
-  Duration& Duration::operator-=(const Duration &rhs){
+  inline Duration& Duration::operator-=(const Duration &rhs){
     sec += -rhs.sec;
     nsec += -rhs.nsec;
     normalizeSecNSecSigned(sec, nsec);
     return *this;
   }
 
-  Duration& Duration::operator*=(double scale){
+  inline Duration& Duration::operator*=(double scale){
     sec *= scale;
     nsec *= scale;
     normalizeSecNSecSigned(sec, nsec);
