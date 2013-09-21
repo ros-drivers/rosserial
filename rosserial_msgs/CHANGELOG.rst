@@ -2,6 +2,11 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.3 (2013-09-21)
+------------------
+* Add message info service and stub of node to provide it, for
+rosserial_server support.
+
 0.5.2 (2013-07-17)
 ------------------
 
