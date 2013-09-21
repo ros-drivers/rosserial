@@ -2,6 +2,9 @@
 Changelog for package rosserial_xbee
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.2 (2013-07-17)
 ------------------
 

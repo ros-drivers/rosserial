@@ -2,6 +2,9 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.2 (2013-07-17)
 ------------------
 

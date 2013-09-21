@@ -2,6 +2,10 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add support for leonardo and due
+
 0.5.2 (2013-07-17)
 ------------------
 
