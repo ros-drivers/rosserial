@@ -115,7 +115,28 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : configured_(false) {}
+      NodeHandle_() : configured_(false) {
+        char * ptr;
+
+				ptr = (char *)publishers;
+        for(int i=0; i< sizeof(publishers); i++) *ptr = 0;
+
+				ptr = (char *)subscribers;
+        for(int i=0; i< sizeof(subscribers); i++) *ptr = 0;
+
+				ptr = (char *)message_in;
+        for(int i=0; i< sizeof(message_in); i++) *ptr = 0;
+
+				ptr = (char *) message_out;
+        for(int i=0; i< sizeof(message_out); i++) *ptr = 0;
+
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+        req_param_resp.floats_length = 0;
+        req_param_resp.floats = NULL;
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+      }
       
       Hardware* getHardware(){
         return &hardware_;

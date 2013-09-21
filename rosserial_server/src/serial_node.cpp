@@ -83,7 +83,7 @@ private:
   void connect_with_reconnection(bool log_errors = true) {
     if (!attempt_connection(log_errors)) {  
       if (log_errors) {
-        ROS_INFO("Attempting reconnection every %ld ms.", interval_.total_milliseconds());
+        ROS_INFO("Attempting reconnection every %lld ms.", interval_.total_milliseconds());
       }
       timer_.expires_from_now(interval_);
       timer_.async_wait(boost::bind(&SerialSession::connect_with_reconnection, this, false));
