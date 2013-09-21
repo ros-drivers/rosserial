@@ -440,6 +440,7 @@ namespace ros {
           return l;
         }else{
           logerror("Message from device dropped: message larger than buffer.");
+          return -1;
         }
       }
 
@@ -485,7 +486,7 @@ namespace ros {
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        int end_time = hardware_.time() + time_out;
+        unsigned int end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
           if (hardware_.time() > end_time) return false;
