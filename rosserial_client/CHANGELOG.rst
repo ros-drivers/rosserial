@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.3 (2013-09-21)
+------------------
 * Added some missing return values
 * Fixed uninitialized arrays that would cause random segfaults on spinOnce 
 and advertise. Fixed other ininitialized variables.

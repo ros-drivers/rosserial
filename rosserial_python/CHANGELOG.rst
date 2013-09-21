@@ -2,8 +2,8 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.3 (2013-09-21)
+------------------
 * De-register subscribers and service clients upon disconnect.
   This prevents callbacks being called after a client program
   terminates a connection.
