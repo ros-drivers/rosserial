@@ -114,8 +114,9 @@ class Subscriber:
         # find message type
         package, message = topic_info.message_type.split('/')
         self.message = load_message(package, message)
+        # add new thing
         if self.message._md5sum == topic_info.md5sum:
-            rospy.Subscriber(self.topic, self.message, self.callback)
+            self.subscriber = rospy.Subscriber(self.topic, self.message, self.callback)
         else:
             raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
 
@@ -124,7 +125,10 @@ class Subscriber:
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
         self.parent.send(self.id, data_buffer.getvalue())
+        print ("OK")
 
+    def unregister(self):
+        self.subscriber.unregister()
 
 class ServiceServer:
     """
@@ -387,7 +391,7 @@ class SerialClient:
             try:
                 flag[0]  = self.port.read(1)
             except Exception as e:
-                rospy.logerr("Serial Port reading for first header failed : %s", e)
+                rospy.logwarn("Serial Port reading for first header failed : %s", e)
                 self.requestTopics()
 
             if (flag[0] != '\xff'):                
@@ -396,7 +400,7 @@ class SerialClient:
             try:
                 flag[1] = self.port.read(1)
             except Exception as e:
-                rospy.logerr("Serial Port reading for second header failed : %s", e)
+                rospy.logwarn("Serial Port reading for second header failed : %s", e)
                 self.requestTopics()
 
             if ( flag[1] != self.protocol_ver):
@@ -413,7 +417,7 @@ class SerialClient:
             try:
                 msg_len_bytes = self.port.read(2)
             except Exception as e:
-                rospy.logerr("Serial Port reading for msg_len_bytes failed : %s", e)
+                rospy.logwarn("Serial Port reading for msg_len_bytes failed : %s", e)
                 self.requestTopics()
 
             if len(msg_len_bytes) != 2:
@@ -425,7 +429,7 @@ class SerialClient:
             try:
                 msg_len_chk = self.port.read(1)
             except Exception as e:
-                rospy.logerr("Serial Port reading for msg_len_chk failed : %s", e)
+                rospy.logwarn("Serial Port reading for msg_len_chk failed : %s", e)
                 self.requestTopics()
 
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
@@ -439,7 +443,7 @@ class SerialClient:
             try:
                 topic_id_header = self.port.read(2)
             except Exception as e:
-                rospy.logerr("Serial Port reading for topic_id_header failed : %s", e)
+                rospy.logwarn("Serial Port reading for topic_id_header failed : %s", e)
                 self.requestTopics()
 
             if len(topic_id_header)!=2:
@@ -449,7 +453,7 @@ class SerialClient:
             try:
                 msg = self.port.read(msg_length)
             except Exception as e:
-                rospy.logerr("Serial Port reading for msg failed : %s", e)
+                rospy.logwarn("Serial Port reading for msg failed : %s", e)
                 self.requestTopics()
 
             if (len(msg) != msg_length):
@@ -463,7 +467,7 @@ class SerialClient:
             try:
                 chk = self.port.read(1)
             except Exception as e:
-                rospy.logerr("Serial Port reading for chk failed : %s", e)
+                rospy.logwarn("Serial Port reading for chk failed : %s", e)
                 self.requestTopics()
 
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
@@ -491,12 +495,11 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
-            if not msg.topic_id in self.publishers.keys():
-                pub = Publisher(msg)
-                self.publishers[msg.topic_id] = pub
-                self.callbacks[msg.topic_id] = pub.handlePacket
-                self.setPublishSize(msg.buffer_size)
-                rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
+            pub = Publisher(msg)
+            self.publishers[msg.topic_id] = pub
+            self.callbacks[msg.topic_id] = pub.handlePacket
+            self.setPublishSize(msg.buffer_size)
+            rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of publisher failed: %s", e)
 
@@ -506,10 +509,17 @@ class SerialClient:
             msg = TopicInfo()
             msg.deserialize(data)
             if not msg.topic_name in self.subscribers.keys():
-                sub = Subscriber(msg, self)
+                sub = Subscriber(msg, self) 
                 self.subscribers[msg.topic_name] = sub
                 self.setSubscribeSize(msg.buffer_size)
                 rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
+            elif msg.message_type != self.subscribers[msg.topic_name].message._type:
+                    old_message_type = self.subscribers[msg.topic_name].message._type
+                    self.subscribers[msg.topic_name].unregister()
+                    sub = Subscriber(msg, self) 
+                    self.subscribers[msg.topic_name] = sub
+                    self.setSubscribeSize(msg.buffer_size)
+                    rospy.loginfo("Change the message type of subscriber on %s from [%s] to [%s]" % (msg.topic_name, old_message_type, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
 
@@ -595,6 +605,7 @@ class SerialClient:
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
+        
 
     def handleParameterRequest(self, data):
         """ Send parameters to device. Supports only simple datatypes and arrays of such. """
