@@ -114,7 +114,6 @@ class Subscriber:
         # find message type
         package, message = topic_info.message_type.split('/')
         self.message = load_message(package, message)
-        # add new thing
         if self.message._md5sum == topic_info.md5sum:
             self.subscriber = rospy.Subscriber(self.topic, self.message, self.callback)
         else:
@@ -125,7 +124,6 @@ class Subscriber:
         data_buffer = StringIO.StringIO()
         msg.serialize(data_buffer)
         self.parent.send(self.id, data_buffer.getvalue())
-        print ("OK")
 
     def unregister(self):
         self.subscriber.unregister()
