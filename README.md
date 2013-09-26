@@ -4,6 +4,10 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkin
 
 ## Changes for Hydro
 
+0.5.3
+ * Add rosserial_server - a C++ server implementation
+ * Fix misc bugs including adding fixes for alignment issues on ARM processors
+0.5.2
  * Wire protocol change to add checksum to message length
  * Support empty requests
  * Re-integrate rosserial_xbee
