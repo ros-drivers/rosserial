@@ -116,19 +116,18 @@ namespace ros {
        */
     public:
       NodeHandle_() : configured_(false) {
-        char * ptr;
 
-				ptr = (char *)publishers;
-        for(unsigned int i=0; i< sizeof(publishers); i++) *ptr = 0;
+        for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
+	   publishers[i] = 0;
 
-				ptr = (char *)subscribers;
-        for(unsigned int i=0; i< sizeof(subscribers); i++) *ptr = 0;
+        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
+	   subscribers[i] = 0;
 
-				ptr = (char *)message_in;
-        for(unsigned int i=0; i< sizeof(message_in); i++) *ptr = 0;
+        for(unsigned int i=0; i< INPUT_SIZE; i++) 
+	   message_in[i] = 0;
 
-				ptr = (char *) message_out;
-        for(unsigned int i=0; i< sizeof(message_out); i++) *ptr = 0;
+        for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
+	   message_out[i] = 0;
 
         req_param_resp.ints_length = 0;
         req_param_resp.ints = NULL;
