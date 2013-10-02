@@ -44,7 +44,10 @@
 #ifdef _SAM3XA_
   #include <UARTClass.h>  // Arduino Due
   #define SERIAL_CLASS UARTClass
-#else
+#elif defined(USE_USBCON)
+  // Arduino Leonardo USB Serial Port
+  #define SERIAL_CLASS Serial_
+#else 
   #include <HardwareSerial.h>  // Arduino AVR
   #define SERIAL_CLASS HardwareSerial
 #endif
@@ -57,7 +60,7 @@ class ArduinoHardware {
     }
     ArduinoHardware()
     {
-#if defined(USBCON)
+#if defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
 #else
