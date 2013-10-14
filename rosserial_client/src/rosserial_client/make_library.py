@@ -170,16 +170,16 @@ class StringDataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      size_t length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
-        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(size_t));\n' % cn)        
+        f.write('      uint32_t length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
+        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)        
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
         f.write('      offset += length_%s;\n' % cn)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      size_t length_%s;\n' % cn)
-        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(size_t));\n' % cn)
+        f.write('      uint32_t length_%s;\n' % cn)
+        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(uint32_t));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
