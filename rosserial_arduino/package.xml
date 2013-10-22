@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_arduino</name>
-  <version>0.5.3</version>
+  <version>0.5.4</version>
   <description>
     Libraries and examples for ROSserial usage on Arduino/AVR Platforms.
   </description>

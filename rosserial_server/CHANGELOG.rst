@@ -2,6 +2,9 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.4 (2013-10-17)
+------------------
+
 0.5.3 (2013-09-21)
 ------------------
 * New package: rosserial_server
