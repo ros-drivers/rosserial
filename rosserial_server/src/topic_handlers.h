@@ -70,6 +70,10 @@ public:
     publisher_.publish(message_);
   }
 
+  std::string get_topic() {
+    return publisher_.getTopic();
+  }
+
 private:
   ros::Publisher publisher_;
   topic_tools::ShapeShifter message_;
@@ -78,6 +82,7 @@ private:
 };
 
 ros::ServiceClient Publisher::message_service_;
+typedef boost::shared_ptr<Publisher> PublisherPtr;
 
 
 class Subscriber {
@@ -91,6 +96,10 @@ public:
     opts.md5sum = topic_info.md5sum;
     opts.datatype = topic_info.message_type;
     subscriber_ = nh.subscribe(opts);
+  }
+  
+  std::string get_topic() {
+    return subscriber_.getTopic();
   }
 
 private:
@@ -107,3 +116,5 @@ private:
   ros::Subscriber subscriber_;
   boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
 };
+
+typedef boost::shared_ptr<Subscriber> SubscriberPtr;
