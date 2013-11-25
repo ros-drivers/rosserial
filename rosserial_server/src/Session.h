@@ -301,13 +301,6 @@ private:
     }
   }
 
-  /*static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
-    uint8_t sum = (topic_id >> 8) + topic_id; //+ (stream.getLength() >> 8) + stream.getLength();
-    for (uint16_t i = 0; i < stream.getLength(); ++i) {
-      sum += stream.getData()[i];
-    }
-    return 255 - sum;
-  }*/
   static uint8_t checksum(ros::serialization::IStream& stream) {
     uint8_t sum = 0;
     for (uint16_t i = 0; i < stream.getLength(); ++i) {
@@ -322,9 +315,6 @@ private:
 
   //// RECEIVED MESSAGE HANDLERS ////
 
-  /**
-   * 
-   */
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
