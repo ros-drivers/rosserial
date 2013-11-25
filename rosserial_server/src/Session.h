@@ -45,8 +45,6 @@
 #include "AsyncReadBuffer.h"
 #include "topic_handlers.h"
 
-#define INT16_MAX 0x7fff
-
 
 template<typename Socket>
 class Session
