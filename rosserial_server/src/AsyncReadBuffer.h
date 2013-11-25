@@ -52,7 +52,7 @@ public:
   void read(size_t read_count, boost::function<void(ros::serialization::IStream&)> callback) {
      if (read_count > mem_.size()) {
       // Insufficient room in the buffer for the requested bytes,
-      ROS_ERROR_NAMED("async_read", "Requested to read %d bytes, but buffer capacity is only %d.", read_count, mem_.size());
+      ROS_ERROR_STREAM_NAMED("async_read", "Requested to read " << read_count << " bytes, but buffer capacity is only " << mem_.size() << ".");
       error_callback_(boost::system::errc::make_error_code(boost::system::errc::no_buffer_space));
       return;
     }
@@ -72,7 +72,7 @@ private:
     if (error) {
       error_callback_(error);
     } else {
-      ROS_DEBUG_NAMED("async_read", "Transferred %d byte(s).", bytes_transferred);
+      ROS_DEBUG_STREAM_NAMED("async_read", "Transferred " << bytes_transferred << " byte(s).");
 
       ros::serialization::IStream stream(&mem_[0], bytes_transferred);
       ROS_ASSERT_MSG(callback, "Bad read callback function.");
