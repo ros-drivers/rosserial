@@ -45,8 +45,8 @@
 #include "AsyncReadBuffer.h"
 #include "topic_handlers.h"
 
-#define INT16_MAX 0x7fff
-
+typedef std::vector<uint8_t> Buffer;
+typedef boost::shared_ptr<Buffer> BufferPtr;
 
 template<typename Socket>
 class Session
@@ -57,10 +57,12 @@ public:
       client_version_try(PROTOCOL_VER2),
       timeout_interval_(boost::posix_time::milliseconds(5000)),
       attempt_interval_(boost::posix_time::milliseconds(1000)),
+      require_check_interval_(boost::posix_time::milliseconds(1000)),
       sync_timer_(io_service), 
-      buffer_(socket_, buffer_max, 
-              boost::bind(&Session::read_failed, this,
-                          boost::asio::placeholders::error))
+      require_check_timer_(io_service), 
+      async_read_buffer_(socket_, buffer_max, 
+                         boost::bind(&Session::read_failed, this,
+                                     boost::asio::placeholders::error))
   {
     callbacks_[rosserial_msgs::TopicInfo::ID_PUBLISHER]
         = boost::bind(&Session::setup_publisher, this, _1);
@@ -100,14 +102,14 @@ private:
   // TODO: Total message timeout, implement primarily in ReadBuffer.
 
   void read_sync_header() {
-    buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+    async_read_buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
   }
   
   void read_sync_first(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
     if (sync == 0xff) {
-      buffer_.read(1, boost::bind(&Session::read_sync_second, this, _1));
+      async_read_buffer_.read(1, boost::bind(&Session::read_sync_second, this, _1));
     } else {
       read_sync_header();
     }
@@ -126,9 +128,9 @@ private:
       }
     }
     if (sync == 0xff && client_version == PROTOCOL_VER1) {
-      buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
+      async_read_buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
     } else if (sync == 0xfe && client_version == PROTOCOL_VER2) {
-      buffer_.read(5, boost::bind(&Session::read_id_length, this, _1)); 
+      async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1)); 
     } else {
       read_sync_header();
     }
@@ -155,8 +157,8 @@ private:
     ROS_DEBUG("Received message header with length %d and topic_id=%d", length, topic_id);
 
     // Read message length + checksum byte.
-    buffer_.read(length + 1, boost::bind(&Session::read_body, this,
-                                         _1, topic_id));
+    async_read_buffer_.read(length + 1, boost::bind(&Session::read_body, this,
+                                                    _1, topic_id));
   }
 
   void read_body(ros::serialization::IStream& stream, uint16_t topic_id) {
@@ -210,7 +212,7 @@ private:
 
   //// SENDING MESSAGES ////
 
-  void write_message(std::vector<uint8_t>& message,
+  void write_message(Buffer& message,
                      const uint16_t topic_id, 
                      Session::Version version) {
     uint8_t overhead_bytes = 0;
@@ -222,7 +224,7 @@ private:
     }
 
     uint16_t length = overhead_bytes + message.size();
-    boost::shared_ptr< std::vector<uint8_t> > buffer_ptr(new std::vector<uint8_t>(length));
+    BufferPtr buffer_ptr(new Buffer(length));
 
     uint8_t msg_checksum;
     ros::serialization::IStream checksum_stream(message.size() > 0 ? &message[0] : NULL, message.size());
@@ -247,13 +249,13 @@ private:
 
   // Function which is dispatched onto the io_service thread by write_message, so that 
   // write_message may be safely called directly from the ROS background spinning thread.
-  void write_buffer(boost::shared_ptr< std::vector<uint8_t> > buffer_ptr) {
+  void write_buffer(BufferPtr buffer_ptr) {
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
 
   void write_cb(const boost::system::error_code& error,
-                boost::shared_ptr< std::vector<uint8_t> > buffer_ptr) { 
+                BufferPtr buffer_ptr) { 
     if (error) {
       ROS_DEBUG_STREAM("Socket asio error: " << error);
       ROS_WARN("Stopping session due to write error.");
@@ -301,15 +303,46 @@ private:
     } else {
         client_version_try = PROTOCOL_VER2;
     }
+
+    // Set timer for future point at which to verify the subscribers and publishers
+    // created by the client against the expected set given in the parameters.
+    require_check_timer_.expires_from_now(require_check_interval_);
+    require_check_timer_.async_wait(boost::bind(&Session::required_topics_check, this,
+          boost::asio::placeholders::error)); 
   }
 
-  /*static uint8_t message_checksum(ros::serialization::IStream& stream, const uint16_t topic_id) {
-    uint8_t sum = (topic_id >> 8) + topic_id; //+ (stream.getLength() >> 8) + stream.getLength();
-    for (uint16_t i = 0; i < stream.getLength(); ++i) {
-      sum += stream.getData()[i];
+  void required_topics_check(const boost::system::error_code& error) {
+    if (ros::param::has("~require")) {
+      if (!check_set("~require/publishers", publishers_) ||
+          !check_set("~require/subscribers", subscribers_)) {
+        ROS_WARN("Connected client failed to establish the publishers and subscribers dictated by require parameter. Re-requesting topics.");
+        request_topics();
+      }
     }
-    return 255 - sum;
-  }*/
+  }
+  
+  template<typename M>
+  bool check_set(std::string param_name, M map) {
+    XmlRpc::XmlRpcValue param_list;
+    ros::param::get(param_name, param_list);
+    ROS_ASSERT(param_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+    for (int i = 0; i < param_list.size(); ++i) {
+      ROS_ASSERT(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeString);
+      std::string required_topic(std::string(param_list[i]));
+      // Iterate through map of registered topics, to ensure that this one is present.
+      bool found = false;
+      for (typename M::iterator j = map.begin(); j != map.end(); ++j) {
+        if (nh_.resolveName(j->second->get_topic()) ==
+            nh_.resolveName(required_topic)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }  
+    return true;
+  }
+
   static uint8_t checksum(ros::serialization::IStream& stream) {
     uint8_t sum = 0;
     for (uint16_t i = 0; i < stream.getLength(); ++i) {
@@ -324,14 +357,11 @@ private:
 
   //// RECEIVED MESSAGE HANDLERS ////
 
-  /**
-   * 
-   */
   void setup_publisher(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-    boost::shared_ptr<Publisher> pub(new Publisher(nh_, topic_info));
+    PublisherPtr pub(new Publisher(nh_, topic_info));
     publishers_[topic_info.topic_id] = pub;
     callbacks_[topic_info.topic_id] = boost::bind(&Publisher::handle, pub, _1);
 
@@ -342,7 +372,7 @@ private:
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-    boost::shared_ptr<Subscriber> sub(new Subscriber(nh_, topic_info,
+    SubscriberPtr sub(new Subscriber(nh_, topic_info,
         boost::bind(&Session::write_message, this, _1, topic_info.topic_id, client_version)));
     subscribers_[topic_info.topic_id] = sub;
 
@@ -367,7 +397,7 @@ private:
   }
 
   Socket socket_;
-  AsyncReadBuffer<Socket> buffer_;
+  AsyncReadBuffer<Socket> async_read_buffer_;
   enum { buffer_max = 1023 };
   ros::NodeHandle nh_;
 
@@ -375,11 +405,13 @@ private:
   Session::Version client_version_try;
   boost::posix_time::time_duration timeout_interval_;
   boost::posix_time::time_duration attempt_interval_;
+  boost::posix_time::time_duration require_check_interval_;
   boost::asio::deadline_timer sync_timer_;
+  boost::asio::deadline_timer require_check_timer_;
 
   std::map< uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
-  std::map< uint16_t, boost::shared_ptr<Publisher> > publishers_;
-  std::map< uint16_t, boost::shared_ptr<Subscriber> > subscribers_;
+  std::map<uint16_t, PublisherPtr> publishers_;
+  std::map<uint16_t, SubscriberPtr> subscribers_;
 };
 
 
