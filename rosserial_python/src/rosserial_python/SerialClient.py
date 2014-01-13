@@ -406,6 +406,8 @@ class SerialClient:
 
             # checksum of msg_len
             msg_len_chk = self.port.read(1)
+            if len(msg_len_chk) != 1:
+                continue
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
             if msg_len_checksum%256 != 255:
@@ -429,6 +431,8 @@ class SerialClient:
 
             # checksum for topic id and msg
             chk = self.port.read(1)
+            if len(chk) != 1:
+                continue            
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
