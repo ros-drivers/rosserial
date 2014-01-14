@@ -2,15 +2,12 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.4 (2013-10-17)
 ------------------
-* - replace size_t with uint32_t to fix an uninitialized data bug on arduino
-  caused by the fact that size_t is 2 bytes on arduino, but 4 bytes in
-  the ros message standard, which left 2 bytes uninitialized, containing
-  random data which may or may not cause a problem for any given program
-  and run on a given chip
-* Proper initialization of arrays
-  The previous modification did not correctly initialize them.
+* fix an uninitialized data bug on arduino
 
 0.5.3 (2013-09-21)
 ------------------

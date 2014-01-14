@@ -4,6 +4,10 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkin
 
 ## Changes for Hydro
 
+0.5.5
+ * Add support for Arduino Yum
+ * Release rosserial_server
+
 0.5.4
  * Fix a bug in string deserialization where part of length field could be uninitialized
 (issues 74 & 76)
