@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.5 (2014-01-14)
+------------------
 * Leonardo: Use the USB serial port for ROS messages option
 
 
