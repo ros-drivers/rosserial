@@ -535,6 +535,7 @@ def get_dependency_sorted_package_list(rospack):
     ''' Returns a list of package names, sorted by dependencies. '''
     pkgs = rospack.list()
     dependency_list = list()
+    failed = list()
     for p in pkgs:
         try:
             depends = rospack.get_depends(p)
@@ -546,10 +547,11 @@ def get_dependency_sorted_package_list(rospack):
                     break
             if not dependent:
                 dependency_list.append(p)
-        except rospkg.common.ResourceNotFound:
-            print('[%s]:Not Found'%p)
+        except rospkg.common.ResourceNotFound as e:
+            failed.append(p + " (missing dependency)")
+            print('[%s]: Unable to find dependency: %s. Messages cannot be built.\n'% (p, str(e)))
     dependency_list.reverse()
-    return dependency_list
+    return [dependency_list, failed]
 
 def rosserial_generate(rospack, path, mapping):
     # horrible hack -- make this die
@@ -557,10 +559,9 @@ def rosserial_generate(rospack, path, mapping):
     ROS_TO_EMBEDDED_TYPES = mapping
 
     # find and sort all packages
-    pkgs = get_dependency_sorted_package_list(rospack)
+    pkgs, failed = get_dependency_sorted_package_list(rospack)
 
     # gimme messages
-    failed = []
     for p in pkgs:
         try:
             MakeLibrary(p, path, rospack)
