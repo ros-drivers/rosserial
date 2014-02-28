@@ -391,7 +391,6 @@ class SerialClient:
             return bytes_read
         except Exception as e:
             rospy.logwarn("Serial Port read failure: %s", e)
-            self.requestTopics()
             raise IOError()
 
     def run(self):
@@ -408,57 +407,66 @@ class SerialClient:
                 self.requestTopics()
                 self.lastsync = rospy.Time.now()
 
-            flag = [0,0]
-            flag[0] = self.tryRead(1)
-            if (flag[0] != '\xff'):                
-                continue
-
-            flag[1] = self.tryRead(1) 
-            if ( flag[1] != self.protocol_ver):
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
-                if (flag[1] in protocol_ver_msgs):
-                    found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
-                else:
-                    found_ver_msg = "Protocol version of client is unrecognized"
-                rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
-                continue
-
-            msg_len_bytes = self.tryRead(2)
-            msg_length, = struct.unpack("<h", msg_len_bytes)
- 
-            msg_len_chk = self.tryRead(1)
-            msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
-
-            if msg_len_checksum % 256 != 255:
-                rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
-                rospy.loginfo("chk is %d" % ord(msg_len_chk))
-                continue
-
-            # topic id (2 bytes)
-            topic_id_header = self.tryRead(2)
-            topic_id, = struct.unpack("<h", topic_id_header)
-
+            # This try-block is here because we make multiple calls to read(). Any one of them can throw
+            # an IOError if there's a serial problem or timeout. In that scenario, a single handler at the
+            # bottom attempts to reconfigure the topics.
             try:
-                msg = self.tryRead(msg_length)
-            except IOError:
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed : Failed to read msg data")
-                rospy.loginfo("Packet Failed :  Failed to read msg data")
-                rospy.loginfo("msg len is %d",len(msg))
-                raise
+                flag = [0,0]
+                flag[0] = self.tryRead(1)
+                if (flag[0] != '\xff'):                
+                    continue
 
-            # checksum for topic id and msg
-            chk = self.tryRead(chk)
-            checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
+                flag[1] = self.tryRead(1) 
+                if ( flag[1] != self.protocol_ver):
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                    rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
+                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                    if (flag[1] in protocol_ver_msgs):
+                        found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
+                    else:
+                        found_ver_msg = "Protocol version of client is unrecognized"
+                    rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
+                    continue
 
-            if checksum % 256 == 255:
-                self.synced = True
+                msg_len_bytes = self.tryRead(2)
+                msg_length, = struct.unpack("<h", msg_len_bytes)
+     
+                msg_len_chk = self.tryRead(1)
+                msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
+
+                if msg_len_checksum % 256 != 255:
+                    rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
+                    rospy.loginfo("chk is %d" % ord(msg_len_chk))
+                    continue
+
+                # topic id (2 bytes)
+                topic_id_header = self.tryRead(2)
+                topic_id, = struct.unpack("<h", topic_id_header)
+
                 try:
-                    self.callbacks[topic_id](msg)
-                except KeyError:
-                    rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
-                rospy.sleep(0.001)
+                    msg = self.tryRead(msg_length)
+                except IOError:
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed : Failed to read msg data")
+                    rospy.loginfo("Packet Failed :  Failed to read msg data")
+                    rospy.loginfo("msg len is %d",len(msg))
+                    raise
+
+                # checksum for topic id and msg
+                chk = self.tryRead(chk)
+                checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
+
+                if checksum % 256 == 255:
+                    self.synced = True
+                    try:
+                        self.callbacks[topic_id](msg)
+                    except KeyError:
+                        rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
+                    rospy.sleep(0.001)
+
+            except IOError:
+                # One of the read calls had an issue. Just to be safe, request that the client
+                # reinitialize their topics.
+                self.requestTopics()
 
     def setPublishSize(self, bytes):
         if self.buffer_out < 0:
