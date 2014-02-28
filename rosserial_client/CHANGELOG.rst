@@ -2,6 +2,20 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.5 (2014-01-14)
+------------------
+
+0.5.4 (2013-10-17)
+------------------
+* fix an uninitialized data bug on arduino
+
+0.5.3 (2013-09-21)
+------------------
+* Added some missing return values
+* Fixed uninitialized arrays that would cause random segfaults on spinOnce 
+and advertise. Fixed other ininitialized variables.
+* fixed misalignment for 32 bit architectures
+
 0.5.2 (2013-07-17)
 ------------------
 

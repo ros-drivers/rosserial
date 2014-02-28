@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>rosserial_server</name>
+  <version>0.5.5</version>
+  <description>The rosserial_server package</description>
+
+  <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>
+  <author email="mpurvis@clearpathrobotics.com">Mike Purvis</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rosserial_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>topic_tools</build_depend>
+  <run_depend>rosserial_msgs</run_depend>
+  <run_depend>rosserial_python</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>roscpp</run_depend>
+</package>

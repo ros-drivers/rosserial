@@ -119,6 +119,10 @@ class Subscriber:
         else:
             raise Exception('Checksum does not match: ' + self.message._md5sum + ',' + topic_info.md5sum)
 
+    def unregister(self):
+        rospy.loginfo("Removing subscriber: %s", self.topic)
+        self.subscriber.unregister()            
+
     def callback(self, msg):
         """ Forward message to serial device. """
         data_buffer = StringIO.StringIO()
@@ -148,6 +152,10 @@ class ServiceServer:
 
         # response message
         self.data = None
+
+    def unregister(self):
+        rospy.loginfo("Removing service: %s", self.topic)
+        self.service.shutdown()                    
 
     def callback(self, req):
         """ Forward request to serial device. """
@@ -250,6 +258,10 @@ class RosSerialServer:
             self.isConnected = False
         finally:
             self.socket.close()
+            for sub in client.subscribers.values():
+                sub.unregister()
+            for srv in client.services.values():
+                srv.unregister()
             #pass
 
     def startSocketServer(self, port, address):
@@ -370,6 +382,17 @@ class SerialClient:
         rospy.loginfo("Send tx stop request")
         sys.exit(0)
 
+    def tryRead(self, length):
+        try:
+            bytes_read = self.port.read(length)
+            if len(bytes_read) < length:
+                rospy.logwarn("Serial Port read returned fewer than expected bytes.")
+                raise IOError()
+            return bytes_read
+        except Exception as e:
+            rospy.logwarn("Serial Port read failure: %s", e)
+            self.requestTopics()
+            raise IOError()
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -386,21 +409,11 @@ class SerialClient:
                 self.lastsync = rospy.Time.now()
 
             flag = [0,0]
-            try:
-                flag[0]  = self.port.read(1)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for first header failed : %s", e)
-                self.requestTopics()
-
+            flag[0] = self.tryRead(1)
             if (flag[0] != '\xff'):                
                 continue
 
-            try:
-                flag[1] = self.port.read(1)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for second header failed : %s", e)
-                self.requestTopics()
-
+            flag[1] = self.tryRead(1) 
             if ( flag[1] != self.protocol_ver):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                 rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
@@ -412,65 +425,34 @@ class SerialClient:
                 rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                 continue
 
-            try:
-                msg_len_bytes = self.port.read(2)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for msg_len_bytes failed : %s", e)
-                self.requestTopics()
-
-            if len(msg_len_bytes) != 2:
-                continue
-
+            msg_len_bytes = self.tryRead(2)
             msg_length, = struct.unpack("<h", msg_len_bytes)
-
-            # checksum of msg_len
-            try:
-                msg_len_chk = self.port.read(1)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for msg_len_chk failed : %s", e)
-                self.requestTopics()
-
+ 
+            msg_len_chk = self.tryRead(1)
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
-            if msg_len_checksum%256 != 255:
+            if msg_len_checksum % 256 != 255:
                 rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
-                rospy.loginfo("chk is %d" %(ord(msg_len_chk)))
+                rospy.loginfo("chk is %d" % ord(msg_len_chk))
                 continue
 
             # topic id (2 bytes)
-            try:
-                topic_id_header = self.port.read(2)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for topic_id_header failed : %s", e)
-                self.requestTopics()
-
-            if len(topic_id_header)!=2:
-                continue
+            topic_id_header = self.tryRead(2)
             topic_id, = struct.unpack("<h", topic_id_header)
 
             try:
-                msg = self.port.read(msg_length)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for msg failed : %s", e)
-                self.requestTopics()
-
-            if (len(msg) != msg_length):
-                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
+                msg = self.tryRead(msg_length)
+            except IOError:
+                self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed : Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
                 rospy.loginfo("msg len is %d",len(msg))
-                #self.port.flushInput()
-                continue
+                raise
 
             # checksum for topic id and msg
-            try:
-                chk = self.port.read(1)
-            except Exception as e:
-                rospy.logwarn("Serial Port reading for chk failed : %s", e)
-                self.requestTopics()
-
+            chk = self.tryRead(chk)
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
-            if checksum%256 == 255:
+            if checksum % 256 == 255:
                 self.synced = True
                 try:
                     self.callbacks[topic_id](msg)
@@ -665,35 +647,35 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-                # second byte of header is protocol version
-                msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
-                msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
-                data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
-                data = data + msg + chr(msg_checksum)
-                self.port.write(data)
-                return length
+                    #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
+                    # second byte of header is protocol version
+                    msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
+                    msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
+                    data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                    data = data + msg + chr(msg_checksum)
+                    self.port.write(data)
+                    return length
 
-    def sendDiagnostics(self, level, msg_text):
-        msg = diagnostic_msgs.msg.DiagnosticArray()
-        status = diagnostic_msgs.msg.DiagnosticStatus()
-        status.name = "rosserial_python"
-        msg.header.stamp = rospy.Time.now()
-        msg.status.append(status)
+        def sendDiagnostics(self, level, msg_text):
+            msg = diagnostic_msgs.msg.DiagnosticArray()
+            status = diagnostic_msgs.msg.DiagnosticStatus()
+            status.name = "rosserial_python"
+            msg.header.stamp = rospy.Time.now()
+            msg.status.append(status)
 
-        status.message = msg_text
-        status.level = level
+            status.message = msg_text
+            status.level = level
 
-        status.values.append(diagnostic_msgs.msg.KeyValue())
-        status.values[0].key="last sync"
-        if self.lastsync.to_sec()>0:
-            status.values[0].value=time.ctime(self.lastsync.to_sec())
-        else:
-            status.values[0].value="never"
+            status.values.append(diagnostic_msgs.msg.KeyValue())
+            status.values[0].key="last sync"
+            if self.lastsync.to_sec()>0:
+                status.values[0].value=time.ctime(self.lastsync.to_sec())
+            else:
+                status.values[0].value="never"
 
-        status.values.append(diagnostic_msgs.msg.KeyValue())
-        status.values[1].key="last sync lost"
-        status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
+            status.values.append(diagnostic_msgs.msg.KeyValue())
+            status.values[1].key="last sync lost"
+            status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
 
-        self.pub_diagnostics.publish(msg)
+            self.pub_diagnostics.publish(msg)
 
