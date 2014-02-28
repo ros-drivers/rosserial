@@ -126,7 +126,7 @@ class Subscriber:
 
     def unregister(self):
         rospy.loginfo("Removing subscriber: %s", self.topic)
-        self.subscriber.unregister()            
+        self.subscriber.unregister()
 
     def callback(self, msg):
         """ Forward message to serial device. """
@@ -136,6 +136,7 @@ class Subscriber:
 
     def unregister(self):
         self.subscriber.unregister()
+
 
 class ServiceServer:
     """
@@ -168,7 +169,7 @@ class ServiceServer:
         req.serialize(data_buffer)
         self.response = None
         if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
-            while self.response == None:
+            while self.response is None:
                 pass
         return self.response
 
@@ -240,7 +241,7 @@ class RosSerialServer:
             self.socket = clientsocket
             self.isConnected = True
 
-            if (self.fork_server == True):    # if configured to launch server in a separate process
+            if (self.fork_server is True):    # if configured to launch server in a separate process
                 rospy.loginfo("Forking a socket server process")
                 process = multiprocessing.Process(target=self.startSocketServer, args=(address))
                 process.daemon = True
@@ -280,7 +281,7 @@ class RosSerialServer:
         pass
 
     def write(self, data):
-        if (self.isConnected == False):
+        if (self.isConnected is False):
             return
         length = len(data)
         totalsent = 0
@@ -293,7 +294,7 @@ class RosSerialServer:
 
     def read(self, rqsted_length):
         self.msg = ''
-        if (self.isConnected == False):
+        if (self.isConnected is False):
             return self.msg
 
         while len(self.msg) < rqsted_length:
@@ -323,7 +324,7 @@ class SerialClient:
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
 
-        if port == None:
+        if port is None:
             # no port specified, listen for any new port?
             pass
         elif hasattr(port, 'read'):
@@ -384,7 +385,7 @@ class SerialClient:
     def txStopRequest(self, signal, frame):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
         self.port.flushInput()
-        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4") 
+        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4")
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")
         sys.exit(0)
@@ -406,10 +407,11 @@ class SerialClient:
         data = ''
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
-                if (self.synced == True):
+                if (self.synced is True):
                     rospy.logerr("Lost sync with device, restarting...")
                 else:
-                    rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
+                    rospy.logerr("Unable to sync with device; possible link problem or link software " +
+                                 "version mismatch such as hydro rosserial_python with groovy Arduino")
                 self.lastsync_lost = rospy.Time.now()
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "no sync with device")
                 self.requestTopics()
@@ -423,16 +425,22 @@ class SerialClient:
                     time.sleep(0.001)
                     continue
 
-                flag = [0,0]
+                flag = [0, 0]
                 flag[0] = self.tryRead(1)
-                if (flag[0] != '\xff'):                
+                if (flag[0] != '\xff'):
                     continue
 
-                flag[1] = self.tryRead(1) 
-                if ( flag[1] != self.protocol_ver):
-                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                    rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                flag[1] = self.tryRead(1)
+                if (flag[1] != self.protocol_ver):
+                    msg = "Mismatched protocol version in packet: "
+                    msg += "lost sync or rosserial_python is from different ros release than the rosserial client"
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, msg)
+                    rospy.logerr(msg)
+                    protocol_ver_msgs = {
+                        '\xff': 'Rev 0 (rosserial 0.4 and earlier)',
+                        '\xfe': 'Rev 1 (rosserial 0.5+)',
+                        '\xfd': 'Some future rosserial version'
+                    }
                     if (flag[1] in protocol_ver_msgs):
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
@@ -442,12 +450,12 @@ class SerialClient:
 
                 msg_len_bytes = self.tryRead(2)
                 msg_length, = struct.unpack("<h", msg_len_bytes)
-     
+
                 msg_len_chk = self.tryRead(1)
                 msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
                 if msg_len_checksum % 256 != 255:
-                    rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
+                    rospy.loginfo("wrong checksum for msg length, length %d" % (msg_length))
                     rospy.loginfo("chk is %d" % ord(msg_len_chk))
                     continue
 
@@ -458,14 +466,15 @@ class SerialClient:
                 try:
                     msg = self.tryRead(msg_length)
                 except IOError:
-                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed : Failed to read msg data")
+                    self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR,
+                                         "Packet Failed : Failed to read msg data")
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
-                    rospy.loginfo("msg len is %d",len(msg))
+                    rospy.loginfo("msg len is %d", len(msg))
                     raise
 
                 # checksum for topic id and msg
                 chk = self.tryRead(1)
-                checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
+                checksum = sum(map(ord, topic_id_header)) + sum(map(ord, msg)) + ord(chk)
 
                 if checksum % 256 == 255:
                     self.synced = True
@@ -509,17 +518,18 @@ class SerialClient:
             msg = TopicInfo()
             msg.deserialize(data)
             if not msg.topic_name in self.subscribers.keys():
-                sub = Subscriber(msg, self) 
+                sub = Subscriber(msg, self)
                 self.subscribers[msg.topic_name] = sub
                 self.setSubscribeSize(msg.buffer_size)
-                rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
+                rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type))
             elif msg.message_type != self.subscribers[msg.topic_name].message._type:
                 old_message_type = self.subscribers[msg.topic_name].message._type
                 self.subscribers[msg.topic_name].unregister()
-                sub = Subscriber(msg, self) 
+                sub = Subscriber(msg, self)
                 self.subscribers[msg.topic_name] = sub
                 self.setSubscribeSize(msg.buffer_size)
-                rospy.loginfo("Change the message type of subscriber on %s from [%s] to [%s]" % (msg.topic_name, old_message_type, msg.message_type) )
+                rospy.loginfo("Change the message type of subscriber on %s from [%s] to [%s]" %
+                              (msg.topic_name, old_message_type, msg.message_type))
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
 
@@ -607,7 +617,6 @@ class SerialClient:
         t.serialize(data_buffer)
         self.send(TopicInfo.ID_TIME, data_buffer.getvalue())
         self.lastsync = rospy.Time.now()
-        
 
     def handleParameterRequest(self, data):
         """ Send parameters to device. Supports only simple datatypes and arrays of such. """
@@ -620,7 +629,7 @@ class SerialClient:
             rospy.logerr("Parameter %s does not exist" % req.name)
             return
 
-        if param == None:
+        if param is None:
             rospy.logerr("Parameter %s does not exist" % req.name)
             return
 
@@ -669,12 +678,15 @@ class SerialClient:
                 print msg
                 return -1
             else:
-                #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
+                # modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) +
+                #                  topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
                 # second byte of header is protocol version
                 msg_len_checksum = 255 - (((length & 255) + (length >> 8)) % 256)
                 msg_checksum = 255 - (((topic & 255) + (topic >> 8) + sum([ord(x) for x in msg])) % 256)
-                data = "\xff" + self.protocol_ver + chr(length & 255) + chr(length >> 8) + chr(msg_len_checksum) + chr(topic & 255) + chr(topic >> 8)
-                data = data + msg + chr(msg_checksum)
+
+                data = "\xff" + self.protocol_ver + chr(length & 255) + chr(length >> 8)
+                data += chr(msg_len_checksum) + chr(topic & 255) + chr(topic >> 8)
+                data += msg + chr(msg_checksum)
                 self.port.write(data)
                 return length
 

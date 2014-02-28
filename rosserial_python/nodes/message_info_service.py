@@ -57,7 +57,7 @@ class MessageInfoService(object):
 
     def _cb(self, req):
         package_message = tuple(req.type.split("/"))
-        if not self.cache.has_key(package_message):
+        if not package_message in self.cache:
             rospy.loginfo("Loading module to return info on %s/%s." % package_message)
             msg = load_message(*package_message)
             self.cache[package_message] = (msg._md5sum, msg._full_text)
