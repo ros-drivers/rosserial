@@ -452,7 +452,7 @@ class SerialClient:
                     raise
 
                 # checksum for topic id and msg
-                chk = self.tryRead(chk)
+                chk = self.tryRead(1)
                 checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
                 if checksum % 256 == 255:
@@ -664,26 +664,26 @@ class SerialClient:
                     self.port.write(data)
                     return length
 
-        def sendDiagnostics(self, level, msg_text):
-            msg = diagnostic_msgs.msg.DiagnosticArray()
-            status = diagnostic_msgs.msg.DiagnosticStatus()
-            status.name = "rosserial_python"
-            msg.header.stamp = rospy.Time.now()
-            msg.status.append(status)
+    def sendDiagnostics(self, level, msg_text):
+        msg = diagnostic_msgs.msg.DiagnosticArray()
+        status = diagnostic_msgs.msg.DiagnosticStatus()
+        status.name = "rosserial_python"
+        msg.header.stamp = rospy.Time.now()
+        msg.status.append(status)
 
-            status.message = msg_text
-            status.level = level
+        status.message = msg_text
+        status.level = level
 
-            status.values.append(diagnostic_msgs.msg.KeyValue())
-            status.values[0].key="last sync"
-            if self.lastsync.to_sec()>0:
-                status.values[0].value=time.ctime(self.lastsync.to_sec())
-            else:
-                status.values[0].value="never"
+        status.values.append(diagnostic_msgs.msg.KeyValue())
+        status.values[0].key="last sync"
+        if self.lastsync.to_sec()>0:
+            status.values[0].value=time.ctime(self.lastsync.to_sec())
+        else:
+            status.values[0].value="never"
 
-            status.values.append(diagnostic_msgs.msg.KeyValue())
-            status.values[1].key="last sync lost"
-            status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
+        status.values.append(diagnostic_msgs.msg.KeyValue())
+        status.values[1].key="last sync lost"
+        status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
 
-            self.pub_diagnostics.publish(msg)
+        self.pub_diagnostics.publish(msg)
 
