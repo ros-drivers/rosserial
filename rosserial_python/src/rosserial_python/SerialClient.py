@@ -412,6 +412,10 @@ class SerialClient:
             # an IOError if there's a serial problem or timeout. In that scenario, a single handler at the
             # bottom attempts to reconfigure the topics.
             try:
+                if self.port.inWaiting() < 1:
+                    time.sleep(0.001)
+                    continue
+
                 flag = [0,0]
                 flag[0] = self.tryRead(1)
                 if (flag[0] != '\xff'):                
