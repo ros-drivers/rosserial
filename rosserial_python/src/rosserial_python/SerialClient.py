@@ -386,7 +386,8 @@ class SerialClient:
         try:
             bytes_read = self.port.read(length)
             if len(bytes_read) < length:
-                rospy.logwarn("Serial Port read returned fewer than expected bytes.")
+                rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
+                              % (length, len(bytes_read)))
                 raise IOError()
             return bytes_read
         except Exception as e:
