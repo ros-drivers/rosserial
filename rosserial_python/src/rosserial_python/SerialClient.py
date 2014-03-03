@@ -507,12 +507,12 @@ class SerialClient:
                 self.setSubscribeSize(msg.buffer_size)
                 rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
             elif msg.message_type != self.subscribers[msg.topic_name].message._type:
-                    old_message_type = self.subscribers[msg.topic_name].message._type
-                    self.subscribers[msg.topic_name].unregister()
-                    sub = Subscriber(msg, self) 
-                    self.subscribers[msg.topic_name] = sub
-                    self.setSubscribeSize(msg.buffer_size)
-                    rospy.loginfo("Change the message type of subscriber on %s from [%s] to [%s]" % (msg.topic_name, old_message_type, msg.message_type) )
+                old_message_type = self.subscribers[msg.topic_name].message._type
+                self.subscribers[msg.topic_name].unregister()
+                sub = Subscriber(msg, self) 
+                self.subscribers[msg.topic_name] = sub
+                self.setSubscribeSize(msg.buffer_size)
+                rospy.loginfo("Change the message type of subscriber on %s from [%s] to [%s]" % (msg.topic_name, old_message_type, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
 
