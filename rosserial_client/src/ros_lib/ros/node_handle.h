@@ -419,16 +419,16 @@ namespace ros {
 	  return 0;
 
         /* serialize message */
-        int l = msg->serialize(message_out+7);
+        unsigned int l = msg->serialize(message_out+7);
 
         /* setup the header */
         message_out[0] = 0xff;
         message_out[1] = PROTOCOL_VER;
-        message_out[2] = (unsigned char) l&255;
-        message_out[3] = (unsigned char) l>>8;
+        message_out[2] = (unsigned char) ((unsigned int)l&255);
+        message_out[3] = (unsigned char) ((unsigned int)l>>8);
 	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
-        message_out[5] = (unsigned char) id&255;
-        message_out[6] = ((unsigned char) id>>8);
+        message_out[5] = (unsigned char) ((int)id&255);
+        message_out[6] = (unsigned char) ((int)id>>8);
 
         /* calculate checksum */
         int chk = 0;
