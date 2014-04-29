@@ -166,11 +166,11 @@ class StringDataType(PrimitiveDataType):
     """ Need to convert to signed char *. """
 
     def make_declaration(self, f):
-        f.write('      char * %s;\n' % self.name)
+        f.write('      const char* %s;\n' % self.name)
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
+        f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
         f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)        
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
