@@ -1,139 +1,230 @@
+/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2014, Clearpath Robotics Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Willow Garage, Inc. nor the names of its
+ *    contributors may be used to endorse or promote prducts derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
-#define WIN32_LEAN_AND_MEAN
-
-#include <windows.h>
+#include "WindowsSocket.h"
+#include <string>
+#include <iostream>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
-#include <stdio.h>
+
+#pragma comment(lib, "Ws2_32.lib")
+
+#define DEFAULT_PORT "11411"
+
+using std::string;
+using std::cerr;
+using std::endl;
 
 
-// Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
-#pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
-#pragma comment (lib, "AdvApi32.lib")
-
-#define DEFAULT_PORT "11411" //for your information
-int iResult;
-WSADATA wsaData;
-SOCKET ConnectSocket = INVALID_SOCKET;
-struct addrinfo *result = NULL,*ptr = NULL, hints;
-
-int WinSock_Init(char* IP, char* port)
+class WindowsSocketImpl
 {
-	// Initialize Winsock
-	printf("Connecting to TCP server at %s:%s....\n", IP, port);
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0) {
-		printf("WSAStartup failed with error: %d\n", iResult);
-		return 1;
-	}
 
-	ZeroMemory(&hints, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
+public:
 
-	// Resolve the server address and port
-	iResult = getaddrinfo(IP, port, &hints, &result);
-	if (iResult != 0) {
-		printf("getaddrinfo failed with error: %d\n", iResult);
-		WSACleanup();
-		return 1;
-	}
+  WindowsSocketImpl () : mySocket (INVALID_SOCKET)
+  { }
 
-	// Attempt to connect to an address until one succeeds
-	for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+  void init (char *server_hostname)
+  {
+    WSADATA wsaData;
+    int result = WSAStartup (MAKEWORD (2, 2), &wsaData);
+    if (result)
+    {
+      // TODO: do something more useful here with the error code
+      std::cerr << "Could not initialize windows socket (" << result << ")" << std::endl;
+      return;
+    }
 
-		// Create a SOCKET for connecting to server
-		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
-			ptr->ai_protocol);
-		if (ConnectSocket == INVALID_SOCKET) {
-			printf("socket failed with error: %ld\n", WSAGetLastError());
-			WSACleanup();
-			return 1;
-		}
+    struct addrinfo *servers = get_server_addr (server_hostname);
 
-		// Connect to server.
-		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+    if (NULL == servers)
+    {
+      WSACleanup ();
+      return;
+    }
 
-		char value = 1; //disable nagle algorithm
-		setsockopt( ConnectSocket, IPPROTO_TCP, TCP_NODELAY, &value, sizeof( value ) );
-		u_long iMode = 1; //enable blocking
-		iResult = ioctlsocket(ConnectSocket, FIONBIO,&iMode);
-		//struct timeval tv;
-		//tv.tv_sec = 0;
-		//tv.tv_usec = 10000;
-		//setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO,(char *)&tv,sizeof(struct timeval));
+    connect_to_server (servers);
 
-		if (iResult == SOCKET_ERROR) {
-			closesocket(ConnectSocket);
-			ConnectSocket = INVALID_SOCKET;
-			continue;
-		}
-		break;
-	}
+    freeaddrinfo (servers);
 
+    if (INVALID_SOCKET == mySocket)
+    {
+      std::cerr << "Could not connect to server" << std::endl;
+      WSACleanup ();
+    }
+  }
 
-	freeaddrinfo(result);
+  int read ()
+  {
+    char data;
+    int result = recv (mySocket, &data, 1, 0);
+    if (result < 0)
+    {
+      std::cerr << "Failed to receive data from server " << WSAGetLastError () << std::endl;
+      return -1;
+    }
+    else if (result == 0)
+    {
+      std::cerr << "Connection to server closed" << std::endl;
+      return -1;
+    }
+    return (unsigned char) data;
+  }
 
-	if (ConnectSocket == INVALID_SOCKET) {
-		printf("Unable to connect to server!\n");
-		WSACleanup();
-		return 1;
-	}
-	return 0;
+  void write (const unsigned char *data, int length)
+  {
+    int result = send (mySocket, (const char *) data, length, 0);
+    if (SOCKET_ERROR == result)
+    {
+      std::cerr << "Send failed with error " << WSAGetLastError () << std::endl;
+      closesocket (mySocket);
+      WSACleanup ();
+    }
+  }
+
+  unsigned long time ()
+  {
+    SYSTEMTIME st_now;
+    GetSystemTime (&st_now);
+    unsigned long millis = st_now.wHour * 3600000 +
+                           st_now.wMinute * 60000 + 
+                           st_now.wSecond * 1000 + 
+                           st_now.wMilliseconds;
+    return millis;
+  }
+
+protected:
+        /**
+	* Helper to get the addrinfo for the server based on a string hostname.
+	* NB: you can just pass in a const char* and C++ will automatically
+	* create the string instance for you.
+	* @param hostname the hostname to connect to. Understands "host:port"
+	* @returns pointer to addrinfo from getaddrinfo or NULL on error
+	*/
+  struct addrinfo *get_server_addr (const string & hostname)
+  {
+    int result;
+    struct addrinfo *ai_output = NULL;
+    struct addrinfo ai_input;
+
+    // split off the port number if given
+    int c = hostname.find_last_of (':');
+    string host = hostname.substr (0, c);
+    string port = (c < 0) ? DEFAULT_PORT : hostname.substr (c + 1);
+
+    ZeroMemory (&ai_input, sizeof (ai_input));
+    ai_input.ai_family = AF_UNSPEC;
+    ai_input.ai_socktype = SOCK_STREAM;
+    ai_input.ai_protocol = IPPROTO_TCP;
+
+    // Resolve the server address and port
+    result = getaddrinfo (host.c_str (), port.c_str (), &ai_input, &ai_output);
+    if (result != 0)
+    {
+      std::cerr << "Could not resolve server address (" << result << ")" << std::endl;
+      return NULL;
+    }
+    return ai_output;
+  }
+
+        /**
+	* Helper to connect the socket to a given address.
+	* @param server address of the server to connect to, linked list
+	*/
+  void connect_to_server (struct addrinfo *servers)
+  {
+    int result;
+    for (struct addrinfo * ptr = servers; ptr != NULL; ptr = ptr->ai_next)
+    {
+      mySocket = socket (ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+      if (INVALID_SOCKET == mySocket)
+      {
+        std::cerr << "Could not great socket " << WSAGetLastError ();
+        return;
+      }
+
+      result = connect (mySocket, ptr->ai_addr, (int) ptr->ai_addrlen);
+      if (SOCKET_ERROR == result)
+      {
+        closesocket (mySocket);
+        mySocket = INVALID_SOCKET;
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    // disable nagle's algorithm
+    char value = 1;
+    setsockopt (mySocket, IPPROTO_TCP, TCP_NODELAY, &value, sizeof (value));
+    // enable blocking
+    u_long iMode = 1;
+    result = ioctlsocket (mySocket, FIONBIO, &iMode);
+    if (result)
+    {
+      std::cerr << "Could not make socket blocking " << result << std::endl;
+      closesocket (mySocket);
+      mySocket = INVALID_SOCKET;
+    }
+  }
+
+private:
+  SOCKET mySocket;
+};
+
+WindowsSocket::WindowsSocket ()
+{
+  impl = new WindowsSocketImpl ();
 }
 
-
-
-unsigned long WinSock_Time()
+void WindowsSocket::init (char *server_hostname)
 {
-	SYSTEMTIME st_now;
-	FILETIME ft_now;
-	GetSystemTime(&st_now);
-	unsigned long millis = st_now.wHour * 3600000 +
-		                   st_now.wMinute * 60000 +
-						   st_now.wSecond * 1000 +
-						   st_now.wMilliseconds;
-	return millis;
+  impl->init (server_hostname);
 }
 
-int WinSock_Write(unsigned char* data, int length)
+int WindowsSocket::read ()
 {
-	// Send an initial buffer
-	iResult = send(ConnectSocket, reinterpret_cast<const char*>(data), length, 0);
-	if (iResult == SOCKET_ERROR) {
-		printf("send failed with error: %d\n", WSAGetLastError());
-		closesocket(ConnectSocket);
-		WSACleanup();
-		return 1;
-	}
-	printf("Bytes Sent: %ld\n", iResult);
-	return iResult;
+  return impl->read ();
 }
 
-int WinSock_Read()
+void WindowsSocket::write (const unsigned char *data, int length)
 {
-	printf("13 ");
-	char data;
-	iResult = recv(ConnectSocket, &data, 1, 0);
-	printf("14 ");
-	if (iResult > 0)
-	{
-		//printf("%d",uData);
-		printf("  Bytes received: %d\n", iResult);
-	}
-	else if (iResult == 0)
-	{
-		printf("Connection closed\n");
-		return -1;
-	}
-	else
-	{
-		printf("recv failed with error: %d\n", WSAGetLastError());
-		return -1;
-	}
+  impl->write (data, length);
+}
 
-	return (unsigned char) data;
+unsigned long WindowsSocket::time ()
+{
+  return impl->time ();
 }

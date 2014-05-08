@@ -1,41 +1,60 @@
-#ifndef WINDOWSSOCKET_H_
-#define WINDOWSSOCKET_H_
+/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2014, Clearpath Robotics Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Willow Garage, Inc. nor the names of its
+ *    contributors may be used to endorse or promote prducts derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
-extern "C++" int WinSock_Read();
-extern "C++" int WinSock_Init(char* IP, char* port);
-extern "C++" int WinSock_Write(unsigned char* data, int length);
-// We have to do the below to ensure windows.h does not mess everything up
-extern "C++" unsigned long WinSock_Time();
+#ifndef ROS_WINDOWS_SOCKET_H_
+#define ROS_WINDOWS_SOCKET_H_
 
-#include <stdio.h>
+// forward declaration of the implementation class
+// this class is defined in the implementation file to abstract all of the 
+// windows specific crud. It gets in the way of the ROS libraries.
+class WindowsSocketImpl;
 
-class WindowsSocket {
+class WindowsSocket
+{
 public:
-	WindowsSocket()
-	{
-	}
-	void init(char* IP, char* port)
-	{
-		if (WinSock_Init(IP,port) == 0) printf("Success!\n");
-	}
-	int read()
-	{
-		int c = WinSock_Read();
-		printf("Data: %d\n", c);
-		return c;
-	}
-	void write(unsigned char* data, int length)
-	{
-		WinSock_Write(data,length);
-	}
+  WindowsSocket ();
 
-	unsigned long time()
-	{
-		unsigned long t = WinSock_Time();
-		printf("Time: %d\n", t);
-		return t;
-	}
+  void init (char *server_hostname);
+
+  int read ();
+
+  void write (const unsigned char *data, int length);
+
+  unsigned long time ();
+
+private:
+    WindowsSocketImpl * impl;
 };
-
 
 #endif
