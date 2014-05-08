@@ -8,6 +8,10 @@ install(DIRECTORY src/ros_lib
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
+install(DIRECTORY src/examples
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
+)
+
 install(PROGRAMS src/rosserial_windows/make_libraries.py
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
