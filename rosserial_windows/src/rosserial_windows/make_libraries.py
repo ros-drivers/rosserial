@@ -3,7 +3,7 @@
 #####################################################################
 # Software License Agreement (BSD License)
 #
-# Copyright (c) 2013, Willow Garage, Inc.
+# Copyright (c) 2014, Clearpath Robotics Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,13 +33,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-THIS_PACKAGE = "rosserial_arduino"
+THIS_PACKAGE = "rosserial_windows"
 
 __usage__ = """
-make_libraries.py generates the Arduino rosserial library files.  It 
-requires the location of your Arduino sketchbook/libraries folder.
+make_libraries.py generates the Windows rosserial library files.  It 
+requires the location of your project's ros_lib folder.
 
-rosrun rosserial_arduino make_libraries.py <output_path>
+rosrun rosserial_windows make_libraries.py <output_path>
 """
 
 import rospkg
