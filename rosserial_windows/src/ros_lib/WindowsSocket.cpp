@@ -91,7 +91,10 @@ public:
     int result = recv (mySocket, &data, 1, 0);
     if (result < 0)
     {
-      std::cerr << "Failed to receive data from server " << WSAGetLastError () << std::endl;
+      if (WSAEWOULDBLOCK != WSAGetLastError())
+      {
+        std::cerr << "Failed to receive data from server " << WSAGetLastError() << std::endl;
+      }
       return -1;
     }
     else if (result == 0)
@@ -189,12 +192,12 @@ protected:
     // disable nagle's algorithm
     char value = 1;
     setsockopt (mySocket, IPPROTO_TCP, TCP_NODELAY, &value, sizeof (value));
-    // enable blocking
+    // disable blocking
     u_long iMode = 1;
     result = ioctlsocket (mySocket, FIONBIO, &iMode);
     if (result)
     {
-      std::cerr << "Could not make socket blocking " << result << std::endl;
+      std::cerr << "Could not make socket nonblocking " << result << std::endl;
       closesocket (mySocket);
       mySocket = INVALID_SOCKET;
     }
