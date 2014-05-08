@@ -1,19 +1,16 @@
 <package>
-  <name>rosserial_arduino</name>
-  <version>0.5.5</version>
+  <name>rosserial_windows</name>
+  <version>0.0.0</version>
   <description>
-    Libraries and examples for ROSserial usage on Arduino/AVR Platforms.
+    Libraries and examples for ROSserial usage on Windows Platforms.
   </description>
-  <author>Michael Ferguson</author>
-  <author>Adam Stambler</author>
-  <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
+  <author>Kareem Shehata</author>
+  <maintainer email="kshehata@clearpathrobotics.com">Kareem Shehata</maintainer>
   <license>BSD</license>
-  <url>http://ros.org/wiki/rosserial_arduino</url>
+  <url>http://ros.org/wiki/rosserial_windows</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>gcc-avr</build_depend>
-  <build_depend>avr-libc</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
