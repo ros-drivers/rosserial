@@ -23,13 +23,17 @@ int main(int argc, char* argv[])
 
 	printf("Advertising cmd_vel message\n");
 	geometry_msgs::Twist twist_msg;
-	ros::Publisher cmd_vel_pub("husky/cmd_vel", &twist_msg);
+	ros::Publisher cmd_vel_pub("cmd_vel", &twist_msg);
 	nh.advertise(cmd_vel_pub);
 
-	printf("Go husky go!\n");
+	printf("Go robot go!\n");
 	while (1) {
-		twist_msg.linear.x = 5.1f;
-		twist_msg.angular.z = -1.8f;
+		twist_msg.linear.x = 5.1;
+		twist_msg.linear.y = 0;
+		twist_msg.linear.z = 0;
+		twist_msg.angular.x = 0;
+		twist_msg.angular.y = 0;
+		twist_msg.angular.z = -1.8;
 		cmd_vel_pub.publish(&twist_msg);
 
 		nh.spinOnce();
