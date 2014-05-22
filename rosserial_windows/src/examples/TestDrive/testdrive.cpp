@@ -44,34 +44,36 @@
 
 using std::string;
 
-int main(int argc, char* argv[])
+int main (int argc, char *argv[])
 {
-	ros::NodeHandle  nh;
-	if (argc != 2) {
-		printf("Usage: testdrive host[:port]\n");
-		return 0;
-	}
+  ros::NodeHandle nh;
+  if (argc != 2)
+  {
+    printf ("Usage: testdrive host[:port]\n");
+    return 0;
+  }
 
-	printf("Connecting to server at %s\n", argv[1]);
-	nh.initNode(argv[1]);
+  printf ("Connecting to server at %s\n", argv[1]);
+  nh.initNode (argv[1]);
 
-	printf("Advertising cmd_vel message\n");
-	geometry_msgs::Twist twist_msg;
-	ros::Publisher cmd_vel_pub("cmd_vel", &twist_msg);
-	nh.advertise(cmd_vel_pub);
+  printf ("Advertising cmd_vel message\n");
+  geometry_msgs::Twist twist_msg;
+  ros::Publisher cmd_vel_pub ("cmd_vel", &twist_msg);
+  nh.advertise (cmd_vel_pub);
 
-	printf("Go robot go!\n");
-	while (1) {
-		twist_msg.linear.x = 5.1;
-		twist_msg.linear.y = 0;
-		twist_msg.linear.z = 0;
-		twist_msg.angular.x = 0;
-		twist_msg.angular.y = 0;
-		twist_msg.angular.z = -1.8;
-		cmd_vel_pub.publish(&twist_msg);
+  printf ("Go robot go!\n");
+  while (1)
+  {
+    twist_msg.linear.x = 5.1;
+    twist_msg.linear.y = 0;
+    twist_msg.linear.z = 0;
+    twist_msg.angular.x = 0;
+    twist_msg.angular.y = 0;
+    twist_msg.angular.z = -1.8;
+    cmd_vel_pub.publish (&twist_msg);
 
-		nh.spinOnce();
-		Sleep(100);
-	}
-	return 0;
+    nh.spinOnce ();
+    Sleep (100);
+  }
+  return 0;
 }
