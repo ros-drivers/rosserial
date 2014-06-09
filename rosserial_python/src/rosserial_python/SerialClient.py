@@ -298,6 +298,17 @@ class RosSerialServer:
 
     def close(self):
         self.port.close()
+        
+    def inWaiting(self):
+        try: # the caller checks just for <1, so we'll peek at just one byte
+            chunk = self.socket.recv(1, socket.MSG_DONTWAIT|socket.MSG_PEEK)
+            if chunk == '':
+                raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
+            return len(chunk)
+        except socket.error, e:
+            if e.args[0] == errno.EWOULDBLOCK:
+                return 0
+            raise
 
 
 class SerialClient:
