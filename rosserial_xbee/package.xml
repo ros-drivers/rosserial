@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_xbee</name>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
   <description>
 
      rosserial_xbee provides tools to do point to multipoint communication

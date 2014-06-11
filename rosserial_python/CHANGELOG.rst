@@ -2,8 +2,8 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.6 (2014-06-11)
+------------------
 * Add Mike Purvis as maintainer to all but xbee.
 * Added the missing inWaiting() to RosSerialServer
 * improvement: inform user of mismatched checksum for topic_id and msg

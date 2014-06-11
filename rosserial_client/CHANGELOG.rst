@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.6 (2014-06-11)
+------------------
 * Add Mike Purvis as maintainer
 * make tf topic absolute instead of relative to prevent remapping with <group> tag
 * fix: msg id serialization
