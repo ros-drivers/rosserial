@@ -2,6 +2,14 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer
+* Updated examples for Arduino 1.+
+* Added Teensy 3.1 support (MK20DX256)
+* Updated ArduinoHardware.h to add Teensy 3.0 support
+* Contributors: Michael Ferguson, Mike Purvis, Moju Zhao, Tony Baltovski, kjanesch
+
 0.5.5 (2014-01-14)
 ------------------
 * Leonardo: Use the USB serial port for ROS messages option

@@ -2,6 +2,18 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer
+* make tf topic absolute instead of relative to prevent remapping with <group> tag
+* fix: msg id serialization
+* fix: wrong message lenght, if message size more than 255
+* fix odometry deserialization error http://answers.ros.org/question/73807/rosserial-deserialization-error/
+* add better debugging information when packages are missing dependencies
+* remove ID_TX_STOP from rosserial_msgs/msg/TopicInfo.msg, using hardcode modification.
+* fix the dupilcated registration problem of subscriber
+* Contributors: Michael Ferguson, Mike Purvis, Moju Zhao, agentx3r, denis
+
 0.5.5 (2014-01-14)
 ------------------
 

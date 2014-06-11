@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rosserial_server</name>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
   <description>The rosserial_server package</description>
 
   <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>
