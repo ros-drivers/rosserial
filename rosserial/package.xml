@@ -6,6 +6,7 @@
   </description>
   <author>Michael Ferguson</author>
   <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
+  <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/rosserial</url>
 
