@@ -2,6 +2,11 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Uncomment ID_TX_STOP constant, per `#111 <https://github.com/ros-drivers/rosserial/issues/111>`_
+* Contributors: Mike Purvis
+
 0.5.6 (2014-06-11)
 ------------------
 * Add Mike Purvis as maintainer to all but xbee.

@@ -2,6 +2,9 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.5.6 (2014-06-11)
 ------------------
 * Add Mike Purvis as maintainer to all but xbee.
