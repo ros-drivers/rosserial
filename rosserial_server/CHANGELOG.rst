@@ -2,6 +2,12 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixed build error due to variable being read as a function due to missing parenthesis
+* Add rosserial_python as dependency of rosserial_server
+* Contributors: Mike Purvis, spaghetti-
+
 0.5.5 (2014-01-14)
 ------------------
 * Add support for require/publishers and require/subscribers parameters.
