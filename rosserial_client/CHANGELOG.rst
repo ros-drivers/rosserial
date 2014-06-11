@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.0 (2014-06-11)
+------------------
 * Remove include of ros.h from time.cpp
 * No xx_val pointers for fixed-length arrays of messages.
 * Use const char* instead of char* for strings in messages.

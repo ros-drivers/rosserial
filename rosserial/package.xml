@@ -1,6 +1,6 @@
 <package>
   <name>rosserial</name>
-  <version>0.5.6</version>
+  <version>0.6.0</version>
   <description>
     Metapackage for core of rosserial.
   </description>
