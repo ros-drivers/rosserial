@@ -255,7 +255,7 @@ namespace ros {
               }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
-              }else if(topic_ == ID_TX_STOP){
+              }else if(topic_ == TopicInfo::ID_TX_STOP){
                   configured_ = false;
               }else{
                 if(subscribers[topic_-100])
