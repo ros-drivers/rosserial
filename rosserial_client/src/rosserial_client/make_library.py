@@ -166,19 +166,20 @@ class StringDataType(PrimitiveDataType):
     """ Need to convert to signed char *. """
 
     def make_declaration(self, f):
-        f.write('      char * %s;\n' % self.name)
+        f.write('      const char* %s;\n' % self.name)
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t * length_%s = (uint32_t *)(outbuffer + offset);\n' % cn)
-        f.write('      *length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
+        f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
+        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)        
         f.write('      offset += 4;\n')
-        f.write('      memcpy(outbuffer + offset, this->%s, *length_%s);\n' % (self.name,cn))
-        f.write('      offset += *length_%s;\n' % cn)
+        f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
+        f.write('      offset += length_%s;\n' % cn)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = *(uint32_t *)(inbuffer + offset);\n' % cn)
+        f.write('      uint32_t length_%s;\n' % cn)
+        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(uint32_t));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
@@ -238,7 +239,6 @@ class ArrayDataType(PrimitiveDataType):
             c.serialize(f)
             f.write('      }\n')
         else:
-            f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)
             f.write('      }\n')
@@ -259,7 +259,6 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            f.write('      uint8_t * %s_val = (uint8_t*) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)
             f.write('      }\n')
@@ -534,6 +533,7 @@ def get_dependency_sorted_package_list(rospack):
     ''' Returns a list of package names, sorted by dependencies. '''
     pkgs = rospack.list()
     dependency_list = list()
+    failed = list()
     for p in pkgs:
         try:
             depends = rospack.get_depends(p)
@@ -545,10 +545,11 @@ def get_dependency_sorted_package_list(rospack):
                     break
             if not dependent:
                 dependency_list.append(p)
-        except rospkg.common.ResourceNotFound:
-            print('[%s]:Not Found'%p)
+        except rospkg.common.ResourceNotFound as e:
+            failed.append(p + " (missing dependency)")
+            print('[%s]: Unable to find dependency: %s. Messages cannot be built.\n'% (p, str(e)))
     dependency_list.reverse()
-    return dependency_list
+    return [dependency_list, failed]
 
 def rosserial_generate(rospack, path, mapping):
     # horrible hack -- make this die
@@ -556,10 +557,9 @@ def rosserial_generate(rospack, path, mapping):
     ROS_TO_EMBEDDED_TYPES = mapping
 
     # find and sort all packages
-    pkgs = get_dependency_sorted_package_list(rospack)
+    pkgs, failed = get_dependency_sorted_package_list(rospack)
 
     # gimme messages
-    failed = []
     for p in pkgs:
         try:
             MakeLibrary(p, path, rospack)

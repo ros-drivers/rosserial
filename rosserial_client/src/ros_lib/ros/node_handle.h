@@ -64,7 +64,6 @@
 #define MODE_MSG_CHECKSUM   8   // checksum for msg and topic id 
 
 
-
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
 #include "ros/msg.h"
@@ -115,7 +114,27 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : configured_(false) {}
+      NodeHandle_() : configured_(false) {
+
+        for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
+	   publishers[i] = 0;
+
+        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
+	   subscribers[i] = 0;
+
+        for(unsigned int i=0; i< INPUT_SIZE; i++) 
+	   message_in[i] = 0;
+
+        for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
+	   message_out[i] = 0;
+
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+        req_param_resp.floats_length = 0;
+        req_param_resp.floats = NULL;
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+      }
       
       Hardware* getHardware(){
         return &hardware_;
@@ -236,6 +255,8 @@ namespace ros {
               }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
+              }else if(topic_ == ID_TX_STOP){
+                  configured_ = false;
               }else{
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
@@ -396,16 +417,16 @@ namespace ros {
 	  return 0;
 
         /* serialize message */
-        int l = msg->serialize(message_out+7);
+        unsigned int l = msg->serialize(message_out+7);
 
         /* setup the header */
         message_out[0] = 0xff;
         message_out[1] = PROTOCOL_VER;
-        message_out[2] = (unsigned char) l&255;
-        message_out[3] = (unsigned char) l>>8;
+        message_out[2] = (unsigned char) ((unsigned int)l&255);
+        message_out[3] = (unsigned char) ((unsigned int)l>>8);
 	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
-        message_out[5] = (unsigned char) id&255;
-        message_out[6] = ((unsigned char) id>>8);
+        message_out[5] = (unsigned char) ((int)id&255);
+        message_out[6] = (unsigned char) ((int)id>>8);
 
         /* calculate checksum */
         int chk = 0;
@@ -419,6 +440,7 @@ namespace ros {
           return l;
         }else{
           logerror("Message from device dropped: message larger than buffer.");
+          return -1;
         }
       }
 
@@ -464,7 +486,7 @@ namespace ros {
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        int end_time = hardware_.time() + time_out;
+        unsigned int end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
           if (hardware_.time() > end_time) return false;

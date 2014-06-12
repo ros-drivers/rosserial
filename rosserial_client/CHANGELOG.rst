@@ -2,6 +2,39 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-06-11)
+------------------
+* Remove include of ros.h from time.cpp
+* No xx_val pointers for fixed-length arrays of messages.
+* Use const char* instead of char* for strings in messages.
+* Contributors: Mike Purvis
+
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer
+* make tf topic absolute instead of relative to prevent remapping with <group> tag
+* fix: msg id serialization
+* fix: wrong message lenght, if message size more than 255
+* fix odometry deserialization error http://answers.ros.org/question/73807/rosserial-deserialization-error/
+* add better debugging information when packages are missing dependencies
+* remove ID_TX_STOP from rosserial_msgs/msg/TopicInfo.msg, using hardcode modification.
+* fix the dupilcated registration problem of subscriber
+* Contributors: Michael Ferguson, Mike Purvis, Moju Zhao, agentx3r, denis
+
+0.5.5 (2014-01-14)
+------------------
+
+0.5.4 (2013-10-17)
+------------------
+* fix an uninitialized data bug on arduino
+
+0.5.3 (2013-09-21)
+------------------
+* Added some missing return values
+* Fixed uninitialized arrays that would cause random segfaults on spinOnce 
+and advertise. Fixed other ininitialized variables.
+* fixed misalignment for 32 bit architectures
+
 0.5.2 (2013-07-17)
 ------------------
 

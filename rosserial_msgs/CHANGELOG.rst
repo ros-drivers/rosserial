@@ -2,6 +2,29 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-06-11)
+------------------
+* Uncomment ID_TX_STOP constant, per `#111 <https://github.com/ros-drivers/rosserial/issues/111>`_
+* Contributors: Mike Purvis
+
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer to all but xbee.
+* remove ID_TX_STOP from rosserial_msgs/msg/TopicInfo.msg, using hardcode modification. fix the dupilcated registration problem of subscriber
+* modified rosserial
+* Contributors: Mike Purvis, Moju Zhao
+
+0.5.5 (2014-01-14)
+------------------
+
+0.5.4 (2013-10-17)
+------------------
+
+0.5.3 (2013-09-21)
+------------------
+* Add message info service and stub of node to provide it, for
+rosserial_server support.
+
 0.5.2 (2013-07-17)
 ------------------
 

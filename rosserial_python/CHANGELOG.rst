@@ -2,6 +2,40 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-06-11)
+------------------
+
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer to all but xbee.
+* Added the missing inWaiting() to RosSerialServer
+* improvement: inform user of mismatched checksum for topic_id and msg
+* Fix indent on if-block.
+* Check for data in buffer before attempting to tryRead. Insert a 1ms sleep to avoid pegging the processor.
+* Better warning message for tryRead.
+* fix two points: 1. the number of bytes to read for chk_byte, 2. the wrong indentation about the defination of sendDiagnostics()
+* Try-block to handle IOErrors thrown from tryRead
+* Merge from hydro-devel.
+* fix the dupilcated registration problem of subscriber
+* remove ID_TX_STOP from rosserial_msgs/msg/TopicInfo.msg, using hardcode modification. fix the dupilcated registration problem of subscriber
+* modified rosserial
+* modified rosserial
+* Contributors: Girts Linde, Mike Purvis, Moju Zhao, bakui, denis
+
+0.5.5 (2014-01-14)
+------------------
+
+0.5.4 (2013-10-17)
+------------------
+
+0.5.3 (2013-09-21)
+------------------
+* De-register subscribers and service clients upon disconnect.
+  This prevents callbacks being called after a client program
+  terminates a connection.
+* Fill out package.xml properly, include docstring in helper Python node.
+* Add message info helper script that supports rosserial_server
+
 0.5.2 (2013-07-17)
 ------------------
 
