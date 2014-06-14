@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 #include <netinet/in.h>
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 
 #include "ros/ros.h"
 
@@ -27,15 +27,15 @@ public:
     ASSERT_NE(-1, unlockpt(fd));
 
     char* pty_name;
-    ASSERT_TRUE((pty_name = ptsname(fd)) != NULL);    
+    ASSERT_TRUE((pty_name = ptsname(fd)) != NULL);
 
     ros::param::get("~port", symlink_name);
     symlink(pty_name, symlink_name.c_str());
-  } 
+  }
   virtual void TearDown() {
     unlink(symlink_name.c_str());
     close(fd);
-  } 
+  }
   std::string symlink_name;
 };
 
@@ -51,24 +51,23 @@ public:
     // server to come up.
     for (int attempt = 0; attempt < 10; attempt++)
     {
-      fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
+      fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       ASSERT_GE(fd, 0);
-      fcntl(fd, F_SETFL, O_NONBLOCK);
-
       if (connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0)
       {
-        // Connection successful.
-        return;  
+        // Connection successful, set nonblocking and return.
+        fcntl(fd, F_SETFL, O_NONBLOCK);
+        return;
       }
       close(fd);
       ros::Duration(0.5).sleep();
-    } 
+    }
     FAIL() << "Unable to connect to rosserial socket server.";
   }
   virtual void TearDown() {
     close(fd);
-  } 
-  struct sockaddr_in serv_addr; 
+  }
+  struct sockaddr_in serv_addr;
 };
 
 class SingleClientFixture : public ::testing::Test {
@@ -94,7 +93,7 @@ protected:
     setup->TearDown();
   }
 
-  rosserial::ros::NodeHandle client_nh; 
+  rosserial::ros::NodeHandle client_nh;
   ros::NodeHandle nh;
   static AbstractSetup* setup;
 };
