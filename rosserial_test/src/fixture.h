@@ -42,24 +42,25 @@ public:
 class SocketSetup : public AbstractSetup {
 public:
   virtual void SetUp() {
-    fd = socket(AF_INET, SOCK_STREAM, 0); 
-    ASSERT_GE(fd, 0);
-    fcntl(fd, F_SETFL, O_NONBLOCK);
-
-    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(11411);
     ASSERT_GE(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr), 0);
 
     // Try a bunch of times; we don't know how long it will take for the
     // server to come up.
-    for (int attempt = 0; attempt < 10; attempt++) {
-      if (connect(fd, 
-          (struct sockaddr *)&serv_addr, 
-          sizeof(serv_addr)) >= 0) {
+    for (int attempt = 0; attempt < 10; attempt++)
+    {
+      fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
+      ASSERT_GE(fd, 0);
+      fcntl(fd, F_SETFL, O_NONBLOCK);
+
+      if (connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0)
+      {
         // Connection successful.
         return;  
       }
+      close(fd);
       ros::Duration(0.5).sleep();
     } 
     FAIL() << "Unable to connect to rosserial socket server.";
