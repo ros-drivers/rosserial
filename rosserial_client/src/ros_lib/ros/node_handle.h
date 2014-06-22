@@ -66,8 +66,6 @@
 
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
-#define ID_TX_STOP 11  //hardcode for hydro version
-
 #include "msg.h"
 
 namespace ros {
