@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_python</name>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <description>
     A Python-based implementation of the ROS serial protocol.
   </description>

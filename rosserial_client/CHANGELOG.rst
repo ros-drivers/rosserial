@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.1 (2014-06-30)
+------------------
 * Remove ID_TX_STOP define
 * Fix ID_TX_STOP in the client lib.
 * Contributors: Mike Purvis

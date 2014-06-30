@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_embeddedlinux</name>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <description>
     Libraries and examples for ROSserial usage on Embedded Linux Enviroments
   </description>

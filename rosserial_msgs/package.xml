@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_msgs</name>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <description>
     Messages for automatic topic configuration using rosserial.
   </description>
