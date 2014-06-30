@@ -2,6 +2,12 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove ID_TX_STOP define
+* Fix ID_TX_STOP in the client lib.
+* Contributors: Mike Purvis
+
 0.6.0 (2014-06-11)
 ------------------
 * Remove include of ros.h from time.cpp
