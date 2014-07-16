@@ -18,4 +18,5 @@
   <run_depend>rosserial_python</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>roscpp</run_depend>
+  <run_depend>topic_tools</run_depend>
 </package>

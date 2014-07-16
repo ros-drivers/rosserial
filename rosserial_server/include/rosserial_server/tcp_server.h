@@ -1,7 +1,7 @@
 /**
  *
  *  \file
- *  \brief      Main entry point for the serial node.
+ *  \brief      TCP server for rosserial
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
  *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
  *
@@ -31,35 +31,56 @@
  *
  */
 
+#ifndef ROSSERIAL_SERVER_TCP_SERVER_H
+#define ROSSERIAL_SERVER_TCP_SERVER_H
+
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 
 #include <ros/ros.h>
 
-#include "rosserial_server/serial_session.h"
-#include "rosserial_server/async_ok_poll.h"
+
+using boost::asio::ip::tcp;
 
 
-int main(int argc, char* argv[])
+template<typename Session>
+class TcpServer
 {
-  boost::asio::io_service io_service;
+public:
+  TcpServer(boost::asio::io_service& io_service, short port)
+    : io_service_(io_service),
+      acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
+  {
+    start_accept();
+  }
 
-  // Initialize ROS.
-  ros::init(argc, argv, "rosserial_server_serial_node");
-  ros::NodeHandle nh("~");
-  std::string port; nh.param<std::string>("port", port, "/dev/ttyACM0");
-  int baud; nh.param<int>("baud", baud, 57600);
+private:
+  void start_accept()
+  {
+    Session* new_session = new Session(io_service_);
+    acceptor_.async_accept(new_session->socket(),
+        boost::bind(&TcpServer::handle_accept, this, new_session,
+          boost::asio::placeholders::error));
+  }
 
-  // ROS background thread.
-  ros::AsyncSpinner ros_spinner(1);
-  ros_spinner.start();
+  void handle_accept(Session* new_session,
+      const boost::system::error_code& error)
+  {
+    if (!error)
+    {
+      new_session->start();
+    }
+    else
+    {
+      delete new_session;
+    }
 
-  // Monitor ROS for shutdown, and stop the io_service accordingly.
-  AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
+    start_accept();
+  }
 
-  new SerialSession(io_service, port, baud);
-  io_service.run();
+  boost::asio::io_service& io_service_;
+  tcp::acceptor acceptor_;
+};
 
-  return 0;
-}
+#endif  // ROSSERIAL_SERVER_TCP_SERVER_H

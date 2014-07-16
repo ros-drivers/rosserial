@@ -5,7 +5,7 @@
  *              templated rosserial client.
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
  *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -16,7 +16,7 @@
  *     * Neither the name of Clearpath Robotics, Inc. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,10 +27,13 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Please send comments, questions, or patches to code@clearpathrobotics.com 
+ *
+ * Please send comments, questions, or patches to code@clearpathrobotics.com
  *
  */
+
+#ifndef ROSSERIAL_SERVER_SESSION_H
+#define ROSSERIAL_SERVER_SESSION_H
 
 #include <map>
 #include <boost/bind.hpp>
@@ -42,8 +45,8 @@
 #include <topic_tools/shape_shifter.h>
 #include <std_msgs/Time.h>
 
-#include "AsyncReadBuffer.h"
-#include "topic_handlers.h"
+#include "rosserial_server/async_read_buffer.h"
+#include "rosserial_server/topic_handlers.h"
 
 typedef std::vector<uint8_t> Buffer;
 typedef boost::shared_ptr<Buffer> BufferPtr;
@@ -58,9 +61,9 @@ public:
       timeout_interval_(boost::posix_time::milliseconds(5000)),
       attempt_interval_(boost::posix_time::milliseconds(1000)),
       require_check_interval_(boost::posix_time::milliseconds(1000)),
-      sync_timer_(io_service), 
-      require_check_timer_(io_service), 
-      async_read_buffer_(socket_, buffer_max, 
+      sync_timer_(io_service),
+      require_check_timer_(io_service),
+      async_read_buffer_(socket_, buffer_max,
                          boost::bind(&Session::read_failed, this,
                                      boost::asio::placeholders::error))
   {
@@ -74,7 +77,7 @@ public:
 
   virtual ~Session()
   {
-    ROS_INFO("Ending session.");  
+    ROS_INFO("Ending session.");
   }
 
   Socket& socket()
@@ -104,7 +107,7 @@ private:
   void read_sync_header() {
     async_read_buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
   }
-  
+
   void read_sync_first(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
@@ -114,7 +117,7 @@ private:
       read_sync_header();
     }
   }
-  
+
   void read_sync_second(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
@@ -130,7 +133,7 @@ private:
     if (sync == 0xff && client_version == PROTOCOL_VER1) {
       async_read_buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
     } else if (sync == 0xfe && client_version == PROTOCOL_VER2) {
-      async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1)); 
+      async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1));
     } else {
       read_sync_header();
     }
@@ -163,7 +166,7 @@ private:
 
   void read_body(ros::serialization::IStream& stream, uint16_t topic_id) {
     ROS_DEBUG("Received body of length %d for message on topic %d.", stream.getLength(), topic_id);
-    
+
     ros::serialization::IStream checksum_stream(stream.getData(), stream.getLength());
 
     uint8_t msg_checksum = checksum(checksum_stream) + checksum(topic_id);
@@ -213,7 +216,7 @@ private:
   //// SENDING MESSAGES ////
 
   void write_message(Buffer& message,
-                     const uint16_t topic_id, 
+                     const uint16_t topic_id,
                      Session::Version version) {
     uint8_t overhead_bytes = 0;
     switch(version) {
@@ -228,8 +231,8 @@ private:
 
     uint8_t msg_checksum;
     ros::serialization::IStream checksum_stream(message.size() > 0 ? &message[0] : NULL, message.size());
-   
-    ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size()); 
+
+    ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size());
     if (version == PROTOCOL_VER2) {
       uint8_t msg_len_checksum = 255 - checksum(message.size());
       stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
@@ -247,7 +250,7 @@ private:
         boost::bind(&Session::write_buffer, this, buffer_ptr));
   }
 
-  // Function which is dispatched onto the io_service thread by write_message, so that 
+  // Function which is dispatched onto the io_service thread by write_message, so that
   // write_message may be safely called directly from the ROS background spinning thread.
   void write_buffer(BufferPtr buffer_ptr) {
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
@@ -255,7 +258,7 @@ private:
   }
 
   void write_cb(const boost::system::error_code& error,
-                BufferPtr buffer_ptr) { 
+                BufferPtr buffer_ptr) {
     if (error) {
       ROS_DEBUG_STREAM("Socket asio error: " << error);
       ROS_WARN("Stopping session due to write error.");
@@ -282,7 +285,7 @@ private:
       return;
     }
     ROS_WARN("Sync with device lost.");
-    attempt_sync(); 
+    attempt_sync();
   }
 
   //// HELPERS ////
@@ -308,7 +311,7 @@ private:
     // created by the client against the expected set given in the parameters.
     require_check_timer_.expires_from_now(require_check_interval_);
     require_check_timer_.async_wait(boost::bind(&Session::required_topics_check, this,
-          boost::asio::placeholders::error)); 
+          boost::asio::placeholders::error));
   }
 
   void required_topics_check(const boost::system::error_code& error) {
@@ -320,7 +323,7 @@ private:
       }
     }
   }
-  
+
   template<typename M>
   bool check_set(std::string param_name, M map) {
     XmlRpc::XmlRpcValue param_list;
@@ -339,7 +342,7 @@ private:
         }
       }
       if (!found) return false;
-    }  
+    }
     return true;
   }
 
@@ -367,7 +370,7 @@ private:
 
     set_sync_timeout(timeout_interval_);
   }
-  
+
   void setup_subscriber(ros::serialization::IStream& stream) {
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
@@ -387,8 +390,8 @@ private:
     std::vector<uint8_t> message(length);
 
     ros::serialization::OStream ostream(&message[0], length);
-    ros::serialization::Serializer<std_msgs::Time>::write(ostream, time); 
- 
+    ros::serialization::Serializer<std_msgs::Time>::write(ostream, time);
+
     write_message(message, rosserial_msgs::TopicInfo::ID_TIME, client_version);
 
     // The MCU requesting the time from the server is the sync notification. This
@@ -414,4 +417,4 @@ private:
   std::map<uint16_t, SubscriberPtr> subscribers_;
 };
 
-
+#endif  // ROSSERIAL_SERVER_SESSION_H
