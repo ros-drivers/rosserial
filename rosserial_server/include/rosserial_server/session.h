@@ -48,6 +48,9 @@
 #include "rosserial_server/async_read_buffer.h"
 #include "rosserial_server/topic_handlers.h"
 
+namespace rosserial_server
+{
+
 typedef std::vector<uint8_t> Buffer;
 typedef boost::shared_ptr<Buffer> BufferPtr;
 
@@ -416,5 +419,7 @@ private:
   std::map<uint16_t, PublisherPtr> publishers_;
   std::map<uint16_t, SubscriberPtr> subscribers_;
 };
+
+}  // namespace
 
 #endif  // ROSSERIAL_SERVER_SESSION_H

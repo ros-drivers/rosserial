@@ -40,6 +40,8 @@
 
 #include <ros/ros.h>
 
+namespace rosserial_server
+{
 
 template<typename AsyncReadStream>
 class AsyncReadBuffer
@@ -87,5 +89,7 @@ private:
   std::vector<uint8_t> mem_;
   boost::function<void(const boost::system::error_code&)> error_callback_;
 };
+
+}  // namespace
 
 #endif  // ROSSERIAL_SERVER_ASYNC_READ_BUFFER_H

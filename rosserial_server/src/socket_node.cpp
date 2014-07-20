@@ -31,34 +31,29 @@
  *
  */
 
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
+
+#include <ros/ros.h>
+
 #include "rosserial_server/session.h"
 #include "rosserial_server/tcp_server.h"
-#include "rosserial_server/async_ok_poll.h"
-
-using boost::asio::ip::tcp;
-
 
 int main(int argc, char* argv[])
 {
-  boost::asio::io_service io_service;
-
   // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_socket_node");
-  ros::NodeHandle nh("~");
-
-  // ROS background thread.
-  ros::AsyncSpinner ros_spinner(1);
-  ros_spinner.start();
-
-  // Monitor ROS for shutdown, and stop the io_service accordingly.
-  AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
-
-  // Start listening for rosserial TCP connections.
   int port;
-  nh.param<int>("port", port, 11411);
-  TcpServer< Session<tcp::socket> > s(io_service, port);
-  std::cout << "Listening on port " << port << "\n";
-  io_service.run();
+  ros::param::param<int>("~port", port, 11411);
 
+  // Listen for rosserial TCP connections in background thread.
+  boost::asio::io_service io_service;
+  rosserial_server::TcpServer<
+      rosserial_server::Session<boost::asio::ip::tcp::socket> > s(io_service, port);
+  boost::thread(boost::bind(&boost::asio::io_service::run, &io_service));
+  ROS_INFO_STREAM("Listening on port " << port);
+
+  ros::spin();
   return 0;
 }

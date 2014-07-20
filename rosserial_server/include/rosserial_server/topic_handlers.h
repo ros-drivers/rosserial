@@ -40,6 +40,8 @@
 #include <rosserial_msgs/RequestMessageInfo.h>
 #include <topic_tools/shape_shifter.h>
 
+namespace rosserial_server
+{
 
 class Publisher {
 public:
@@ -120,5 +122,7 @@ private:
 };
 
 typedef boost::shared_ptr<Subscriber> SubscriberPtr;
+
+}  // namespace
 
 #endif  // ROSSERIAL_SERVER_TOPIC_HANDLERS_H

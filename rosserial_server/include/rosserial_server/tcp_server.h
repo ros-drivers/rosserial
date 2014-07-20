@@ -40,9 +40,10 @@
 
 #include <ros/ros.h>
 
+namespace rosserial_server
+{
 
 using boost::asio::ip::tcp;
-
 
 template<typename Session>
 class TcpServer
@@ -82,5 +83,7 @@ private:
   boost::asio::io_service& io_service_;
   tcp::acceptor acceptor_;
 };
+
+}  // namespace
 
 #endif  // ROSSERIAL_SERVER_TCP_SERVER_H

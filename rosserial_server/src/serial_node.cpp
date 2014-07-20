@@ -31,35 +31,28 @@
  *
  */
 
-#include <iostream>
-#include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
 
 #include <ros/ros.h>
 
 #include "rosserial_server/serial_session.h"
-#include "rosserial_server/async_ok_poll.h"
-
 
 int main(int argc, char* argv[])
 {
-  boost::asio::io_service io_service;
-
   // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_serial_node");
-  ros::NodeHandle nh("~");
-  std::string port; nh.param<std::string>("port", port, "/dev/ttyACM0");
-  int baud; nh.param<int>("baud", baud, 57600);
+  std::string port;
+  ros::param::param<std::string>("~port", port, "/dev/ttyACM0");
+  int baud;
+  ros::param::param<int>("~baud", baud, 57600);
 
-  // ROS background thread.
-  ros::AsyncSpinner ros_spinner(1);
-  ros_spinner.start();
+  // Run boost::asio io service in a background thread.
+  boost::asio::io_service io_service;
+  new rosserial_server::SerialSession(io_service, port, baud);
+  boost::thread(boost::bind(&boost::asio::io_service::run, &io_service));
 
-  // Monitor ROS for shutdown, and stop the io_service accordingly.
-  AsyncOkPoll ok_poll(io_service, boost::posix_time::milliseconds(500), ros::ok);
-
-  new SerialSession(io_service, port, baud);
-  io_service.run();
-
+  ros::spin();
   return 0;
 }

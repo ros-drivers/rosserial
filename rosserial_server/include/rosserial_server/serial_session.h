@@ -42,6 +42,8 @@
 
 #include "rosserial_server/session.h"
 
+namespace rosserial_server
+{
 
 class SerialSession : public Session<boost::asio::serial_port>
 {
@@ -99,5 +101,6 @@ private:
   boost::asio::deadline_timer timer_;
 };
 
+}  // namespace
 
 #endif  // ROSSERIAL_SERVER_SERIAL_SESSION_H
