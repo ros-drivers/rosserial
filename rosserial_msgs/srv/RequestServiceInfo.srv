@@ -1,0 +1,6 @@
+# service name
+string service
+---
+# If found, return md5 string of system's version of the service, and
+# textual definition. If not found, both strings are to be empty.
+string md5

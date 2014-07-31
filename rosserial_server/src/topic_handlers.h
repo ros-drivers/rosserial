@@ -5,7 +5,7 @@
  *              that a Session has with its client.
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
  *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -16,7 +16,7 @@
  *     * Neither the name of Clearpath Robotics, Inc. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,8 +27,8 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Please send comments, questions, or patches to code@clearpathrobotics.com 
+ *
+ * Please send comments, questions, or patches to code@clearpathrobotics.com
  *
  */
 
@@ -36,6 +36,7 @@
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
 #include <rosserial_msgs/RequestMessageInfo.h>
+#include <rosserial_msgs/RequestServiceInfo.h>
 #include <topic_tools/shape_shifter.h>
 
 
@@ -88,7 +89,7 @@ typedef boost::shared_ptr<Publisher> PublisherPtr;
 class Subscriber {
 public:
   Subscriber(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer)> write_fn) 
+      boost::function<void(std::vector<uint8_t> buffer)> write_fn)
     : write_fn_(write_fn) {
     ros::SubscribeOptions opts;
     opts.init<topic_tools::ShapeShifter>(
@@ -97,7 +98,7 @@ public:
     opts.datatype = topic_info.message_type;
     subscriber_ = nh.subscribe(opts);
   }
-  
+
   std::string get_topic() {
     return subscriber_.getTopic();
   }
@@ -108,8 +109,8 @@ private:
     std::vector<uint8_t> buffer(length);
 
     ros::serialization::OStream ostream(&buffer[0], length);
-    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, *msg); 
- 
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, *msg);
+
     write_fn_(buffer);
   }
 
@@ -118,3 +119,52 @@ private:
 };
 
 typedef boost::shared_ptr<Subscriber> SubscriberPtr;
+
+class ServiceClient {
+public:
+  ServiceClient(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
+      boost::function<void(std::vector<uint8_t> buffer)> write_fn)
+    : write_fn_(write_fn) {
+
+    if (!service_info_service_.isValid()) {
+      // lazy-initialize the service caller.
+      service_info_service_ = nh.serviceClient<rosserial_msgs::RequestServiceInfo>("service_info");
+      if (!service_info_service_.waitForExistence(ros::Duration(5.0))) {
+        ROS_WARN("Timed out waiting for message_info service to become available.");
+      }
+    }
+
+    rosserial_msgs::RequestServiceInfo info;
+    info.request.service = topic_info.message_type;
+    ROS_DEBUG("Calling service_info service for topic name %s",topic_info.topic_name.c_str());
+    if (service_info_service_.call(info)) {
+      if (info.response.md5 != topic_info.md5sum) {
+        // ROS_WARN_STREAM("Message" << topic_info.message_type  << "MD5 sum from client does not match that in system. Will avoid using system's message definition.");
+        // info.response.definition = "";
+      }
+    } else {
+      ROS_WARN("Failed to call message_info service. Proceeding without full message definition.");
+    }
+    ros::ServiceClientOptions opts;
+    opts.service = info.request.service;
+    opts.md5sum = info.response.md5;
+    opts.persistent = false; // always false for now
+    service_client_ = nh.serviceClient(opts);
+  }
+
+private:
+  void handle(const boost::shared_ptr<topic_tools::ShapeShifter const>& msg) {
+    size_t length = ros::serialization::serializationLength(*msg);
+    std::vector<uint8_t> buffer(length);
+
+    ros::serialization::OStream ostream(&buffer[0], length);
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, *msg);
+    ROS_INFO("Being asked to handle a service call but I have no logic");
+    write_fn_(buffer);
+  }
+
+  ros::ServiceClient service_client_;
+  ros::ServiceClient service_info_service_;
+  boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
+};
+typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
