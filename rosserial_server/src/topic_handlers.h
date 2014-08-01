@@ -123,14 +123,14 @@ typedef boost::shared_ptr<Subscriber> SubscriberPtr;
 class ServiceClient {
 public:
   ServiceClient(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer)> write_fn)
+      boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn)
     : write_fn_(write_fn) {
-
+    topic_id_ = -1;
     if (!service_info_service_.isValid()) {
       // lazy-initialize the service caller.
       service_info_service_ = nh.serviceClient<rosserial_msgs::RequestServiceInfo>("service_info");
       if (!service_info_service_.waitForExistence(ros::Duration(5.0))) {
-        ROS_WARN("Timed out waiting for message_info service to become available.");
+        ROS_WARN("Timed out waiting for service_info service to become available.");
       }
     }
 
@@ -143,28 +143,45 @@ public:
         // info.response.definition = "";
       }
     } else {
-      ROS_WARN("Failed to call message_info service. Proceeding without full message definition.");
+      ROS_WARN("Failed to call service_info service. The service client will be created with blank md5sum.");
     }
     ros::ServiceClientOptions opts;
-    opts.service = info.request.service;
-    opts.md5sum = info.response.md5;
+    opts.service = topic_info.topic_name;
+    opts.md5sum = service_md5_ = info.response.md5;
     opts.persistent = false; // always false for now
     service_client_ = nh.serviceClient(opts);
   }
-
-private:
-  void handle(const boost::shared_ptr<topic_tools::ShapeShifter const>& msg) {
-    size_t length = ros::serialization::serializationLength(*msg);
-    std::vector<uint8_t> buffer(length);
-
-    ros::serialization::OStream ostream(&buffer[0], length);
-    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, *msg);
-    ROS_INFO("Being asked to handle a service call but I have no logic");
-    write_fn_(buffer);
+  void setTopicId(uint16_t topic_id) {
+    topic_id_ = topic_id;
   }
 
+private:
+  void handle(ros::serialization::IStream stream) {
+    ROS_INFO("Service call handler says hi");
+    // deserialize request message
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, request_message_);
+
+    // perform service call
+    // note that at present, at least for rosserial-windows a service call returns nothing,
+    // so we discard the return value of this call() invocation.
+    service_client_.call(request_message_, response_message_, service_md5_);
+
+    // write service response over the wire
+    size_t length = ros::serialization::serializationLength(response_message_);
+    std::vector<uint8_t> buffer(length);
+    ros::serialization::OStream ostream(&buffer[0], length);
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, response_message_);
+    write_fn_(buffer,topic_id_);
+  }
+
+  topic_tools::ShapeShifter request_message_;
+  topic_tools::ShapeShifter response_message_;
   ros::ServiceClient service_client_;
-  ros::ServiceClient service_info_service_;
-  boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
+  static ros::ServiceClient service_info_service_;
+  boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
+  std::string service_md5_;
+  uint16_t topic_id_;
 };
+
+ros::ServiceClient ServiceClient::service_info_service_;
 typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;

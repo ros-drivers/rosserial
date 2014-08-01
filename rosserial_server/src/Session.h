@@ -383,31 +383,39 @@ private:
     set_sync_timeout(timeout_interval_);
   }
 
+  // When the rosserial client creates a ServiceClient object (and/or when it registers that object with the NodeHandle)
+  // it creates a publisher (to publish the service request message to us) and a subscriber (to receive the response)
+  // the service client callback is attached to the *subscriber*, so when we receive the service response
+  // and wish to send it over the socket to the client,
+  // we must attach the topicId that came from the service client subscriber message
+
   void setup_service_client_publisher(ros::serialization::IStream& stream) {
-
-    // we will need to subscribe to the response
-    // we will need to publish the request
-
-    // TODO ascertain whether these publishers/subscribers ever get torn down
-
-    //deserialize the incoming ServiceClient message
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
-    ROS_DEBUG("Creating service client for topic %s",topic_info.topic_name.c_str());
-    ServiceClientPtr srv(new ServiceClient(nh_,topic_info,boost::bind(&Session::write_message, this, _1, topic_info.topic_id, client_version)));
-    services_[topic_info.topic_name] = srv;
 
+    if (!services_.count(topic_info.topic_name)) {
+      ROS_DEBUG("Creating service client for topic %s",topic_info.topic_name.c_str());
+      ServiceClientPtr srv(new ServiceClient(
+        nh_,topic_info,boost::bind(&Session::write_message, this, _1, _2, client_version)));
+      services_[topic_info.topic_name] = srv;
+      callbacks_[topic_info.topic_id] = boost::bind(&ServiceClient::handle, srv, _1);
+    }
     set_sync_timeout(timeout_interval_);
   }
+
   void setup_service_client_subscriber(ros::serialization::IStream& stream) {
-
-    // TODO ascertain whether these publishers/subscribers ever get torn down
-
-    //deserialize the incoming ServiceClient message
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-
+    if (!services_.count(topic_info.topic_name)) {
+      ROS_DEBUG("Creating service client for topic %s",topic_info.topic_name.c_str());
+      ServiceClientPtr srv(new ServiceClient(
+        nh_,topic_info,boost::bind(&Session::write_message, this, _1, _2, client_version)));
+      services_[topic_info.topic_name] = srv;
+      callbacks_[topic_info.topic_id] = boost::bind(&ServiceClient::handle, srv, _1);
+    }
+    // see above comment regarding the service client callback for why we set topic_id here
+    services_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
     set_sync_timeout(timeout_interval_);
   }
 
