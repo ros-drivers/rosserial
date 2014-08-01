@@ -70,15 +70,14 @@ class MessageInfoService(object):
 
   def _service_info_cb(self, req):
     rospy.logdebug("req.service is %s" % req.service)
-    package_message = tuple(req.service.split("/"))
-    if not self.service_cache.has_key(package_message):
-      rospy.loginfo("Loading module to return info on service %s/%s." % package_message)
-      srv = load_service(*package_message)
-      self.service_cache[package_message] = (srv._md5sum)
+    package_service = tuple(req.service.split("/"))
+    if not self.service_cache.has_key(package_service):
+      rospy.loginfo("Loading module to return info on service %s/%s." % package_service)
+      srv = load_service(*package_service)
+      self.service_cache[package_service] = (srv._md5sum)
     else:
-      rospy.loginfo("Returning info from cache on %s/%s." % package_message)
-      rospy.logdebug("moo: %s" % str(dir(self.service_cache[package_message])))
-    return self.service_cache[package_message]
+      rospy.loginfo("Returning info from cache on %s/%s." % package_service)
+    return self.service_cache[package_service]
 
   def spin(self):
     rospy.spin()

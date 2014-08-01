@@ -157,7 +157,6 @@ public:
 
 private:
   void handle(ros::serialization::IStream stream) {
-    ROS_INFO("Service call handler says hi");
     // deserialize request message
     ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, request_message_);
 

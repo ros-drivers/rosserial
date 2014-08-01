@@ -82,7 +82,6 @@ def load_service(package,service):
     s = load_pkg_module(package, 'srv')
     s = getattr(s, 'srv')
     srv = getattr(s, service)
-    rospy.logdebug("srv contains " + str(dir(srv)))
     return srv
 
 class Publisher:
