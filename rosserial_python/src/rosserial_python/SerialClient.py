@@ -82,7 +82,9 @@ def load_service(package,service):
     s = load_pkg_module(package, 'srv')
     s = getattr(s, 'srv')
     srv = getattr(s, service)
-    return srv
+    mreq = getattr(s, service+"Request")
+    mres = getattr(s, service+"Response")
+    return srv,mreq,mres
 
 class Publisher:
     """

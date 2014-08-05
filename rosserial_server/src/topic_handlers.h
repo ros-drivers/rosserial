@@ -138,21 +138,25 @@ public:
     info.request.service = topic_info.message_type;
     ROS_DEBUG("Calling service_info service for topic name %s",topic_info.topic_name.c_str());
     if (service_info_service_.call(info)) {
-      if (info.response.md5 != topic_info.md5sum) {
-        // ROS_WARN_STREAM("Message" << topic_info.message_type  << "MD5 sum from client does not match that in system. Will avoid using system's message definition.");
-        // info.response.definition = "";
-      }
+      request_message_md5_ = info.response.request_md5;
+      response_message_md5_ = info.response.response_md5;
     } else {
       ROS_WARN("Failed to call service_info service. The service client will be created with blank md5sum.");
     }
     ros::ServiceClientOptions opts;
     opts.service = topic_info.topic_name;
-    opts.md5sum = service_md5_ = info.response.md5;
+    opts.md5sum = service_md5_ = info.response.service_md5;
     opts.persistent = false; // always false for now
     service_client_ = nh.serviceClient(opts);
   }
   void setTopicId(uint16_t topic_id) {
     topic_id_ = topic_id;
+  }
+  std::string getRequestMessageMD5() {
+    return request_message_md5_;
+  }
+  std::string getResponseMessageMD5() {
+    return response_message_md5_;
   }
 
 private:
@@ -179,6 +183,8 @@ private:
   static ros::ServiceClient service_info_service_;
   boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
   std::string service_md5_;
+  std::string request_message_md5_;
+  std::string response_message_md5_;
   uint16_t topic_id_;
 };
 

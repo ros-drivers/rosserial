@@ -400,6 +400,13 @@ private:
       services_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceClient::handle, srv, _1);
     }
+    if (services_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
+      // TODO coherent error message
+      ROS_WARN("Service client setup: Request message MD5 mismatch between rosserial client and ROS");
+    } else {
+      ROS_DEBUG("Service client %s: request message MD5 successfully validated as %s",
+        topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
+    }
     set_sync_timeout(timeout_interval_);
   }
 
@@ -416,6 +423,13 @@ private:
     }
     // see above comment regarding the service client callback for why we set topic_id here
     services_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
+    if (services_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
+      // TODO coherent error message
+      ROS_WARN("Service client setup: Response message MD5 mismatch between rosserial client and ROS");
+    } else {
+      ROS_DEBUG("Service client %s: response message MD5 successfully validated as %s",
+        topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
+    }
     set_sync_timeout(timeout_interval_);
   }
 

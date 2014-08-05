@@ -73,8 +73,8 @@ class MessageInfoService(object):
     package_service = tuple(req.service.split("/"))
     if not self.service_cache.has_key(package_service):
       rospy.loginfo("Loading module to return info on service %s/%s." % package_service)
-      srv = load_service(*package_service)
-      self.service_cache[package_service] = (srv._md5sum)
+      srv,mreq,mres = load_service(*package_service)
+      self.service_cache[package_service] = (srv._md5sum,mreq._md5sum,mres._md5sum)
     else:
       rospy.loginfo("Returning info from cache on %s/%s." % package_service)
     return self.service_cache[package_service]
