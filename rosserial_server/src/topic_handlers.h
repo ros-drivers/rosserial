@@ -159,7 +159,6 @@ public:
     return response_message_md5_;
   }
 
-private:
   void handle(ros::serialization::IStream stream) {
     // deserialize request message
     ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, request_message_);
@@ -177,6 +176,7 @@ private:
     write_fn_(buffer,topic_id_);
   }
 
+private:
   topic_tools::ShapeShifter request_message_;
   topic_tools::ShapeShifter response_message_;
   ros::ServiceClient service_client_;
