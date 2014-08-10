@@ -32,6 +32,9 @@
  *
  */
 
+#ifndef ROSSERIAL_SERVER_SESSION_H
+#define ROSSERIAL_SERVER_SESSION_H
+
 #include <map>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -42,8 +45,11 @@
 #include <topic_tools/shape_shifter.h>
 #include <std_msgs/Time.h>
 
-#include "AsyncReadBuffer.h"
-#include "topic_handlers.h"
+#include "rosserial_server/async_read_buffer.h"
+#include "rosserial_server/topic_handlers.h"
+
+namespace rosserial_server
+{
 
 typedef std::vector<uint8_t> Buffer;
 typedef boost::shared_ptr<Buffer> BufferPtr;
@@ -466,3 +472,7 @@ private:
   std::map<uint16_t, SubscriberPtr> subscribers_;
   std::map<std::string, ServiceClientPtr> services_;
 };
+
+}  // namespace
+
+#endif  // ROSSERIAL_SERVER_SESSION_H

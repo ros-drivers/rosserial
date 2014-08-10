@@ -32,6 +32,8 @@
  *
  */
 
+#ifndef ROSSERIAL_SERVER_TOPIC_HANDLERS_H
+#define ROSSERIAL_SERVER_TOPIC_HANDLERS_H
 
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
@@ -39,6 +41,8 @@
 #include <rosserial_msgs/RequestServiceInfo.h>
 #include <topic_tools/shape_shifter.h>
 
+namespace rosserial_server
+{
 
 class Publisher {
 public:
@@ -190,3 +194,7 @@ private:
 
 ros::ServiceClient ServiceClient::service_info_service_;
 typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
+
+}  // namespace
+
+#endif  // ROSSERIAL_SERVER_TOPIC_HANDLERS_H
