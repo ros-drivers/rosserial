@@ -211,6 +211,9 @@ namespace ros {
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
             }
+            else if( difftime(hardware_.time(), c_time) > (SYNC_SECONDS)){        /* We have been stuck in spinOnce too long, return error */
+              return -2;
+            }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
               mode_++;
