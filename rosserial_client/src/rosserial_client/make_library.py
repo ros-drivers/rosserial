@@ -519,6 +519,8 @@ def MakeLibrary(package, output_path, rospack):
                 md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
                 messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
         print('\n')
+    elif messages != list():
+        print('\n')
 
     # generate for each message
     output_path = output_path + "/" + package
