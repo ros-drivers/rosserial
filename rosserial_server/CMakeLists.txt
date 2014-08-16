@@ -18,10 +18,12 @@ include_directories(
 add_executable(${PROJECT_NAME}_serial_node src/serial_node.cpp)
 target_link_libraries(${PROJECT_NAME}_serial_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_serial_node PROPERTIES OUTPUT_NAME serial_node PREFIX "")
+add_dependencies(${PROJECT_NAME}_serial_node rosserial_msgs_gencpp)
 
 add_executable(${PROJECT_NAME}_socket_node src/socket_node.cpp)
 target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_socket_node PROPERTIES OUTPUT_NAME socket_node PREFIX "")
+add_dependencies(${PROJECT_NAME}_socket_node rosserial_msgs_gencpp)
 
 install(
   TARGETS ${PROJECT_NAME}_socket_node ${PROJECT_NAME}_serial_node
