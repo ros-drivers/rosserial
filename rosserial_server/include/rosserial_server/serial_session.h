@@ -56,9 +56,27 @@ public:
   }
 
 private:
-  ~SerialSession() {
+  ~SerialSession()
+  {
+    ROS_WARN("Serial session shutting down. Waiting 1 second for system state to settle.");
+
+    boost::shared_ptr<boost::asio::deadline_timer> timer
+          (new boost::asio::deadline_timer(
+              socket().get_io_service(),
+              boost::posix_time::seconds(1)));
+
+    // The timer instance is only passed to the callback in order to keep it alive for the
+    // required lifetime. When the callback completes, it goes out of scope and is destructed.
+    timer->async_wait(
+       boost::bind(&SerialSession::restart_session,
+                   boost::ref(socket().get_io_service()), port_, baud_, timer));
+  }
+
+  static void restart_session(boost::asio::io_service& io_service, std::string port, int baud,
+                              boost::shared_ptr<boost::asio::deadline_timer>& timer)
+  {
     if (ros::ok()) {
-      new SerialSession(socket().get_io_service(), port_, baud_);
+      new SerialSession(io_service, port, baud);
     }
   }
 

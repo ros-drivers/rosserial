@@ -74,8 +74,18 @@ public:
 private:
   void read_cb(const boost::system::error_code& error, size_t bytes_transferred,
                boost::function<void(ros::serialization::IStream&)> callback) {
-    if (error) {
-      error_callback_(error);
+    if (error)
+    {
+      if (error == boost::asio::error::operation_aborted)
+      {
+        // Special case for operation_aborted. The abort callback comes when the owning Session
+        // is in the middle of teardown, which means the callback is no longer valid and calling
+        // it would be a segfault.
+      }
+      else
+      {
+        error_callback_(error);
+      }
     } else {
       ROS_DEBUG_STREAM_NAMED("async_read", "Transferred " << bytes_transferred << " byte(s).");
 
