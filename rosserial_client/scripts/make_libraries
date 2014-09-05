@@ -36,15 +36,16 @@
 THIS_PACKAGE = "rosserial_client"
 
 __usage__ = """
-make_libraries_generic generates the non-platform specific part of a rosserial
-client library, including messages. It assumes the target platform has native
-float64 support, and is therefore unsuitable for use with AVR. To generate 
-messages for AVR, use the make_libraries script in rosserial_arduino.
+This generic make_libraries generates the non-platform specific part of a
+rosserial client library, including messages. It assumes the target platform
+has native float64 support, and is therefore unsuitable for use with AVR.
+To generate messages for AVR, use the make_libraries script in
+rosserial_arduino.
 
-make_libraries_generic also does not provide the ros.h file or other hardware
+This script also does not provide the ros.h file or other hardware
 abstraction. This will need to be supplied by the user.
 
-rosrun rosserial_client make_libraries_generic <output_path>
+rosrun rosserial_client make_libraries <output_path>
 """
 
 import rospkg
