@@ -1,3 +1,0 @@
-[submodule "rosserial_arduino/arduino-cmake"]
-	path = rosserial_arduino/arduino-cmake
-	url = https://github.com/mikepurvis/arduino-cmake
