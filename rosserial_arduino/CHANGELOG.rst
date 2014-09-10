@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.2 (2014-09-10)
+------------------
 * Clean up rosserial_arduino/package.xml
 * Generic CMake helpers.
 * Contributors: Mike Purvis

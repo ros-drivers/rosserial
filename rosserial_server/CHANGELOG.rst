@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.2 (2014-09-10)
+------------------
 * Bugfix for interrupted sessions.
   This is a two-part fix for an issue causes a segfault when the device
   disappears during operation, for example a ttyACM device which is unplugged.

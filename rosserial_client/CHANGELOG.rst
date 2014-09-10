@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.2 (2014-09-10)
+------------------
 * Generic CMake helpers for ros_lib generation and in-package firmwares.
 * Fix output of make_library when package has only messages
 * Added time out to the state machine
