@@ -1,8 +1,13 @@
-## ROSserial for Hydro
+## rosserial
 
-This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkinized and updated for ROS Groovy and newer.
+This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkinized and updated for ROS Groovy and onward.
 
-## Changes for Hydro
+### Changes for Indigo
+
+Changes are being tracked on a per-package basis; please see the individual package folders,
+or use the "Changes" link on the right side of the package pages on the ROS wiki.
+
+### Changes for Hydro
 
 0.5.5
  * Add support for Arduino Yum
@@ -20,7 +25,7 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkin
  * Support empty requests
  * Re-integrate rosserial_xbee
 
-## Changes for Groovy/Catkin
+### Changes for Groovy/Catkin
 
  * Moved to catkin build system 
  * Moved rosserial_xbee to experimential stack
@@ -31,16 +36,6 @@ This repo is ported from https://kforge.ros.org/rosserial/hg. It has been catkin
    * messages are no longer built at built-time (yeah, sounds ridiculous, but is true, see below for new workflow)
    * beginnings of easier porting to new platforms (the lookup table is now found in architecture-dependent packages, etc)
 
-## Usage/Workflow
-Workflow is a bit different from in the past. Rather than running the library generator over each package you want to use, you run it once and generate libraries for all installed messages:
+### Usage/Workflow
 
-      cd <ws>/src
-      git clone https://github.com/ros-drivers/rosserial
-      cd <ws>
-      catkin_make
-      catkin_make install
-      source <ws>/install/setup.bash
-      cd <sketchbook>/libraries
-      rosrun rosserial_arduino make_libraries.py .
-
-Note: currently you will HAVE to run catkin_make install, otherwise portions of the ros_lib directory will be missing. This will hopefully be fixed soon. Also note: you may have to delete <sketchbook>/libraries/ros_lib in order to regenerate as its existence may cause an error.
+Please see the [rosserial Tutorials on the ROS wiki](http://wiki.ros.org/rosserial_arduino/Tutorials) to get started.
