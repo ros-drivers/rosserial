@@ -50,15 +50,18 @@ function(rosserial_configure_client)
     message(SEND_ERROR "rosserial_client_add_client called without DIRECTORY argument.")
   endif()
 
+  if(client_TOOLCHAIN_FILE)
+    set(DTOOLCHAIN_FILE -DCMAKE_TOOLCHAIN_FILE=${client_TOOLCHAIN_FILE})
+  endif()
+
   # Create a build tree directory for configuring the client's CMake project.
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${client_DIRECTORY})
   add_custom_target(${PROJECT_NAME}_${client_DIRECTORY}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${client_DIRECTORY}
     COMMAND ${CMAKE_COMMAND} ${PROJECT_SOURCE_DIR}/${client_DIRECTORY}
       -DROS_LIB_DIR=${${PROJECT_NAME}_ROS_LIB_DIR}
-      -DCATKIN_PACKAGE_DIR=${PROJECT_SOURCE_DIR}
       -DEXECUTABLE_OUTPUT_PATH=${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}
-      -DCMAKE_TOOLCHAIN_FILE=${client_TOOLCHAIN_FILE}
+      ${DTOOLCHAIN_FILE}
   )
   add_dependencies(${PROJECT_NAME}_${client_DIRECTORY} ${PROJECT_NAME}_ros_lib)
 endfunction()
