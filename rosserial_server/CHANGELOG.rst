@@ -2,6 +2,21 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bugfix for interrupted sessions.
+  This is a two-part fix for an issue causes a segfault when the device
+  disappears during operation, for example a ttyACM device which is unplugged.
+  The AsyncReadBuffer part avoids calling a callback after the object
+  owning it has destructed, and the SerialSession part avoids recreating
+  itself until the previous instance has finished the destructor and been
+  full destroyed.
+* Add dependency on rosserial_msgs_gencpp, fixes `#133 <https://github.com/ros-drivers/rosserial/issues/133>`_
+* Make ServiceClient::handle public, to fix compilation bug on some platforms.
+* Enabled registration of service clients
+* Add namespaces to headers, swap ROS thread to foreground.
+* Move headers to include path, rename to follow ROS style.
+
 0.6.1 (2014-06-30)
 ------------------
 

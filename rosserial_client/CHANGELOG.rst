@@ -2,6 +2,13 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Generic CMake helpers for ros_lib generation and in-package firmwares.
+* Fix output of make_library when package has only messages
+* Added time out to the state machine
+* Contributors: Jason Scatena, Michael Ferguson, Mike Purvis
+
 0.6.1 (2014-06-30)
 ------------------
 * Remove ID_TX_STOP define
