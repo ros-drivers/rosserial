@@ -159,8 +159,7 @@ class AVR_Float64DataType(PrimitiveDataType):
         f.write('      exp_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
         f.write('      if(exp_%s !=0)\n' % cn)
         f.write('        *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('      if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
-
+        f.write('      *val_%s |= (((uint32_t)(*(inbuffer+offset++)) & 0x80)<<24);\n' % (cn))
 
 class StringDataType(PrimitiveDataType):
     """ Need to convert to signed char *. """
