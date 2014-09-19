@@ -76,7 +76,10 @@ private:
                               boost::shared_ptr<boost::asio::deadline_timer>& timer)
   {
     if (ros::ok()) {
+      ROS_INFO("Recreating serial session.");
       new SerialSession(io_service, port, baud);
+    } else {
+      ROS_INFO("In shutdown, avoiding recreating serial session.");
     }
   }
 

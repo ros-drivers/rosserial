@@ -267,9 +267,16 @@ private:
   void write_cb(const boost::system::error_code& error,
                 BufferPtr buffer_ptr) {
     if (error) {
-      ROS_DEBUG_STREAM("Socket asio error: " << error);
-      ROS_WARN("Stopping session due to write error.");
-      delete this;
+      if (error == boost::system::errc::io_error) {
+        ROS_WARN_THROTTLE(1, "Socket write operation returned IO error.");
+      } else if (error == boost::system::errc::no_such_device) {
+        ROS_WARN_THROTTLE(1, "Socket write operation returned no device.");
+      } else {
+        socket_.cancel();
+        ROS_WARN_STREAM_THROTTLE(1, "Unknown error returned during write operation: " << error);
+        ROS_WARN("Destroying session.");
+        delete this;
+      }
     }
     // Buffer is destructed when this function exits.
   }
