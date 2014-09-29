@@ -14,3 +14,8 @@ install(DIRECTORY src/ros_lib
 install(PROGRAMS scripts/make_libraries
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+if(CATKIN_ENABLE_TESTING)
+  include_directories(src)
+  catkin_add_gtest(float64_test test/float64_test.cpp)
+endif()

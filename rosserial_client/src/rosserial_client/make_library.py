@@ -131,35 +131,10 @@ class AVR_Float64DataType(PrimitiveDataType):
         f.write('      float %s;\n' % self.name )
 
     def serialize(self, f):
-        cn = self.name.replace("[","").replace("]","")
-        f.write('      int32_t * val_%s = (int32_t *) &(this->%s);\n' % (cn,self.name))
-        f.write('      int32_t exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
-        f.write('      if(exp_%s != 0)\n' % cn)
-        f.write('        exp_%s += 1023-127;\n' % cn)
-        f.write('      int32_t sig_%s = *val_%s;\n' % (cn,cn))
-        f.write('      *(outbuffer + offset++) = 0;\n') # 29 blank bits
-        f.write('      *(outbuffer + offset++) = 0;\n')
-        f.write('      *(outbuffer + offset++) = 0;\n')
-        f.write('      *(outbuffer + offset++) = (sig_%s<<5) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = (sig_%s>>3) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = (sig_%s>>11) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = ((exp_%s<<4) & 0xF0) | ((sig_%s>>19)&0x0F);\n' % (cn,cn))
-        f.write('      *(outbuffer + offset++) = (exp_%s>>4) & 0x7F;\n' % cn)
-        f.write('      if(this->%s < 0) *(outbuffer + offset -1) |= 0x80;\n' % self.name)
+        f.write('      offset += serializeAvrFloat64(outbuffer + offset, this->%s);\n' % self.name)
 
     def deserialize(self, f):
-        cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t * val_%s = (uint32_t*) &(this->%s);\n' % (cn,self.name))
-        f.write('      offset += 3;\n') # 29 blank bits
-        f.write('      *val_%s = ((uint32_t)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
-        f.write('      uint32_t exp_%s = ((uint32_t)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
-        f.write('      exp_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
-        f.write('      if(exp_%s !=0)\n' % cn)
-        f.write('        *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('      if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
+        f.write('      offset += deserializeAvrFloat64(inbuffer + offset, &(this->%s));\n' % self.name)
 
 
 class StringDataType(PrimitiveDataType):
