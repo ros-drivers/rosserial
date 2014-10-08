@@ -53,6 +53,7 @@ public:
     strncpy(portName, pn, 30);
     baud_ = baud;
   }
+
   EmbeddedLinuxHardware()
   {
     const char *envPortName = getenv("ROSSERIAL_PORT");
@@ -101,20 +102,12 @@ public:
   int read()
   {
     int c = elCommRead(fd);
-    //std::cout << "read() got: " << c << std::endl;
-    if (c > 0)
-    {
-    }
     return c;
   }
 
   void write(uint8_t* data, int length)
   {
     elCommWrite(fd, data, length);
-//      for (int i=0; i<length; i++) {
-//        std::cout <<  "i:" << i << " data: " << data[i];
-//      }
-//      std::cout << std::endl;
   }
 
   unsigned long time()
