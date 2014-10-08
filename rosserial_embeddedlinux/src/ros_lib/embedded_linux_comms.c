@@ -40,13 +40,10 @@ assert(flags != -1);
 fcntl(socket, F_SETFL, flags | O_NONBLOCK);
 }
 
-int elCommInit(char *portName, int baud)
+int elCommInit(const char *portName, int baud)
 {
 	struct termios options;
 	int fd;
-	char *ip;
-	char *tcpPortNumString;
-	long int tcpPortNum;
 	int sockfd;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
@@ -61,7 +58,8 @@ int elCommInit(char *portName, int baud)
 			//Could not open the port.
 			perror("init(): Unable to open serial port - ");
 		}
-		else{
+		else
+    {
 			fcntl(fd, F_SETFL, FNDELAY); // Sets the read() function to return NOW and not wait for data to enter buffer if there isn't anything there.
 
 			//Configure port for 8N1 transmission
@@ -81,20 +79,27 @@ int elCommInit(char *portName, int baud)
 			tcsetattr(fd, TCSANOW, &options);			//Set the new options for the port "NOW"
 		}
 		return fd;
-	} else {		// Connect to the rosserial server
-		// figure out the port number to use
-		ip = strtok(portName, ":");			// IP address should be e.g. 192.168.1.10 or 192.168.1.10:11411
-		tcpPortNumString = strtok(NULL, ":");	// get the port # if specified
-		tcpPortNum = 0;
-		if (tcpPortNumString != NULL) {
-			tcpPortNum = strtol(tcpPortNumString, NULL, 10);	// convert port num string to long
-		}
-		if (tcpPortNum == 0){				// if port was not specified, or was not numeric
+	}
+  else
+  {
+    // Separate connection string into IP address and port.
+    const char* tcpPortNumString = strchr(portName, ':');
+	  long int tcpPortNum;
+	  char ip[16];
+    if (!tcpPortNumString)
+    {
 			tcpPortNum = DEFAULT_PORTNUM;
-		}
+      strncpy(ip, portName, 16);
+    }
+    else
+    {
+			tcpPortNum = strtol(tcpPortNumString + 1, NULL, 10);
+      strncpy(ip, portName, tcpPortNumString - portName);
+    }
+
 		printf("Connecting to TCP server at %s:%ld....\n", ip, tcpPortNum);
 
-		// create the socket
+		  // create the socket
 	    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	    if (sockfd < 0) {
 	        error("ERROR opening socket");

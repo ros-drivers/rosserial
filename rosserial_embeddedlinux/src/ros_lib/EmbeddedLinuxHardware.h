@@ -47,13 +47,13 @@ extern "C" elCommWrite(int fd, uint8_t* data, int length);
 
 class EmbeddedLinuxHardware {
   public:
-    EmbeddedLinuxHardware(char *pn, long baud= 57600){
+    EmbeddedLinuxHardware(const char *pn, long baud= 57600){
       strncpy(portName, pn, 30);
       baud_ = baud;
     }
     EmbeddedLinuxHardware()
     {
-      char *envPortName = getenv("ROSSERIAL_PORT");
+      const char *envPortName = getenv("ROSSERIAL_PORT");
       if (envPortName == NULL)
 	strcpy(portName, DEFAULT_PORT);
       else
@@ -78,7 +78,7 @@ class EmbeddedLinuxHardware {
     	clock_gettime(CLOCK_MONOTONIC, &start);			// record when the program started
     }
 
-    void init(char *pName){
+    void init(const char *pName){
     	fd = elCommInit(pName, baud_);
     	if (fd < 0) {
     		std::cout << "Exiting" << std::endl;
