@@ -42,7 +42,7 @@
 #endif
 
 #include "ros/node_handle.h"
-#include "EmbeddedLinuxHardware.h"
+#include "embedded_linux_hardware.h"
 
 namespace ros
 {
