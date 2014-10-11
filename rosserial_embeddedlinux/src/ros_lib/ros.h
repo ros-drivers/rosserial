@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -42,7 +42,7 @@
 #endif
 
 #include "ros/node_handle.h"
-#include "EmbeddedLinuxHardware.h"
+#include "embedded_linux_hardware.h"
 
 namespace ros
 {
