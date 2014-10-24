@@ -15,7 +15,7 @@ std_msgs::String str_msg;
 
 
 // Example a "normal publisher" still works if flash memory is allow by the generated ros_lib
-// in this case only msg's topic and md5sum will be stored in flash memory
+// in this case only msg's type and md5sum will be stored in flash memory
 ros::Publisher chatter1( "chatter1", &str_msg);
 
 

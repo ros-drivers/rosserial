@@ -5,8 +5,9 @@
  *   i. e. without any changed to the application code at least topic types and md5sum
  *   are stored in flash memory and not in SRAM for the entire application lifetime
  *
- * If the ros_lib is created without use of flash menory all the msg's tyes and md5sums
- *   will use up all the SRAM on Arduino uno and this will not work
+ * If the ros_lib is created without use of flash menory this will compile but all the 
+ * 	msg's tyes and md5sums will use up all the SRAM on Arduino uno and this 
+ * 	will fail to run on arduino uno
  * 
  */
 
