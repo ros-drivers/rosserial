@@ -37,31 +37,50 @@
 
 #include "rosserial_msgs/TopicInfo.h"
 #include "node_handle.h"
+#include "msg.h"
 
 namespace ros {
-
-  /* Generic Publisher */
-  class Publisher
+  
+  /* Base class for objects publishers */
+  class Publisher_
   {
     public:
-      Publisher( const char * topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
-        topic_(topic_name), 
-        msg_(msg),
-        endpoint_(endpoint) {};
+      Publisher_( Msg * msg ) : msg_(msg) {};
+      virtual int publish( const Msg * msg ) = 0;
+      virtual int getEndpointType() = 0;
+      
+      virtual const char * getTopic() = 0;
 
-      int publish( const Msg * msg ) { return nh_->publish(id_, msg); };
-      int getEndpointType(){ return endpoint_; }
-
-      const char * topic_;
       Msg *msg_;
       // id_ and no_ are set by NodeHandle when we advertise 
       int id_;
       NodeHandleBase_* nh_;
+  };
+  
+  /* Generic Publisher */
+  template<typename T_ConstStringType>
+  class PublisherTempl : public Publisher_
+  {
+    public:
+      PublisherTempl( T_ConstStringType topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
+	Publisher_( msg ),
+        topic_(topic_name), 
+        endpoint_(endpoint) {};
+
+      virtual int publish( const Msg * msg ) { return nh_->publish(id_, msg); };
+      virtual int getEndpointType(){ return endpoint_; }
+      
+      virtual const char * getTopic() { return ros::StringConverter::convertToConstChar( topic_ ); };
 
     private:
+      T_ConstStringType topic_;
       int endpoint_;
   };
-
+  
+  /*
+   * for backwards compatibility
+   */
+  typedef PublisherTempl<const char *> Publisher;
 }
 
 #endif

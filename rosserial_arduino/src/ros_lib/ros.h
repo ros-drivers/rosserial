@@ -53,6 +53,48 @@ namespace ros
   typedef NodeHandle_<ArduinoHardware> NodeHandle;
 
 #endif   
+  
+  /*
+   * For convience
+   * 
+   */
+  
+  typedef PublisherTempl<const __FlashStringHelper *> PublisherFlashTopic;
+  
+  template<typename MsgT>
+  class SubscriberFlashTopic : public SubscriberTempl<MsgT, const __FlashStringHelper *>
+  {
+      typedef void(*CallbackT)(const MsgT&);
+  public:
+    SubscriberFlashTopic( const __FlashStringHelper * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+      SubscriberTempl<MsgT, const __FlashStringHelper *>( topic_name, cb, endpoint )
+    {
+      
+    }
+  };
+  
+  template<typename MReq , typename MRes>
+  class ServiceClientFlashTopic : public ServiceClientTempl<MReq, MRes, const __FlashStringHelper * >  
+  {
+    public:
+      ServiceClientFlashTopic( const __FlashStringHelper * topic_name) : 
+        ServiceClientTempl<MReq, MRes, const __FlashStringHelper * >( topic_name )
+      {
+	
+      }
+  };
+  
+  template<typename MReq , typename MRes>
+  class ServiceServerFlashTopic : public ServiceServerTempl<MReq, MRes, const __FlashStringHelper * >  
+  {
+    public:
+      ServiceServerFlashTopic( const __FlashStringHelper * topic_name) : 
+        ServiceServerTempl<MReq, MRes, const __FlashStringHelper * >( topic_name )
+      {
+	
+      }
+  };
+  
 }
 
 #endif

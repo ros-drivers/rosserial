@@ -36,6 +36,7 @@
 #define ROS_SUBSCRIBER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
+#include "msg.h"
 
 namespace ros {
 
@@ -51,18 +52,18 @@ namespace ros {
 
       virtual const char * getMsgType()=0;
       virtual const char * getMsgMD5()=0;
-      const char * topic_;
+      virtual const char * getTopic()=0;
   };
 
 
   /* Actual subscriber, templated on message type. */
-  template<typename MsgT>
-  class Subscriber: public Subscriber_{
+  template<typename MsgT, typename T_ConstStringType>
+  class SubscriberTempl: public Subscriber_{
     public:
       typedef void(*CallbackT)(const MsgT&);
       MsgT msg;
 
-      Subscriber(const char * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+      SubscriberTempl( T_ConstStringType topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
         cb_(cb),
         endpoint_(endpoint)
       {
@@ -77,12 +78,28 @@ namespace ros {
       virtual const char * getMsgType(){ return this->msg.getType(); }
       virtual const char * getMsgMD5(){ return this->msg.getMD5(); }
       virtual int getEndpointType(){ return endpoint_; }
+      virtual const char * getTopic() { return ros::StringConverter::convertToConstChar( topic_ ); };
 
     private:
       CallbackT cb_;
       int endpoint_;
+      T_ConstStringType topic_;
   };
-
+  
+  /*
+   * for backwards compatibility
+   */
+  template<typename MsgT>
+  class Subscriber : public SubscriberTempl<MsgT, const char *>
+  {
+      typedef void(*CallbackT)(const MsgT&);
+  public:
+    Subscriber( const char * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+      SubscriberTempl<MsgT, const char *>( topic_name, cb, endpoint )
+    {
+      
+    }
+  };
 }
 
 #endif

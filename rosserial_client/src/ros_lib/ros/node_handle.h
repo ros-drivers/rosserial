@@ -86,7 +86,7 @@ namespace ros {
 #include "service_client.h"
 
 namespace ros {
-
+  
   using rosserial_msgs::TopicInfo;
 
   /* Node Handle */
@@ -109,7 +109,7 @@ namespace ros {
       unsigned char message_in[INPUT_SIZE];
       unsigned char message_out[OUTPUT_SIZE];
 
-      Publisher * publishers[MAX_PUBLISHERS];
+      Publisher_ * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
 
       /*
@@ -327,12 +327,13 @@ namespace ros {
        * Topic Management 
        */
 
-      /* Register a new publisher */    
-      bool advertise(Publisher & p)
+      /* Register a new publisher */ 
+      template<typename T_ConstStringType>   
+      bool advertise(PublisherTempl<T_ConstStringType> & p)
       {
         for(int i = 0; i < MAX_PUBLISHERS; i++){
           if(publishers[i] == 0){ // empty slot
-            publishers[i] = &p;
+            publishers[i] = (Publisher_*)&p;
             p.id_ = i+100+MAX_SUBSCRIBERS;
             p.nh_ = this;
             return true;
@@ -342,8 +343,8 @@ namespace ros {
       }
 
       /* Register a new subscriber */
-      template<typename MsgT>
-      bool subscribe(Subscriber< MsgT> & s){
+      template<typename MsgT, typename T_ConstStringType>
+      bool subscribe(SubscriberTempl< MsgT, T_ConstStringType> & s){
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
             subscribers[i] = (Subscriber_*) &s;
@@ -355,8 +356,8 @@ namespace ros {
       }
 
       /* Register a new Service Server */
-      template<typename MReq, typename MRes>
-      bool advertiseService(ServiceServer<MReq,MRes>& srv){
+      template<typename MReq, typename MRes, typename T_ConstStringType>
+      bool advertiseService(ServiceServerTempl<MReq,MRes,T_ConstStringType>& srv){
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
@@ -369,8 +370,8 @@ namespace ros {
       }
 
       /* Register a new Service Client */
-      template<typename MReq, typename MRes>
-      bool serviceClient(ServiceClient<MReq, MRes>& srv){
+      template<typename MReq, typename MRes, typename T_ConstStringType>
+      bool serviceClient(ServiceClientTempl<MReq, MRes,T_ConstStringType>& srv){
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
@@ -391,11 +392,20 @@ namespace ros {
           if(publishers[i] != 0) // non-empty slot
           {
             ti.topic_id = publishers[i]->id_;
-            ti.topic_name = (char *) publishers[i]->topic_;
+            ti.topic_name = (char *) publishers[i]->getTopic();
             ti.message_type = (char *) publishers[i]->msg_->getType();
             ti.md5sum = (char *) publishers[i]->msg_->getMD5();
             ti.buffer_size = OUTPUT_SIZE;
             publish( publishers[i]->getEndpointType(), &ti );
+	    
+	    bool lo_overflow = ros::StringConverter::hasOverflow();
+	    
+	    ros::StringConverter::clearBufferIfAny();
+	    
+	    if ( lo_overflow )
+	    {
+	      logerror( "Buffer overflow pub" );
+	    }
           }
         }
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
@@ -403,11 +413,19 @@ namespace ros {
           if(subscribers[i] != 0) // non-empty slot
           {
             ti.topic_id = subscribers[i]->id_;
-            ti.topic_name = (char *) subscribers[i]->topic_;
+            ti.topic_name = (char *) subscribers[i]->getTopic();
             ti.message_type = (char *) subscribers[i]->getMsgType();
             ti.md5sum = (char *) subscribers[i]->getMsgMD5();
             ti.buffer_size = INPUT_SIZE;
             publish( subscribers[i]->getEndpointType(), &ti );
+	    bool lo_overflow = ros::StringConverter::hasOverflow();
+	    
+	    ros::StringConverter::clearBufferIfAny();
+	    
+	    if ( lo_overflow )
+	    {
+	      logerror( "Buffer overflow sub" );
+	    }
           }
         }
         configured_ = true;
@@ -451,27 +469,51 @@ namespace ros {
        */
 
     private:
-      void log(char byte, const char * msg){
+      template<typename T_ConstStringType>   
+      void log(char byte, T_ConstStringType msg){
         rosserial_msgs::Log l;
         l.level= byte;
-        l.msg = (char*)msg;
+        l.msg = (char*) ros::StringConverter::convertToConstChar( msg );
         publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
+	
+	bool lo_overflow = ros::StringConverter::hasOverflow();
+	
+	ros::StringConverter::clearBufferIfAny();
+	
+	if ( lo_overflow )
+	{
+	  logerror( "Overflow in log, truncated msg" );
+	}
       }
 
     public:
-      void logdebug(const char* msg){
+      template<typename T_ConstStringType>   
+      void logdebug( T_ConstStringType msg)
+      {
         log(rosserial_msgs::Log::ROSDEBUG, msg);
       }
-      void loginfo(const char * msg){
+      
+      template<typename T_ConstStringType>   
+      void loginfo( T_ConstStringType msg)
+      {
         log(rosserial_msgs::Log::INFO, msg);
       }
-      void logwarn(const char *msg){
+      
+      template<typename T_ConstStringType>   
+      void logwarn( T_ConstStringType msg)
+      {
         log(rosserial_msgs::Log::WARN, msg);
       }
-      void logerror(const char*msg){
+      
+      template<typename T_ConstStringType>   
+      void logerror( T_ConstStringType msg)
+      {
         log(rosserial_msgs::Log::ERROR, msg);
       }
-      void logfatal(const char*msg){
+      
+      template<typename T_ConstStringType>   
+      void logfatal( T_ConstStringType msg)
+      {
         log(rosserial_msgs::Log::FATAL, msg);
       }
 
