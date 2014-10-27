@@ -35,11 +35,10 @@
 #ifndef _ROS_MSG_H_
 #define _ROS_MSG_H_
 
-#include "ros/string_converter.h"
-
+class __FlashStringHelper; // unresolved forward declare
+  
 namespace ros {
   
-  class __FlashStringHelper; // unresolved forward declare
 
   /* Base Message Type */
   class Msg

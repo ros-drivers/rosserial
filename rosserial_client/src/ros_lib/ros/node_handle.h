@@ -88,13 +88,72 @@ namespace ros {
 namespace ros {
   
   using rosserial_msgs::TopicInfo;
-
+  
+  class DefaultReadOutBuffer_
+  {
+  public:
+    
+    enum ReadoutError
+    {
+      NoError,
+      ReadoutFromFlashAttemptedButNotImplemented,
+      BufferOverflow
+    };
+    
+  protected:
+    ReadoutError read_out_error_;
+    
+    virtual const char * readTopic( const char * topic, bool from_flash )
+    {
+      if ( from_flash )
+      {
+	read_out_error_ = ReadoutFromFlashAttemptedButNotImplemented;
+	return "\0";
+      }
+      else
+      {
+	return topic;
+      }
+    }
+        
+  public:
+    DefaultReadOutBuffer_() :
+      read_out_error_( NoError )
+    {
+      
+    }
+    
+    // for md5sum / msg type
+    virtual const char *  readMsgInfo( const char * msg_info )
+    {
+      return msg_info;
+    }
+    
+    // for topics
+    const char * readTopicName( const Publisher * pub )
+    {
+      return readTopic( pub->topic_, pub->has_flash_topic_ );
+    }
+    
+    // for topics
+    const char * readTopicName( const Subscriber_ * sub )
+    {
+      return readTopic( sub->topic_, sub->has_flash_topic_ );
+    }
+    
+    ReadoutError getError()
+    {
+      return read_out_error_;
+    }
+  };
+  
   /* Node Handle */
   template<class Hardware,
            int MAX_SUBSCRIBERS=25,
            int MAX_PUBLISHERS=25,
            int INPUT_SIZE=512,
-           int OUTPUT_SIZE=512>
+           int OUTPUT_SIZE=512,
+	   class ReadBuffer = DefaultReadOutBuffer_>
   class NodeHandle_ : public NodeHandleBase_
   {
     protected:
@@ -109,7 +168,7 @@ namespace ros {
       unsigned char message_in[INPUT_SIZE];
       unsigned char message_out[OUTPUT_SIZE];
 
-      Publisher_ * publishers[MAX_PUBLISHERS];
+      Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
 
       /*
@@ -327,13 +386,12 @@ namespace ros {
        * Topic Management 
        */
 
-      /* Register a new publisher */ 
-      template<typename T_ConstStringType>   
-      bool advertise(PublisherTempl<T_ConstStringType> & p)
+      /* Register a new publisher */    
+      bool advertise(Publisher & p)
       {
         for(int i = 0; i < MAX_PUBLISHERS; i++){
           if(publishers[i] == 0){ // empty slot
-            publishers[i] = (Publisher_*)&p;
+            publishers[i] = &p;
             p.id_ = i+100+MAX_SUBSCRIBERS;
             p.nh_ = this;
             return true;
@@ -343,8 +401,8 @@ namespace ros {
       }
 
       /* Register a new subscriber */
-      template<typename MsgT, typename T_ConstStringType>
-      bool subscribe(SubscriberTempl< MsgT, T_ConstStringType> & s){
+      template<typename MsgT>
+      bool subscribe(Subscriber< MsgT> & s){
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
             subscribers[i] = (Subscriber_*) &s;
@@ -356,8 +414,8 @@ namespace ros {
       }
 
       /* Register a new Service Server */
-      template<typename MReq, typename MRes, typename T_ConstStringType>
-      bool advertiseService(ServiceServerTempl<MReq,MRes,T_ConstStringType>& srv){
+      template<typename MReq, typename MRes>
+      bool advertiseService(ServiceServer<MReq,MRes>& srv){
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
@@ -370,8 +428,8 @@ namespace ros {
       }
 
       /* Register a new Service Client */
-      template<typename MReq, typename MRes, typename T_ConstStringType>
-      bool serviceClient(ServiceClientTempl<MReq, MRes,T_ConstStringType>& srv){
+      template<typename MReq, typename MRes>
+      bool serviceClient(ServiceClient<MReq, MRes>& srv){
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
@@ -387,47 +445,61 @@ namespace ros {
       {
         rosserial_msgs::TopicInfo ti;
         int i;
+	
         for(i = 0; i < MAX_PUBLISHERS; i++)
         {
           if(publishers[i] != 0) // non-empty slot
           {
-            ti.topic_id = publishers[i]->id_;
-            ti.topic_name = (char *) publishers[i]->getTopic();
-            ti.message_type = (char *) publishers[i]->msg_->getType();
-            ti.md5sum = (char *) publishers[i]->msg_->getMD5();
-            ti.buffer_size = OUTPUT_SIZE;
-            publish( publishers[i]->getEndpointType(), &ti );
+	    ReadBuffer buffer;
 	    
-	    bool lo_overflow = ros::StringConverter::hasOverflow();
+	    ti.topic_id = publishers[i]->id_;
+	    ti.topic_name = (char *) buffer.readTopicName( publishers[i] );
+	    ti.message_type = (char *) buffer.readMsgInfo( publishers[i]->msg_->getType() );
+	    ti.md5sum = (char *) buffer.readMsgInfo( publishers[i]->msg_->getMD5() );
+	    ti.buffer_size = OUTPUT_SIZE;
+	    publish( publishers[i]->getEndpointType(), &ti );
 	    
-	    ros::StringConverter::clearBufferIfAny();
+	    DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
 	    
-	    if ( lo_overflow )
+	    // clean up buffer here before eventually going into log
+	    
+	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
+	    {
+	      logerror( "Flash read not impl" );
+	    }
+	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
 	    {
 	      logerror( "Buffer overflow pub" );
 	    }
           }
         }
+        
         for(i = 0; i < MAX_SUBSCRIBERS; i++)
         {
           if(subscribers[i] != 0) // non-empty slot
           {
-            ti.topic_id = subscribers[i]->id_;
-            ti.topic_name = (char *) subscribers[i]->getTopic();
-            ti.message_type = (char *) subscribers[i]->getMsgType();
-            ti.md5sum = (char *) subscribers[i]->getMsgMD5();
-            ti.buffer_size = INPUT_SIZE;
-            publish( subscribers[i]->getEndpointType(), &ti );
-	    bool lo_overflow = ros::StringConverter::hasOverflow();
+	    ReadBuffer buffer;
 	    
-	    ros::StringConverter::clearBufferIfAny();
+	    ti.topic_id = subscribers[i]->id_;
+	    ti.topic_name = (char *) buffer.readTopicName( subscribers[i] );
+	    ti.message_type = (char *) buffer.readMsgInfo( subscribers[i]->getMsgType() );
+	    ti.md5sum = (char *) buffer.readMsgInfo( subscribers[i]->getMsgMD5() );
+	    ti.buffer_size = INPUT_SIZE;
+	    publish( subscribers[i]->getEndpointType(), &ti );
 	    
-	    if ( lo_overflow )
+	    DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
+	    
+	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
 	    {
-	      logerror( "Buffer overflow sub" );
+	      logerror( "Flash read not impl" );
 	    }
-          }
+	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
+	    {
+	      logerror( "Buffer overflow pub" );
+	    }
+	  }
         }
+        
         configured_ = true;
       }
 
@@ -473,17 +545,25 @@ namespace ros {
       void log(char byte, T_ConstStringType msg){
         rosserial_msgs::Log l;
         l.level= byte;
-        l.msg = (char*) ros::StringConverter::convertToConstChar( msg );
+	
+	ReadBuffer buffer;
+	
+        l.msg = (char*) buffer.readLog( msg );
+	
         publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
 	
-	bool lo_overflow = ros::StringConverter::hasOverflow();
-	
-	ros::StringConverter::clearBufferIfAny();
-	
-	if ( lo_overflow )
+	if ( DefaultReadOutBuffer_::BufferOverflow == buffer.getError() )
 	{
 	  logerror( "Overflow in log, truncated msg" );
 	}
+	// attempt but not implemented here save by template selection at compile time
+      }
+      
+      void log(char byte, const char * msg){
+        rosserial_msgs::Log l;
+        l.level= byte;
+        l.msg = (char*) msg;
+        publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
       }
 
     public:

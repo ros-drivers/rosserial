@@ -26,10 +26,10 @@ ros::Publisher chatter1( "chatter1", &str_msg);
 const char chatter_topic[]  PROGMEM  = { "chatter2" };
 
 // set up the publisher with a flash topic
-// the F_COV marco assures casting the chatter_topic to __FlashStringHelper *
+// the FCAST marco assures casting the chatter_topic to __FlashStringHelper *
 // thereby assuring that the topic will not be accessed directly but read out 
 // of flash memory before usage
-ros::PublisherFlashTopic chatter2( F_COV( chatter_topic), &str_msg);
+ros::Publisher chatter2( FCAST( chatter_topic), &str_msg);
 
 char hello[13] = "hello world!";
 

@@ -571,12 +571,9 @@ def rosserial_generate(rospack, path, target_specific_message_class ):
             print('    %s'%f)
     print('\n')
 
-def rosserial_client_copy_files(rospack, path, skip_copy_string_converter = False, skip_mkdir_ros = False ):
-    if not skip_mkdir_ros:
-      os.makedirs(path+"/ros")
-      
+def rosserial_client_copy_files(rospack, path):
+    os.makedirs(path+"/ros")
     os.makedirs(path+"/tf")
-    
     files = ['duration.cpp',
              'time.cpp',
              'ros/duration.h',
@@ -589,13 +586,6 @@ def rosserial_client_copy_files(rospack, path, skip_copy_string_converter = Fals
              'ros/time.h',
              'tf/tf.h',
              'tf/transform_broadcaster.h']
-    
-    if not skip_copy_string_converter:
-      files.append( 'string_converter.cpp' )
-      files.append( 'ros/string_converter.h' )
-             
     mydir = rospack.get_path("rosserial_client")
-    
     for f in files:
         shutil.copy(mydir+"/src/ros_lib/"+f, path+f)
-

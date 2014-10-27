@@ -32,22 +32,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_CONVERTER_H_
-#define _STRING_CONVERTER_H_
+#ifndef ROS_ARDUINO_INCLUDES_H_
+#define ROS_ARDUINO_INCLUDES_H_
 
-namespace ros 
-{
-  class DefaultStringConverter
-  {
-  public:
-    static const char * convertToConstChar( const char * ap_in );
+#if ARDUINO>=100
+  #include <Arduino.h>  // Arduino 1.0
+#else
+  #include <WProgram.h>  // Arduino 0022
+#endif
 
-    static void clearBufferIfAny();
-    static bool hasOverflow();
-  };
-  
-  typedef ros::DefaultStringConverter StringConverter;
-};
+#if defined(__MK20DX128__) || defined(__MK20DX256__)
+  #include <usb_serial.h>  // Teensy 3.0 and 3.1
+  #define SERIAL_CLASS usb_serial_class
+#elif defined(_SAM3XA_)
+  #include <UARTClass.h>  // Arduino Due
+  #define SERIAL_CLASS UARTClass
+#elif defined(USE_USBCON)
+  // Arduino Leonardo USB Serial Port
+  #define SERIAL_CLASS Serial_
+#else 
+  #include <HardwareSerial.h>  // Arduino AVR
+  #define SERIAL_CLASS HardwareSerial
+#endif
 
-
-#endif //ndef _STRING_CONVERTER_H_
+#endif //ROS_ARDUINO_INCLUDES_H_
