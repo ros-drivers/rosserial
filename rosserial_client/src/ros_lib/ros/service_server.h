@@ -42,14 +42,24 @@
 
 namespace ros {
 
-  template<typename MReq , typename MRes, typename T_ConstStringType>
-  class ServiceServerTempl : public Subscriber_ {
+  template<typename MReq , typename MRes>
+  class ServiceServer : public Subscriber_ {
     public:
       typedef void(*CallbackT)(const MReq&,  MRes&);
 
-      ServiceServerTempl( T_ConstStringType topic_name, CallbackT cb) :
+      ServiceServer(const char* topic_name, CallbackT cb) :
         pub(topic_name, &resp, rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_PUBLISHER)
       {
+        this->topic_ = topic_name;
+	this->has_flash_topic_ = false;
+        this->cb_ = cb;
+      }
+      
+      ServiceServer(const __FlashStringHelper* topic_name, CallbackT cb) :
+        pub(topic_name, &resp, rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+      {
+        this->topic_ = reinterpret_cast<const char *>( topic_name );
+	this->has_flash_topic_ = true;
         this->cb_ = cb;
       }
 
@@ -61,31 +71,13 @@ namespace ros {
       }
       virtual const char * getMsgType(){ return this->req.getType(); }
       virtual const char * getMsgMD5(){ return this->req.getMD5(); }
-      virtual const char * getTopic(){ return this->pub.getTopic(); }
       virtual int getEndpointType(){ return rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_SUBSCRIBER; }
 
       MReq req;
       MRes resp;
-      PublisherTempl<T_ConstStringType> pub;
+      Publisher pub;
     private:
       CallbackT cb_;
-  };
-  
-  
-  /*
-   * for backwards compatibility
-   */
-  template<typename MReq , typename MRes>
-  class ServiceServer : public ServiceServerTempl<MReq, MRes, const char * >  
-  {
-    public:
-      typedef void(*CallbackT)(const MReq&,  MRes&);
-
-      ServiceServer( const char * topic_name, CallbackT cb) :
-        ServiceServerTempl<MReq, MRes, const char * >(topic_name, cb )
-      {
-	
-      }
   };
 
 }

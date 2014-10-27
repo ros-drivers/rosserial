@@ -42,13 +42,22 @@
 
 namespace ros {
 
-  template<typename MReq , typename MRes, typename T_ConstStringType>
-  class ServiceClientTempl : public Subscriber_  
-  {
+  template<typename MReq , typename MRes>
+  class ServiceClient : public Subscriber_  {
     public:
-      ServiceClientTempl( T_ConstStringType topic_name) : 
+      ServiceClient(const char* topic_name) : 
         pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
       {
+        this->topic_ = topic_name;
+	this->has_flash_topic_ = false;
+        this->waiting = true;
+      }
+      
+      ServiceClient(const __FlashStringHelper* topic_name) : 
+        pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+      {
+        this->topic_ = reinterpret_cast<const char *>( topic_name );
+	this->has_flash_topic_ = true;
         this->waiting = true;
       }
 
@@ -69,28 +78,13 @@ namespace ros {
       }
       virtual const char * getMsgType(){ return this->resp.getType(); }
       virtual const char * getMsgMD5(){ return this->resp.getMD5(); }
-      virtual const char * getTopic(){ return this->pub.getTopic(); }
       virtual int getEndpointType(){ return rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_SUBSCRIBER; }
 
       MReq req;
       MRes resp;
       MRes * ret;
       bool waiting;
-      PublisherTempl<T_ConstStringType> pub;
-  };
-  
-  /*
-   * for backwards compatibility
-   */
-  template<typename MReq , typename MRes>
-  class ServiceClient : public ServiceClientTempl<MReq, MRes, const char * >  
-  {
-    public:
-      ServiceClient( const char * topic_name) : 
-        ServiceClientTempl<MReq, MRes, const char * >( topic_name )
-      {
-	
-      }
+      Publisher pub;
   };
 }
 

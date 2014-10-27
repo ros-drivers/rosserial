@@ -38,7 +38,8 @@
 #include "ros/string_converter.h"
 
 namespace ros {
-    
+  
+  class __FlashStringHelper; // unresolved forward declare
 
   /* Base Message Type */
   class Msg
