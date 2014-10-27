@@ -103,7 +103,11 @@ class ArduinoMessage( Message ) :
   def _write_getMD5(self, f):
       f.write('    const char * getMD5(){ return PSTR( "%s" ); };\n'%self.md5)
 
+class ArduinoService( Service ):
+
+    def write_type_decl(self, f):
+        f.write('static const char %s[] PROGMEM = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
 
 
 # generate messages
-rosserial_generate(rospack, path+"/ros_lib", ArduinoMessage )
+rosserial_generate(rospack, path+"/ros_lib", ArduinoMessage, ArduinoService )

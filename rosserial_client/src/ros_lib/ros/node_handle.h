@@ -565,6 +565,10 @@ namespace ros {
         l.msg = (char*) msg;
         publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
       }
+      
+      void log(char byte, char * msg){
+	log( byte, (const char *)msg );
+      }
 
     public:
       template<typename T_ConstStringType>   

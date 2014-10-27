@@ -36,8 +36,8 @@ ros::NodeHandle  nh;
 std_msgs::String str_msg;
 std_msgs::UInt32 int_msg;
 
-ros::Publisher chatter_str( "chatter", &str_msg);
-ros::Publisher chatter_int( "free_memory", &int_msg);
+ros::Publisher chatter_str( "/chatter/hello_world", &str_msg);
+ros::Publisher chatter_int( "/chatter/free_memory", &int_msg);
 
 
 char hello[13] = "hello world!";
@@ -60,7 +60,7 @@ void loop()
   
   chatter_int.publish( &int_msg );
 
-  nh.loginfo( "Published free memory and string message" );
+  nh.loginfo( "Published free memory and string message via rosserial" );
   
   nh.spinOnce();
   
