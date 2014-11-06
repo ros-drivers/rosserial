@@ -2,8 +2,8 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.3 (2014-11-05)
+------------------
 * Miscellaneous tidying in EmbeddedLinuxHardware.
 * Rename header.
 * Automatic astyle fixes.

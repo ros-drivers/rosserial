@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.3 (2014-11-05)
+------------------
 * Move avr serialization logic to Msg class, add gtest to exercise it.
 * Fixed the deserialization of avr64bit in order to support negative numbers.
 * Contributors: Martin Gerdzhev, Mike Purvis
