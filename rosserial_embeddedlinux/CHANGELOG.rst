@@ -2,6 +2,14 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Miscellaneous tidying in EmbeddedLinuxHardware.
+* Rename header.
+* Automatic astyle fixes.
+* portName as const char*, eliminate strtok.
+* Contributors: Mike Purvis
+
 0.6.2 (2014-09-10)
 ------------------
 

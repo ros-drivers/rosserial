@@ -2,6 +2,11 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix for Arduino upload path issue.
+* Contributors: Mike Purvis
+
 0.6.2 (2014-09-10)
 ------------------
 * Clean up rosserial_arduino/package.xml

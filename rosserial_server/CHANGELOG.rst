@@ -2,6 +2,11 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add more log output, don't end the session for certain write errors.
+* Contributors: Mike Purvis
+
 0.6.2 (2014-09-10)
 ------------------
 * Bugfix for interrupted sessions.
