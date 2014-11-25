@@ -43,6 +43,10 @@ extern "C" int elCommRead(int fd);
 extern "C" elCommWrite(int fd, uint8_t* data, int length);
 #endif
 
+#ifdef __linux__
+#include <time.h>
+#endif
+
 // Includes necessary to support time on OS X.
 #ifdef __MACH__
 #include <mach/mach.h>
