@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -36,14 +36,14 @@
 
 namespace ros
 {
-  void normalizeSecNSec(unsigned long& sec, unsigned long& nsec){
-    unsigned long nsec_part= nsec % 1000000000UL;
-    unsigned long sec_part = nsec / 1000000000UL;
+  void normalizeSecNSec(uint32_t& sec, uint32_t& nsec){
+    uint32_t nsec_part= nsec % 1000000000UL;
+    uint32_t sec_part = nsec / 1000000000UL;
     sec += sec_part;
     nsec = nsec_part;
   }
 
-  Time& Time::fromNSec(long t)
+  Time& Time::fromNSec(int32_t t)
   {
     sec = t / 1000000000;
     nsec = t % 1000000000;
@@ -56,7 +56,7 @@ namespace ros
     sec += rhs.sec;
     nsec += rhs.nsec;
     normalizeSecNSec(sec, nsec);
-    return *this; 
+    return *this;
   }
 
   Time& Time::operator -=(const Duration &rhs){
@@ -65,5 +65,4 @@ namespace ros
     normalizeSecNSec(sec, nsec);
     return *this;
   }
-
 }
