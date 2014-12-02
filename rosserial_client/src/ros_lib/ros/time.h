@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -35,29 +35,31 @@
 #ifndef ROS_TIME_H_
 #define ROS_TIME_H_
 
-#include <ros/duration.h>
 #include <math.h>
+#include <stdint.h>
+
+#include "ros/duration.h"
 
 namespace ros
 {
-  void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);
+  void normalizeSecNSec(uint32_t &sec, uint32_t &nsec);
 
   class Time
   {
     public:
-      unsigned long sec, nsec;
+      uint32_t sec, nsec;
 
       Time() : sec(0), nsec(0) {}
-      Time(unsigned long _sec, unsigned long _nsec) : sec(_sec), nsec(_nsec)
+      Time(uint32_t _sec, uint32_t _nsec) : sec(_sec), nsec(_nsec)
       {
-        normalizeSecNSec(sec, nsec);  
-      } 
-        
-      double toSec() const { return (double)sec + 1e-9*(double)nsec; };
-      void fromSec(double t) { sec = (unsigned long) floor(t); nsec = (unsigned long) round((t-sec) * 1e9); };
+        normalizeSecNSec(sec, nsec);
+      }
 
-      unsigned long toNsec() { return (unsigned long)sec*1000000000ull + (unsigned long)nsec; };
-      Time& fromNSec(long t);
+      double toSec() const { return (double)sec + 1e-9*(double)nsec; };
+      void fromSec(double t) { sec = (uint32_t) floor(t); nsec = (uint32_t) round((t-sec) * 1e9); };
+
+      uint32_t toNsec() { return (uint32_t)sec*1000000000ull + (uint32_t)nsec; };
+      Time& fromNSec(int32_t t);
 
       Time& operator +=(const Duration &rhs);
       Time& operator -=(const Duration &rhs);
