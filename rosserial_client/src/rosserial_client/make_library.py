@@ -213,7 +213,7 @@ class ArrayDataType(PrimitiveDataType):
         if self.size == None:
             f.write('      %s_length(0), %s(NULL)%s\n' % (self.name, self.name, trailer))
         else:
-            f.write('      %s()%s\n' % (self.name, self.name, trailer))
+            f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
@@ -571,8 +571,9 @@ def rosserial_generate(rospack, path, mapping):
     for p in pkgs:
         try:
             MakeLibrary(p, path, rospack)
-        except:
+        except Exception as e:
             failed.append(p)
+            print('[%s]: Unable to build messages: %s\n' % (p, str(e)))
     print('\n')
     if len(failed) > 0:
         print('*** Warning, failed to generate libraries for the following packages: ***')
