@@ -571,8 +571,9 @@ def rosserial_generate(rospack, path, mapping):
     for p in pkgs:
         try:
             MakeLibrary(p, path, rospack)
-        except:
+        except Exception as e:
             failed.append(p)
+            print('[%s]: Unable to build messages: %s\n' % (p, str(e)))
     print('\n')
     if len(failed) > 0:
         print('*** Warning, failed to generate libraries for the following packages: ***')
