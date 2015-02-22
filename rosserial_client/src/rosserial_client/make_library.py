@@ -218,7 +218,7 @@ class ArrayDataType(PrimitiveDataType):
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
-            f.write('      uint8_t %s_length;\n' % self.name)
+            f.write('      uint16_t %s_length;\n' % self.name)
             f.write('      %s st_%s;\n' % (self.type, self.name)) # static instance for copy
             f.write('      %s * %s;\n' % (self.type, self.name))
         else:
