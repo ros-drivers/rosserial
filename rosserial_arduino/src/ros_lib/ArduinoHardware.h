@@ -44,8 +44,8 @@
 #if defined(__MK20DX128__) || defined(__MK20DX256__)
   #include <usb_serial.h>  // Teensy 3.0 and 3.1
   #define SERIAL_CLASS usb_serial_class
-#elif defined(_SAM3XA_)
-  #include <UARTClass.h>  // Arduino Due
+#elif defined(_SAM3XA_) || defined(_LIBRFDUINO_)
+  #include <UARTClass.h>  // Arduino Due & RFDuino
   #define SERIAL_CLASS UARTClass
 #elif defined(USE_USBCON)
   // Arduino Leonardo USB Serial Port
