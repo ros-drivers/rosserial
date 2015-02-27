@@ -51,6 +51,15 @@ namespace ros {
         pub(topic_name, &resp, rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_PUBLISHER)
       {
         this->topic_ = topic_name;
+	this->has_flash_topic_ = false;
+        this->cb_ = cb;
+      }
+      
+      ServiceServer(const __FlashStringHelper* topic_name, CallbackT cb) :
+        pub(topic_name, &resp, rosserial_msgs::TopicInfo::ID_SERVICE_SERVER + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+      {
+        this->topic_ = reinterpret_cast<const char *>( topic_name );
+	this->has_flash_topic_ = true;
         this->cb_ = cb;
       }
 

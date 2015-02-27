@@ -265,10 +265,9 @@ class ArrayDataType(PrimitiveDataType):
 
 class Message:
     """ Parses message definitions into something we can export. """
-    global ROS_TO_EMBEDDED_TYPES
 
     def __init__(self, name, package, definition, md5):
-
+      	
         self.name = name            # name of message/class
         self.package = package      # package we reside in
         self.md5 = md5              # checksum
@@ -319,13 +318,13 @@ class Message:
 
             # convert to C type if primitive, expand name otherwise
             try:
-                code_type = ROS_TO_EMBEDDED_TYPES[type_name][0]
-                size = ROS_TO_EMBEDDED_TYPES[type_name][1]
-                cls = ROS_TO_EMBEDDED_TYPES[type_name][2]
-                for include in ROS_TO_EMBEDDED_TYPES[type_name][3]:
+                code_type = self.ros_to_embedded_types_[type_name][0]
+                size = self.ros_to_embedded_types_[type_name][1]
+                cls = self.ros_to_embedded_types_[type_name][2]
+                for include in self.ros_to_embedded_types_[type_name][3]:
                     if include not in self.includes:
                         self.includes.append(include)
-            except:
+            except:		
                 if type_package == None:
                     type_package = self.package
                 if type_package+"/"+type_name not in self.includes:
@@ -422,7 +421,7 @@ class Message:
         f.write('#endif')
 
 class Service:
-    def __init__(self, name, package, definition, md5req, md5res):
+    def __init__(self, name, package, definition, md5req, md5res, target_specific_message_class):
         """
         @param name -  name of service
         @param package - name of service package
@@ -441,9 +440,12 @@ class Service:
         self.req_def = definition[0:sep_line]
         self.resp_def = definition[sep_line+1:]
 
-        self.req = Message(name+"Request", package, self.req_def, md5req)
-        self.resp = Message(name+"Response", package, self.resp_def, md5res)
+        self.req = target_specific_message_class(name+"Request", package, self.req_def, md5req)
+        self.resp = target_specific_message_class(name+"Response", package, self.resp_def, md5res)
 
+    def write_type_decl(self, f):
+        f.write('static const char %s[] = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
+        
     def make_header(self, f):
         f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
         f.write('#define _ROS_SERVICE_%s_h\n' % self.name)
@@ -459,7 +461,7 @@ class Service:
         f.write('namespace %s\n' % self.package)
         f.write('{\n')
         f.write('\n')
-        f.write('static const char %s[] = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
+	self.write_type_decl( f)
 
         def write_type(out, name):
             out.write('    const char * getType(){ return %s; };\n'%(name))
@@ -487,7 +489,7 @@ class Service:
 #####################################################################
 # Make a Library
 
-def MakeLibrary(package, output_path, rospack):
+def MakeLibrary(package, output_path, rospack, target_specific_message_class, target_specific_service_class ):
     pkg_dir = rospack.get_path(package)
 
     # find the messages in this package
@@ -503,7 +505,7 @@ def MakeLibrary(package, output_path, rospack):
                 print('%s,'%f[0:-4], end='')
                 definition = open(file).readlines()
                 md5sum = roslib.message.get_message_class(package+'/'+f[0:-4])._md5sum
-                messages.append( Message(f[0:-4], package, definition, md5sum) )
+                messages.append( target_specific_message_class(f[0:-4], package, definition, md5sum) )
 
     # find the services in this package
     services = list()
@@ -523,7 +525,7 @@ def MakeLibrary(package, output_path, rospack):
                 definition = open(file).readlines()
                 md5req = roslib.message.get_service_class(package+'/'+f[0:-4])._request_class._md5sum
                 md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
-                messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+                messages.append( target_specific_service_class(f[0:-4], package, definition, md5req, md5res, target_specific_message_class ) )
         print('\n')
     elif messages != list():
         print('\n')
@@ -559,20 +561,18 @@ def get_dependency_sorted_package_list(rospack):
     dependency_list.reverse()
     return [dependency_list, failed]
 
-def rosserial_generate(rospack, path, mapping):
-    # horrible hack -- make this die
-    global ROS_TO_EMBEDDED_TYPES
-    ROS_TO_EMBEDDED_TYPES = mapping
-
+def rosserial_generate(rospack, path, target_specific_message_class, target_specific_service_class = Service ):
+    
     # find and sort all packages
     pkgs, failed = get_dependency_sorted_package_list(rospack)
 
     # gimme messages
     for p in pkgs:
         try:
-            MakeLibrary(p, path, rospack)
-        except:
+            MakeLibrary(p, path, rospack, target_specific_message_class, target_specific_service_class )
+        except Exception as e:
             failed.append(p)
+            print('[%s]: Unable to build messages: %s\n' % (p, str(e)))
     print('\n')
     if len(failed) > 0:
         print('*** Warning, failed to generate libraries for the following packages: ***')
@@ -598,4 +598,3 @@ def rosserial_client_copy_files(rospack, path):
     mydir = rospack.get_path("rosserial_client")
     for f in files:
         shutil.copy(mydir+"/src/ros_lib/"+f, path+f)
-

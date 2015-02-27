@@ -32,48 +32,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_PUBLISHER_H_
-#define _ROS_PUBLISHER_H_
+#ifndef ROS_ARDUINO_INCLUDES_H_
+#define ROS_ARDUINO_INCLUDES_H_
 
-#include "rosserial_msgs/TopicInfo.h"
-#include "node_handle.h"
-#include "msg.h"
-
-
-namespace ros {
-
-  /* Generic Publisher */
-  class Publisher
-  {
-    public:
-      Publisher( const char * topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
-        topic_(topic_name), 
-        has_flash_topic_( false ),
-        msg_(msg),
-        endpoint_(endpoint) 
-      {};
-	
-      Publisher( const __FlashStringHelper * topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
-        topic_( reinterpret_cast<const char *>( topic_name ) ), 
-        has_flash_topic_( true ),
-        msg_(msg),
-        endpoint_(endpoint)
-      {};
-      
-      int publish( const Msg * msg ) { return nh_->publish(id_, msg); };
-      int getEndpointType(){ return endpoint_; }
-
-      const char * topic_;
-      bool has_flash_topic_;
-      Msg *msg_;
-      // id_ and no_ are set by NodeHandle when we advertise 
-      int id_;
-      NodeHandleBase_* nh_;
-
-    private:
-      int endpoint_;
-  };
-
-}
-
+#if ARDUINO>=100
+  #include <Arduino.h>  // Arduino 1.0
+#else
+  #include <WProgram.h>  // Arduino 0022
 #endif
+
+#if defined(__MK20DX128__) || defined(__MK20DX256__)
+  #include <usb_serial.h>  // Teensy 3.0 and 3.1
+  #define SERIAL_CLASS usb_serial_class
+#elif defined(_SAM3XA_)
+  #include <UARTClass.h>  // Arduino Due
+  #define SERIAL_CLASS UARTClass
+#elif defined(USE_USBCON)
+  // Arduino Leonardo USB Serial Port
+  #define SERIAL_CLASS Serial_
+#else 
+  #include <HardwareSerial.h>  // Arduino AVR
+  #define SERIAL_CLASS HardwareSerial
+#endif
+
+#endif //ROS_ARDUINO_INCLUDES_H_
