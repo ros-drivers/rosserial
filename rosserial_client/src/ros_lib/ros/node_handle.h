@@ -121,6 +121,11 @@ namespace ros {
       
     }
     
+    virtual ~DefaultReadOutBuffer_() 
+    {
+      
+    }
+    
     // for md5sum / msg type
     virtual const char *  readMsgInfo( const char * msg_info )
     {
@@ -544,23 +549,6 @@ namespace ros {
        */
 
     private:
-      template<typename T_ConstStringType>   
-      void log(char byte, T_ConstStringType msg){
-        rosserial_msgs::Log l;
-        l.level= byte;
-	
-	ReadBuffer buffer;
-	
-        l.msg = (char*) buffer.readLog( msg );
-	
-        publish(rosserial_msgs::TopicInfo::ID_LOG, &l);
-	
-	if ( DefaultReadOutBuffer_::BufferOverflow == buffer.getError() )
-	{
-	  logerror( "Overflow in log, truncated msg" );
-	}
-	// attempt but not implemented here save by template selection at compile time
-      }
       
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;
@@ -571,6 +559,19 @@ namespace ros {
       
       void log(char byte, char * msg){
 	log( byte, (const char *)msg );
+      }
+      
+      template<typename T_ConstStringType>   
+      void log(char byte, T_ConstStringType msg){
+	
+	  ReadBuffer buffer;
+	  
+	  log( byte, buffer.readLog( msg ) );
+	  
+	  if ( DefaultReadOutBuffer_::BufferOverflow == buffer.getError() )
+	  {
+	    logerror( "Overflow in log, truncated msg" );
+	  }
       }
 
     public:

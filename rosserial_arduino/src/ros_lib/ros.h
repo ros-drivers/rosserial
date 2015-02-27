@@ -48,7 +48,7 @@ namespace ros
   class FlashReadOutBuffer_ : public DefaultReadOutBuffer_
   {
   private:
-    char buffer_[FLASH_CONVERTER_BUFFER];
+    char* buffer_;
     int buffer_index_;
     
     const char* readFromFlash( const __FlashStringHelper * what )
@@ -99,8 +99,16 @@ namespace ros
     FlashReadOutBuffer_() 
     {
       buffer_index_ = 0;
+      
+      buffer_ = new char[ FLASH_CONVERTER_BUFFER ];
+      
       buffer_[0] = 0;  //zero termination at beginning
       buffer_[ FLASH_CONVERTER_BUFFER - 1 ] = 0; // assure zero termination
+    }
+    
+    virtual ~FlashReadOutBuffer_() 
+    {
+      delete buffer_;
     }
     
     // for md5sum / msg type
