@@ -2,6 +2,12 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.3 (2014-11-05)
+------------------
+* Move avr serialization logic to Msg class, add gtest to exercise it.
+* Fixed the deserialization of avr64bit in order to support negative numbers.
+* Contributors: Martin Gerdzhev, Mike Purvis
+
 0.6.2 (2014-09-10)
 ------------------
 * Generic CMake helpers for ros_lib generation and in-package firmwares.

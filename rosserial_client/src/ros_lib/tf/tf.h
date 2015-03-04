@@ -40,7 +40,7 @@
 namespace tf
 {
   
-  geometry_msgs::Quaternion createQuaternionFromYaw(double yaw)
+  static inline geometry_msgs::Quaternion createQuaternionFromYaw(double yaw)
   {
     geometry_msgs::Quaternion q;
     q.x = 0;

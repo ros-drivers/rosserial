@@ -36,7 +36,7 @@
 THIS_PACKAGE = "rosserial_embeddedlinux"
 
 __usage__ = """
-make_libraries.py generates the rosserial library files.  It 
+make_libraries.py generates the rosserial library files.  It
 requires the location of your project folder.
 
 rosrun rosserial_embeddedlinux make_libraries.py <output_path>
@@ -62,7 +62,7 @@ ROS_TO_EMBEDDED_TYPES = {
     'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
     'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
     'float32' :   ('float',             4, PrimitiveDataType, []),
-    'float64' :   ('float',             4, AVR_Float64DataType, []),
+    'float64' :   ('double',            8, PrimitiveDataType, []),
     'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
     'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
     'string'  :   ('char*',             0, StringDataType, []),
@@ -73,7 +73,7 @@ ROS_TO_EMBEDDED_TYPES = {
 if (len(sys.argv) < 2):
     print __usage__
     exit()
-    
+
 # get output path
 path = sys.argv[1]
 if path[-1] == "/":
