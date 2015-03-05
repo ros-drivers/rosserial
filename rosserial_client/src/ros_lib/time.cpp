@@ -38,7 +38,7 @@ namespace ros
 {
   void normalizeSecNSec(uint32_t& sec, uint32_t& nsec){
     uint32_t nsec_part= nsec % 1000000000UL;
-    unint32_t sec_part = nsec / 1000000000UL;
+    uint32_t sec_part = nsec / 1000000000UL;
     sec += sec_part;
     nsec = nsec_part;
   }
