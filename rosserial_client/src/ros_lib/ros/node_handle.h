@@ -55,13 +55,13 @@
 #define PROTOCOL_VER1		0xff // through groovy
 #define PROTOCOL_VER2		0xfe // in hydro
 #define PROTOCOL_VER 		PROTOCOL_VER2
-#define MODE_SIZE_L         2   
+#define MODE_SIZE_L         2
 #define MODE_SIZE_H         3
 #define MODE_SIZE_CHECKSUM  4   // checksum for msg size received from size L and H
 #define MODE_TOPIC_L        5   // waiting for topic id
 #define MODE_TOPIC_H        6
 #define MODE_MESSAGE        7
-#define MODE_MSG_CHECKSUM   8   // checksum for msg and topic id 
+#define MODE_MSG_CHECKSUM   8   // checksum for msg and topic id
 
 
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
@@ -116,16 +116,16 @@ namespace ros {
     public:
       NodeHandle_() : configured_(false) {
 
-        for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
+        for(unsigned int i=0; i< MAX_PUBLISHERS; i++)
 	   publishers[i] = 0;
 
-        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
+        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++)
 	   subscribers[i] = 0;
 
-        for(unsigned int i=0; i< INPUT_SIZE; i++) 
+        for(unsigned int i=0; i< INPUT_SIZE; i++)
 	   message_in[i] = 0;
 
-        for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
+        for(unsigned int i=0; i< OUTPUT_SIZE; i++)
 	   message_out[i] = 0;
 
         req_param_resp.ints_length = 0;
@@ -135,7 +135,7 @@ namespace ros {
         req_param_resp.ints_length = 0;
         req_param_resp.ints = NULL;
       }
-      
+
       Hardware* getHardware(){
         return &hardware_;
       }
@@ -186,9 +186,9 @@ namespace ros {
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             configured_ = false;
          }
-         
+
         /* reset if message has timed out */
-        if ( mode_ != MODE_FIRST_FF){ 
+        if ( mode_ != MODE_FIRST_FF){
           if (c_time > last_msg_timeout_time){
             mode_ = MODE_FIRST_FF;
           }
@@ -211,6 +211,11 @@ namespace ros {
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
             }
+            else if( hardware_.time() - c_time > (SYNC_SECONDS)){
+              /* We have been stuck in spinOnce too long, return error */
+              configured_=false;
+              return -2;
+            }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
               mode_++;
@@ -227,10 +232,10 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_H ){   /* top half of message size */
             bytes_ += data<<8;
 	    mode_++;
-          }else if( mode_ == MODE_SIZE_CHECKSUM ){  
+          }else if( mode_ == MODE_SIZE_CHECKSUM ){
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else 
+	    else
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
@@ -240,7 +245,7 @@ namespace ros {
             topic_ += data<<8;
             mode_ = MODE_MESSAGE;
             if(bytes_ == 0)
-              mode_ = MODE_MSG_CHECKSUM;  
+              mode_ = MODE_MSG_CHECKSUM;
           }else if( mode_ == MODE_MSG_CHECKSUM ){ /* do checksum */
             mode_ = MODE_FIRST_FF;
             if( (checksum_%256) == 255){
@@ -322,10 +327,10 @@ namespace ros {
       }
 
       /********************************************************************
-       * Topic Management 
+       * Topic Management
        */
 
-      /* Register a new publisher */    
+      /* Register a new publisher */
       bool advertise(Publisher & p)
       {
         for(int i = 0; i < MAX_PUBLISHERS; i++){
@@ -413,7 +418,7 @@ namespace ros {
 
       virtual int publish(int id, const Msg * msg)
       {
-        if(id >= 100 && !configured_) 
+        if(id >= 100 && !configured_)
 	  return 0;
 
         /* serialize message */
@@ -510,7 +515,7 @@ namespace ros {
         if (requestParam(name) ){
           if (length == req_param_resp.floats_length){
             //copy it over
-            for(int i=0; i<length; i++) 
+            for(int i=0; i<length; i++)
               param[i] = req_param_resp.floats[i];
             return true;
           }
@@ -527,7 +532,7 @@ namespace ros {
           }
         }
         return false;
-      }  
+      }
   };
 
 }

@@ -2,6 +2,20 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.3 (2014-11-05)
+------------------
+* Fix for Arduino upload path issue.
+* Contributors: Mike Purvis
+
+0.6.2 (2014-09-10)
+------------------
+* Clean up rosserial_arduino/package.xml
+* Generic CMake helpers.
+* Contributors: Mike Purvis
+
+0.6.1 (2014-06-30)
+------------------
+
 0.6.0 (2014-06-11)
 ------------------
 

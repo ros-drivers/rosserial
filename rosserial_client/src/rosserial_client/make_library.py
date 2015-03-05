@@ -79,6 +79,9 @@ class PrimitiveDataType:
         self.type = ty
         self.bytes = bytes
 
+    def make_initializer(self, f, trailer):
+        f.write('      %s(0)%s\n' % (self.name, trailer))
+
     def make_declaration(self, f):
         f.write('      %s %s;\n' % (self.type, self.name) )
 
@@ -117,6 +120,10 @@ class PrimitiveDataType:
 
 class MessageDataType(PrimitiveDataType):
     """ For when our data type is another message. """
+
+    def make_initializer(self, f, trailer):
+        f.write('      %s()%s\n' % (self.name, trailer))
+
     def serialize(self, f):
         f.write('      offset += this->%s.serialize(outbuffer + offset);\n' % self.name)
 
@@ -127,43 +134,24 @@ class MessageDataType(PrimitiveDataType):
 class AVR_Float64DataType(PrimitiveDataType):
     """ AVR C/C++ has no native 64-bit support, we automatically convert to 32-bit float. """
 
+    def make_initializer(self, f, trailer):
+        f.write('      %s(0)%s\n' % (self.name, trailer))
+
     def make_declaration(self, f):
         f.write('      float %s;\n' % self.name )
 
     def serialize(self, f):
-        cn = self.name.replace("[","").replace("]","")
-        f.write('      int32_t * val_%s = (int32_t *) &(this->%s);\n' % (cn,self.name))
-        f.write('      int32_t exp_%s = (((*val_%s)>>23)&255);\n' % (cn,cn))
-        f.write('      if(exp_%s != 0)\n' % cn)
-        f.write('        exp_%s += 1023-127;\n' % cn)
-        f.write('      int32_t sig_%s = *val_%s;\n' % (cn,cn))
-        f.write('      *(outbuffer + offset++) = 0;\n') # 29 blank bits
-        f.write('      *(outbuffer + offset++) = 0;\n')
-        f.write('      *(outbuffer + offset++) = 0;\n')
-        f.write('      *(outbuffer + offset++) = (sig_%s<<5) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = (sig_%s>>3) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = (sig_%s>>11) & 0xff;\n' % cn)
-        f.write('      *(outbuffer + offset++) = ((exp_%s<<4) & 0xF0) | ((sig_%s>>19)&0x0F);\n' % (cn,cn))
-        f.write('      *(outbuffer + offset++) = (exp_%s>>4) & 0x7F;\n' % cn)
-        f.write('      if(this->%s < 0) *(outbuffer + offset -1) |= 0x80;\n' % self.name)
+        f.write('      offset += serializeAvrFloat64(outbuffer + offset, this->%s);\n' % self.name)
 
     def deserialize(self, f):
-        cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t * val_%s = (uint32_t*) &(this->%s);\n' % (cn,self.name))
-        f.write('      offset += 3;\n') # 29 blank bits
-        f.write('      *val_%s = ((uint32_t)(*(inbuffer + offset++))>>5 & 0x07);\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<3;\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset++)) & 0xff)<<11;\n' % cn)
-        f.write('      *val_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x0f)<<19;\n' % cn)
-        f.write('      uint32_t exp_%s = ((uint32_t)(*(inbuffer + offset++))&0xf0)>>4;\n' % cn)
-        f.write('      exp_%s |= ((uint32_t)(*(inbuffer + offset)) & 0x7f)<<4;\n' % cn)
-        f.write('      if(exp_%s !=0)\n' % cn)
-        f.write('        *val_%s |= ((exp_%s)-1023+127)<<23;\n' % (cn,cn))
-        f.write('      if( ((*(inbuffer+offset++)) & 0x80) > 0) this->%s = -this->%s;\n' % (self.name,self.name))
+        f.write('      offset += deserializeAvrFloat64(inbuffer + offset, &(this->%s));\n' % self.name)
 
 
 class StringDataType(PrimitiveDataType):
     """ Need to convert to signed char *. """
+
+    def make_initializer(self, f, trailer):
+        f.write('      %s("")%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
         f.write('      const char* %s;\n' % self.name)
@@ -171,7 +159,7 @@ class StringDataType(PrimitiveDataType):
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
-        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)        
+        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
         f.write('      offset += length_%s;\n' % cn)
@@ -197,6 +185,9 @@ class TimeDataType(PrimitiveDataType):
         self.sec = PrimitiveDataType(name+'.sec','uint32_t',4)
         self.nsec = PrimitiveDataType(name+'.nsec','uint32_t',4)
 
+    def make_initializer(self, f, trailer):
+        f.write('      %s()%s\n' % (self.name, trailer))
+
     def make_declaration(self, f):
         f.write('      %s %s;\n' % (self.type, self.name))
 
@@ -217,6 +208,12 @@ class ArrayDataType(PrimitiveDataType):
         self.bytes = bytes
         self.size = array_size
         self.cls = cls
+
+    def make_initializer(self, f, trailer):
+        if self.size == None:
+            f.write('      %s_length(0), %s(NULL)%s\n' % (self.name, self.name, trailer))
+        else:
+            f.write('      %s()%s\n' % (self.name, self.name, trailer))
 
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
@@ -343,7 +340,6 @@ class Message:
 
     def _write_serializer(self, f):
                 # serializer
-        f.write('\n')
         f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
@@ -374,11 +370,20 @@ class Message:
         for i in self.includes:
             f.write('#include "%s.h"\n' % i)
 
+    def _write_constructor(self, f):
+        f.write('    %s()%s\n' % (self.name, ':' if self.data else ''))
+        if self.data:
+            for d in self.data[:-1]:
+                d.make_initializer(f, ',')
+            self.data[-1].make_initializer(f, '')
+        f.write('    {\n    }\n\n')
+
     def _write_data(self, f):
         for d in self.data:
             d.make_declaration(f)
         for e in self.enums:
             e.make_declaration(f)
+        f.write('\n')
 
     def _write_getType(self, f):
         f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
@@ -391,6 +396,7 @@ class Message:
         f.write('  {\n')
         f.write('    public:\n')
         self._write_data(f)
+        self._write_constructor(f)
         self._write_serializer(f)
         self._write_deserializer(f)
         self._write_getType(f)
@@ -426,7 +432,7 @@ class Service:
         self.name = name
         self.package = package
 
-        sep_line = None
+        sep_line = len(definition)
         sep = re.compile('---*')
         for i in range(0, len(definition)):
             if (None!= re.match(sep, definition[i]) ):
@@ -518,6 +524,8 @@ def MakeLibrary(package, output_path, rospack):
                 md5req = roslib.message.get_service_class(package+'/'+f[0:-4])._request_class._md5sum
                 md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
                 messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+        print('\n')
+    elif messages != list():
         print('\n')
 
     # generate for each message

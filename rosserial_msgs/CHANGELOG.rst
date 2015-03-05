@@ -2,6 +2,15 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.3 (2014-11-05)
+------------------
+
+0.6.2 (2014-09-10)
+------------------
+
+0.6.1 (2014-06-30)
+------------------
+
 0.6.0 (2014-06-11)
 ------------------
 * Uncomment ID_TX_STOP constant, per `#111 <https://github.com/ros-drivers/rosserial/issues/111>`_

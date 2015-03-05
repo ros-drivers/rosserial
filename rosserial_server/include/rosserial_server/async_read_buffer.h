@@ -4,7 +4,7 @@
  *  \brief      Helper object for successive reads from a ReadStream.
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
  *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
  *     * Neither the name of Clearpath Robotics, Inc. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,10 +26,13 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Please send comments, questions, or patches to code@clearpathrobotics.com 
+ *
+ * Please send comments, questions, or patches to code@clearpathrobotics.com
  *
  */
+
+#ifndef ROSSERIAL_SERVER_ASYNC_READ_BUFFER_H
+#define ROSSERIAL_SERVER_ASYNC_READ_BUFFER_H
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -37,6 +40,8 @@
 
 #include <ros/ros.h>
 
+namespace rosserial_server
+{
 
 template<typename AsyncReadStream>
 class AsyncReadBuffer
@@ -69,8 +74,18 @@ public:
 private:
   void read_cb(const boost::system::error_code& error, size_t bytes_transferred,
                boost::function<void(ros::serialization::IStream&)> callback) {
-    if (error) {
-      error_callback_(error);
+    if (error)
+    {
+      if (error == boost::asio::error::operation_aborted)
+      {
+        // Special case for operation_aborted. The abort callback comes when the owning Session
+        // is in the middle of teardown, which means the callback is no longer valid and calling
+        // it would be a segfault.
+      }
+      else
+      {
+        error_callback_(error);
+      }
     } else {
       ROS_DEBUG_STREAM_NAMED("async_read", "Transferred " << bytes_transferred << " byte(s).");
 
@@ -85,4 +100,6 @@ private:
   boost::function<void(const boost::system::error_code&)> error_callback_;
 };
 
+}  // namespace
 
+#endif  // ROSSERIAL_SERVER_ASYNC_READ_BUFFER_H

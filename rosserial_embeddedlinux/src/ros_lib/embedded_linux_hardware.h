@@ -45,86 +45,90 @@ extern "C" elCommWrite(int fd, uint8_t* data, int length);
 
 #define DEFAULT_PORT "/dev/ttyAM1"
 
-class EmbeddedLinuxHardware {
-  public:
-    EmbeddedLinuxHardware(char *pn, long baud= 57600){
-      strncpy(portName, pn, 30);
-      baud_ = baud;
-    }
-    EmbeddedLinuxHardware()
+class EmbeddedLinuxHardware
+{
+public:
+  EmbeddedLinuxHardware(const char *pn, long baud = 57600)
+  {
+    strncpy(portName, pn, 30);
+    baud_ = baud;
+  }
+
+  EmbeddedLinuxHardware()
+  {
+    const char *envPortName = getenv("ROSSERIAL_PORT");
+    if (envPortName == NULL)
+      strcpy(portName, DEFAULT_PORT);
+    else
+      strncpy(portName, envPortName, 29);
+    portName[29] = '\0'; // in case user gave us too long a port name
+    baud_ = 57600;
+  }
+
+  void setBaud(long baud)
+  {
+    this->baud_ = baud;
+  }
+
+  int getBaud()
+  {
+    return baud_;
+  }
+
+  void init()
+  {
+    fd = elCommInit(portName, baud_);
+    if (fd < 0)
     {
-      char *envPortName = getenv("ROSSERIAL_PORT");
-      if (envPortName == NULL)
-	strcpy(portName, DEFAULT_PORT);
-      else
-        strncpy(portName, envPortName, 29);
-      portName[29] = '\0'; // in case user gave us too long a port name
-      baud_ = 57600;
+      std::cout << "Exiting" << std::endl;
+      exit(-1);
     }
+    std::cout << "EmbeddedHardware.h: opened serial port successfully\n";
+    clock_gettime(CLOCK_MONOTONIC, &start);     // record when the program started
+  }
 
-    void setBaud(long baud){
-      this->baud_= baud;
-    }
-
-    int getBaud(){return baud_;}
-
-    void init(){
-    	fd = elCommInit(portName, baud_);
-    	if (fd < 0) {
-    		std::cout << "Exiting" << std::endl;
-    		exit(-1);
-    	}
-    	std::cout << "EmbeddedHardware.h: opened serial port successfully\n";
-    	clock_gettime(CLOCK_MONOTONIC, &start);			// record when the program started
-    }
-
-    void init(char *pName){
-    	fd = elCommInit(pName, baud_);
-    	if (fd < 0) {
-    		std::cout << "Exiting" << std::endl;
-    		exit(-1);
-    	}
-    	std::cout << "EmbeddedHardware.h: opened comm port successfully\n";
-    	clock_gettime(CLOCK_MONOTONIC, &start);			// record when the program started
-    }
-
-    int read()
+  void init(const char *pName)
+  {
+    fd = elCommInit(pName, baud_);
+    if (fd < 0)
     {
-    	int c = elCommRead(fd);
-		//std::cout << "read() got: " << c << std::endl;
-    	if (c > 0) {
-    	}
-    	return c;
+      std::cout << "Exiting" << std::endl;
+      exit(-1);
     }
+    std::cout << "EmbeddedHardware.h: opened comm port successfully\n";
+    clock_gettime(CLOCK_MONOTONIC, &start);     // record when the program started
+  }
 
-    void write(uint8_t* data, int length)
-    {
-      elCommWrite(fd, data, length);
-//      for (int i=0; i<length; i++) {
-//    	  std::cout <<  "i:" << i << " data: " << data[i];
-//      }
-//      std::cout << std::endl;
-    }
+  int read()
+  {
+    int c = elCommRead(fd);
+    return c;
+  }
 
-    unsigned long time()
-    {
-    	long millis, seconds, nseconds;
+  void write(uint8_t* data, int length)
+  {
+    elCommWrite(fd, data, length);
+  }
 
-    	clock_gettime(CLOCK_MONOTONIC, &end);
+  unsigned long time()
+  {
+    long millis, seconds, nseconds;
 
-        seconds  = end.tv_sec  - start.tv_sec;
-        nseconds = end.tv_nsec - start.tv_nsec;
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
-        millis = ((seconds) * 1000 + nseconds/1000000.0) + 0.5;
+    seconds  = end.tv_sec  - start.tv_sec;
+    nseconds = end.tv_nsec - start.tv_nsec;
 
-    	return millis;
-    }
+    millis = ((seconds) * 1000 + nseconds / 1000000.0) + 0.5;
 
-  protected:
-    int fd;
-    char portName[30];
-    long baud_;
-    struct timespec start, end;
+    return millis;
+  }
+
+protected:
+  int fd;
+  char portName[30];
+  long baud_;
+  struct timespec start, end;
 };
 
 #endif

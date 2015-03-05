@@ -2,6 +2,25 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.3 (2014-11-05)
+------------------
+* Move avr serialization logic to Msg class, add gtest to exercise it.
+* Fixed the deserialization of avr64bit in order to support negative numbers.
+* Contributors: Martin Gerdzhev, Mike Purvis
+
+0.6.2 (2014-09-10)
+------------------
+* Generic CMake helpers for ros_lib generation and in-package firmwares.
+* Fix output of make_library when package has only messages
+* Added time out to the state machine
+* Contributors: Jason Scatena, Michael Ferguson, Mike Purvis
+
+0.6.1 (2014-06-30)
+------------------
+* Remove ID_TX_STOP define
+* Fix ID_TX_STOP in the client lib.
+* Contributors: Mike Purvis
+
 0.6.0 (2014-06-11)
 ------------------
 * Remove include of ros.h from time.cpp
