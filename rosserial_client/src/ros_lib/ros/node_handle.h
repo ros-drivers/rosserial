@@ -52,10 +52,10 @@
  * rosserial_python/src/rosserial_python/SerialClient.py
  */
 #define MODE_PROTOCOL_VER   1
-#define PROTOCOL_VER1		0xff // through groovy
-#define PROTOCOL_VER2		0xfe // in hydro
-#define PROTOCOL_VER 		PROTOCOL_VER2
-#define MODE_SIZE_L         2   
+#define PROTOCOL_VER1       0xff // through groovy
+#define PROTOCOL_VER2       0xfe // in hydro
+#define PROTOCOL_VER        PROTOCOL_VER2
+#define MODE_SIZE_L         2
 #define MODE_SIZE_H         3
 #define MODE_SIZE_CHECKSUM  4   // checksum for msg size received from size L and H
 #define MODE_TOPIC_L        5   // waiting for topic id
@@ -99,13 +99,13 @@ namespace ros {
       Hardware hardware_;
 
       /* time used for syncing */
-      unsigned long rt_time;
+      uint32_t rt_time;
 
       /* used for computing current time */
-      unsigned long sec_offset, nsec_offset;
+      uint32_t sec_offset, nsec_offset;
 
-      unsigned char message_in[INPUT_SIZE];
-      unsigned char message_out[OUTPUT_SIZE];
+      uint32_t message_in[INPUT_SIZE];
+      uint32_t message_out[OUTPUT_SIZE];
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
@@ -169,9 +169,9 @@ namespace ros {
       bool configured_;
 
       /* used for syncing the time */
-      unsigned long last_sync_time;
-      unsigned long last_sync_receive_time;
-      unsigned long last_msg_timeout_time;
+      uint32_t last_sync_time;
+      uint32_t last_sync_receive_time;
+      uint32_t last_msg_timeout_time;
 
     public:
       /* This function goes in your loop() function, it handles
@@ -182,7 +182,7 @@ namespace ros {
       virtual int spinOnce(){
 
         /* restart if timed out */
-        unsigned long c_time = hardware_.time();
+        uint32_t c_time = hardware_.time();
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             configured_ = false;
          }
@@ -299,7 +299,7 @@ namespace ros {
       void syncTime( unsigned char * data )
       {
         std_msgs::Time t;
-        unsigned long offset = hardware_.time() - rt_time;
+        uint32_t offset = hardware_.time() - rt_time;
 
         t.deserialize(data);
         t.data.sec += offset/1000;
@@ -310,7 +310,7 @@ namespace ros {
       }
 
       Time now(){
-        unsigned long ms = hardware_.time();
+        uint32_t ms = hardware_.time();
         Time current_time;
         current_time.sec = ms/1000 + sec_offset;
         current_time.nsec = (ms%1000)*1000000UL + nsec_offset;
@@ -320,7 +320,7 @@ namespace ros {
 
       void setNow( Time & new_now )
       {
-        unsigned long ms = hardware_.time();
+        uint32_t ms = hardware_.time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
@@ -418,8 +418,8 @@ namespace ros {
 
       virtual int publish(int id, const Msg * msg)
       {
-        if(id >= 100 && !configured_) 
-	  return 0;
+        if(id >= 100 && !configured_)
+          return 0;
 
         /* serialize message */
         unsigned int l = msg->serialize(message_out+7);
@@ -429,7 +429,7 @@ namespace ros {
         message_out[1] = PROTOCOL_VER;
         message_out[2] = (unsigned char) ((unsigned int)l&255);
         message_out[3] = (unsigned char) ((unsigned int)l>>8);
-	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
+        message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
         message_out[5] = (unsigned char) ((int)id&255);
         message_out[6] = (unsigned char) ((int)id>>8);
 
@@ -515,7 +515,7 @@ namespace ros {
         if (requestParam(name) ){
           if (length == req_param_resp.floats_length){
             //copy it over
-            for(int i=0; i<length; i++) 
+            for(int i=0; i<length; i++)
               param[i] = req_param_resp.floats[i];
             return true;
           }
@@ -532,7 +532,7 @@ namespace ros {
           }
         }
         return false;
-      }  
+      }
   };
 
 }

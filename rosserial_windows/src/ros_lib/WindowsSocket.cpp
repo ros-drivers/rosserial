@@ -107,11 +107,11 @@ public:
     }
   }
 
-  unsigned long time ()
+  uint32_t time ()
   {
     SYSTEMTIME st_now;
     GetSystemTime (&st_now);
-    unsigned long millis = st_now.wHour * 3600000 +
+    uint32_t millis = st_now.wHour * 3600000 +
                            st_now.wMinute * 60000 + 
                            st_now.wSecond * 1000 + 
                            st_now.wMilliseconds;
@@ -218,7 +218,7 @@ void WindowsSocket::write (const unsigned char *data, int length)
   impl->write (data, length);
 }
 
-unsigned long WindowsSocket::time ()
+uint32_t WindowsSocket::time ()
 {
   return impl->time ();
 }
