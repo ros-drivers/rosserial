@@ -42,7 +42,7 @@ public:
 
   void write (const unsigned char *data, int length);
 
-  unsigned long time ();
+  uint32_t time ();
 
 private:
     WindowsSocketImpl * impl;

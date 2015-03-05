@@ -48,7 +48,7 @@ extern "C" elCommWrite(int fd, uint8_t* data, int length);
 class EmbeddedLinuxHardware
 {
 public:
-  EmbeddedLinuxHardware(const char *pn, long baud = 57600)
+  EmbeddedLinuxHardware(const char *pn, int32_t baud = 57600)
   {
     strncpy(portName, pn, 30);
     baud_ = baud;
@@ -65,12 +65,12 @@ public:
     baud_ = 57600;
   }
 
-  void setBaud(long baud)
+  void setBaud(int32_t baud)
   {
     this->baud_ = baud;
   }
 
-  int getBaud()
+  int32_t getBaud()
   {
     return baud_;
   }
@@ -110,9 +110,9 @@ public:
     elCommWrite(fd, data, length);
   }
 
-  unsigned long time()
+  uint32_t time()
   {
-    long millis, seconds, nseconds;
+    int32_t millis, seconds, nseconds;
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
@@ -127,7 +127,7 @@ public:
 protected:
   int fd;
   char portName[30];
-  long baud_;
+  int32_t baud_;
   struct timespec start, end;
 };
 
