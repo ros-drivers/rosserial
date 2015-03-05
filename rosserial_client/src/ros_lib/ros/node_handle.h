@@ -104,8 +104,8 @@ namespace ros {
       /* used for computing current time */
       uint32_t sec_offset, nsec_offset;
 
-      uint32_t message_in[INPUT_SIZE];
-      uint32_t message_out[OUTPUT_SIZE];
+      unsigned char message_in[INPUT_SIZE];
+      unsigned char message_out[OUTPUT_SIZE];
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
@@ -117,16 +117,16 @@ namespace ros {
       NodeHandle_() : configured_(false) {
 
         for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
-	   publishers[i] = 0;
+         publishers[i] = 0;
 
         for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
-	   subscribers[i] = 0;
+         subscribers[i] = 0;
 
         for(unsigned int i=0; i< INPUT_SIZE; i++) 
-	   message_in[i] = 0;
+         message_in[i] = 0;
 
         for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
-	   message_out[i] = 0;
+         message_out[i] = 0;
 
         req_param_resp.ints_length = 0;
         req_param_resp.ints = NULL;
@@ -224,20 +224,20 @@ namespace ros {
               if (configured_ == false)
                   requestSyncTime(); 	/* send a msg back showing our protocol version */
             }
-	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
+          }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
             index_ = 0;
             mode_++;
             checksum_ = data;               /* first byte for calculating size checksum */
           }else if( mode_ == MODE_SIZE_H ){   /* top half of message size */
             bytes_ += data<<8;
-	    mode_++;
+            mode_++;
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
-	      mode_++;
-	    else 
-	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
-	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
+              mode_++;
+            else
+              mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
+          }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
             checksum_ = data;               /* first byte included in checksum */
