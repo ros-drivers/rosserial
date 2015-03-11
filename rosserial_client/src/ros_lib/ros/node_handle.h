@@ -165,7 +165,7 @@ namespace ros {
       int topic_;
       int index_;
       int checksum_;
-
+      int size_checksum_;
       bool configured_;
 
       /* used for syncing the time */
@@ -228,13 +228,14 @@ namespace ros {
             bytes_ = data;
             index_ = 0;
             mode_++;
-            checksum_ = data;               /* first byte for calculating size checksum */
+            size_checksum_ = data;               /* first byte for calculating size checksum */
           }else if( mode_ == MODE_SIZE_H ){   /* top half of message size */
             bytes_ += data<<8;
+            size_checksum_ |= data;
 	    mode_++;
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
-            if( (checksum_%256) == 255)
-	      mode_++;
+            if(255-size_checksum_ == data)
+	            mode_++;
 	    else 
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
