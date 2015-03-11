@@ -369,7 +369,7 @@ private:
   }
 
   static uint8_t checksum(uint16_t val) {
-    return (val >> 8) | val;
+    return (val >> 8) + val;
   }
 
   //// RECEIVED MESSAGE HANDLERS ////
