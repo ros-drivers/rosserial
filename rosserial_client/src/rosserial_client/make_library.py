@@ -213,7 +213,7 @@ class ArrayDataType(PrimitiveDataType):
         if self.size == None:
             f.write('      %s_length(0), %s(NULL)%s\n' % (self.name, self.name, trailer))
         else:
-            f.write('      %s()%s\n' % (self.name, self.name, trailer))
+            f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
         c = self.cls("*"+self.name, self.type, self.bytes)
