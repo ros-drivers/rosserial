@@ -333,7 +333,7 @@ class SerialClient:
         self.timeout = timeout
         self.synced = False
 
-        self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray)
+        self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
         if port== None:
             # no port specified, listen for any new port?
