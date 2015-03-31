@@ -9,7 +9,7 @@
 #include "ros/ros.h"
 
 namespace rosserial {
-#include "rosserial/ros.h"
+#include "rosserial_test/ros.h"
 }
 
 class AbstractSetup {

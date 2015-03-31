@@ -2,13 +2,13 @@
 #include "std_msgs/String.h"
 
 namespace rosserial {
-#include "rosserial/ros.h"
+#include "rosserial_test/ros.h"
 #include "rosserial/std_msgs/String.h"
 }
 
 #include <gtest/gtest.h>
-#include "fixture.h"
-#include "helpers.h"
+#include "rosserial_test/fixture.h"
+#include "rosserial_test/helpers.h"
 
 /**
  * Single message published from a rosserial-connected client,
