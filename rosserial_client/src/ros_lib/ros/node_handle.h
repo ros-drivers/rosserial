@@ -35,6 +35,8 @@
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
+#include <stdint.h>
+
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 #include "rosserial_msgs/Log.h"
@@ -99,13 +101,13 @@ namespace ros {
       Hardware hardware_;
 
       /* time used for syncing */
-      unsigned long rt_time;
+      uint32_t rt_time;
 
       /* used for computing current time */
-      unsigned long sec_offset, nsec_offset;
+      uint32_t sec_offset, nsec_offset;
 
-      unsigned char message_in[INPUT_SIZE];
-      unsigned char message_out[OUTPUT_SIZE];
+      uint8_t message_in[INPUT_SIZE];
+      uint8_t message_out[OUTPUT_SIZE];
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
@@ -169,9 +171,9 @@ namespace ros {
       bool configured_;
 
       /* used for syncing the time */
-      unsigned long last_sync_time;
-      unsigned long last_sync_receive_time;
-      unsigned long last_msg_timeout_time;
+      uint32_t last_sync_time;
+      uint32_t last_sync_receive_time;
+      uint32_t last_msg_timeout_time;
 
     public:
       /* This function goes in your loop() function, it handles
@@ -182,7 +184,7 @@ namespace ros {
       virtual int spinOnce(){
 
         /* restart if timed out */
-        unsigned long c_time = hardware_.time();
+        uint32_t c_time = hardware_.time();
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             configured_ = false;
          }
@@ -296,10 +298,10 @@ namespace ros {
         rt_time = hardware_.time();
       }
 
-      void syncTime( unsigned char * data )
+      void syncTime(uint8_t * data)
       {
         std_msgs::Time t;
-        unsigned long offset = hardware_.time() - rt_time;
+        uint32_t offset = hardware_.time() - rt_time;
 
         t.deserialize(data);
         t.data.sec += offset/1000;
@@ -309,8 +311,9 @@ namespace ros {
         last_sync_receive_time = hardware_.time();
       }
 
-      Time now(){
-        unsigned long ms = hardware_.time();
+      Time now()
+      {
+        uint32_t ms = hardware_.time();
         Time current_time;
         current_time.sec = ms/1000 + sec_offset;
         current_time.nsec = (ms%1000)*1000000UL + nsec_offset;
@@ -320,7 +323,7 @@ namespace ros {
 
       void setNow( Time & new_now )
       {
-        unsigned long ms = hardware_.time();
+        uint32_t ms = hardware_.time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
@@ -422,16 +425,16 @@ namespace ros {
 	  return 0;
 
         /* serialize message */
-        unsigned int l = msg->serialize(message_out+7);
+        uint16_t l = msg->serialize(message_out+7);
 
         /* setup the header */
         message_out[0] = 0xff;
         message_out[1] = PROTOCOL_VER;
-        message_out[2] = (unsigned char) ((unsigned int)l&255);
-        message_out[3] = (unsigned char) ((unsigned int)l>>8);
+        message_out[2] = (uint8_t) ((uint16_t)l&255);
+        message_out[3] = (uint8_t) ((uint16_t)l>>8);
 	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
-        message_out[5] = (unsigned char) ((int)id&255);
-        message_out[6] = (unsigned char) ((int)id>>8);
+        message_out[5] = (uint8_t) ((int16_t)id&255);
+        message_out[6] = (uint8_t) ((int16_t)id>>8);
 
         /* calculate checksum */
         int chk = 0;
@@ -491,7 +494,7 @@ namespace ros {
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        unsigned int end_time = hardware_.time() + time_out;
+        uint16_t end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
           if (hardware_.time() > end_time) return false;

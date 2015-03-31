@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -37,11 +37,11 @@
 
 namespace ros
 {
-  void normalizeSecNSecSigned(long &sec, long &nsec)
+  void normalizeSecNSecSigned(int32_t &sec, int32_t &nsec)
   {
-    long nsec_part = nsec;
-    long sec_part = sec;
-     
+    int32_t nsec_part = nsec;
+    int32_t sec_part = sec;
+
     while (nsec_part > 1000000000L)
     {
       nsec_part -= 1000000000L;
