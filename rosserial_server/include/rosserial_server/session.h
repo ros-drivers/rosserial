@@ -60,7 +60,7 @@ class Session
 public:
   Session(boost::asio::io_service& io_service)
     : socket_(io_service), client_version(PROTOCOL_UNKNOWN),
-      client_version_try(PROTOCOL_VER2),
+      client_version_try(PROTOCOL_VER3),
       timeout_interval_(boost::posix_time::milliseconds(5000)),
       attempt_interval_(boost::posix_time::milliseconds(1000)),
       require_check_interval_(boost::posix_time::milliseconds(1000)),
@@ -104,6 +104,7 @@ public:
     PROTOCOL_UNKNOWN = 0,
     PROTOCOL_VER1 = 1,
     PROTOCOL_VER2 = 2,
+    PROTOCOL_VER3 = 3,
     PROTOCOL_MAX
   };
 
@@ -136,10 +137,16 @@ private:
         ROS_INFO("Attached client is using protocol VER2 (hydro)");
         client_version = PROTOCOL_VER2;
       }
+        else if (sync == 0xfc) {
+        ROS_INFO("Attached client is using protocol VER3 (Jade)");
+        client_version = PROTOCOL_VER3;
+      }
     }
     if (sync == 0xff && client_version == PROTOCOL_VER1) {
       async_read_buffer_.read(4, boost::bind(&Session::read_id_length, this, _1));
     } else if (sync == 0xfe && client_version == PROTOCOL_VER2) {
+      async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1));
+    } else if (sync == 0xfc && client_version == PROTOCOL_VER3) {
       async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1));
     } else {
       read_sync_header();
@@ -149,7 +156,7 @@ private:
   void read_id_length(ros::serialization::IStream& stream) {
     uint16_t topic_id, length;
     uint8_t length_checksum;
-    if (client_version == PROTOCOL_VER2) {
+    if (client_version == PROTOCOL_VER2 || client_version == PROTOCOL_VER3) {
       // Complex header with checksum byte for length field.
       stream >> length >> length_checksum;
       if (length_checksum + checksum(length) != 0xff) {
@@ -227,6 +234,7 @@ private:
                      Session::Version version) {
     uint8_t overhead_bytes = 0;
     switch(version) {
+      case PROTOCOL_VER3: overhead_bytes = 8; break;
       case PROTOCOL_VER2: overhead_bytes = 8; break;
       case PROTOCOL_VER1: overhead_bytes = 7; break;
       default:
@@ -240,7 +248,11 @@ private:
     ros::serialization::IStream checksum_stream(message.size() > 0 ? &message[0] : NULL, message.size());
 
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size());
-    if (version == PROTOCOL_VER2) {
+    if (version == PROTOCOL_VER3) {
+      uint8_t msg_len_checksum = 255 - checksum(message.size());
+      stream << (uint16_t)0xfcff << (uint16_t)message.size() << msg_len_checksum << topic_id;
+      msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
+    } else if (version == PROTOCOL_VER2) {
       uint8_t msg_len_checksum = 255 - checksum(message.size());
       stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
       msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
@@ -309,7 +321,11 @@ private:
     if (client_version != PROTOCOL_UNKNOWN) client_version_try = client_version;
 
     std::vector<uint8_t> message(0);
-    if (client_version_try == PROTOCOL_VER2) {
+    if (client_version_try == PROTOCOL_VER3) {
+        ROS_DEBUG("Sending request topics message for VER3 protocol.");
+        write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER3);
+        client_version_try = PROTOCOL_VER2;
+    } else if (client_version_try == PROTOCOL_VER2) {
         ROS_DEBUG("Sending request topics message for VER2 protocol.");
         write_message(message, rosserial_msgs::TopicInfo::ID_PUBLISHER, PROTOCOL_VER2);
         client_version_try = PROTOCOL_VER1;

@@ -2,6 +2,11 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.4 (2014-11-05)
+------------------
+* Updated header size to 16 bits to allow larger data files for Jade
+* Contributors: Ilia Baranov
+
 0.6.3 (2014-11-05)
 ------------------
 * Move avr serialization logic to Msg class, add gtest to exercise it.

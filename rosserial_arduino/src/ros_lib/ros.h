@@ -44,7 +44,7 @@ namespace ros
   /* downsize our buffers */
   typedef NodeHandle_<ArduinoHardware, 6, 6, 150, 150> NodeHandle;
 
-#elif defined(__AVR_ATmega328P__)
+#elif defined(__AVR_ATmega328P__) || defined(USE_USBCON) //stability fix for ATmega32u4(Leonardo)
 
   typedef NodeHandle_<ArduinoHardware, 25, 25, 280, 280> NodeHandle;
 
