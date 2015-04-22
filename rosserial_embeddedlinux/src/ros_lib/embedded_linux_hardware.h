@@ -43,6 +43,17 @@ extern "C" int elCommRead(int fd);
 extern "C" elCommWrite(int fd, uint8_t* data, int length);
 #endif
 
+#ifdef __linux__
+#include <time.h>
+#endif
+
+// Includes necessary to support time on OS X.
+#ifdef __MACH__
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+static mach_timebase_info_data_t    sTimebaseInfo;
+#endif
+
 #define DEFAULT_PORT "/dev/ttyAM1"
 
 class EmbeddedLinuxHardware
@@ -84,7 +95,8 @@ public:
       exit(-1);
     }
     std::cout << "EmbeddedHardware.h: opened serial port successfully\n";
-    clock_gettime(CLOCK_MONOTONIC, &start);     // record when the program started
+
+    initTime();
   }
 
   void init(const char *pName)
@@ -96,7 +108,8 @@ public:
       exit(-1);
     }
     std::cout << "EmbeddedHardware.h: opened comm port successfully\n";
-    clock_gettime(CLOCK_MONOTONIC, &start);     // record when the program started
+
+    initTime();
   }
 
   int read()
@@ -110,25 +123,50 @@ public:
     elCommWrite(fd, data, length);
   }
 
+#ifdef __linux__
+  void initTime()
+  {
+    clock_gettime(CLOCK_MONOTONIC, &start);
+  }
+
   unsigned long time()
   {
-    long millis, seconds, nseconds;
+    struct timespec end;
+    long seconds, nseconds;
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     seconds  = end.tv_sec  - start.tv_sec;
     nseconds = end.tv_nsec - start.tv_nsec;
 
-    millis = ((seconds) * 1000 + nseconds / 1000000.0) + 0.5;
-
-    return millis;
+    return ((seconds) * 1000 + nseconds / 1000000.0) + 0.5;
   }
+
+#elif __MACH__
+  void initTime()
+  {
+    start = mach_absolute_time();
+    mach_timebase_info(&sTimebaseInfo);
+  }
+
+  unsigned long time()
+  {
+    // See: https://developer.apple.com/library/mac/qa/qa1398/_index.html
+    uint64_t elapsed = mach_absolute_time() - start;
+    return elapsed * sTimebaseInfo.numer / (sTimebaseInfo.denom * 1000000);
+  }
+#endif
 
 protected:
   int fd;
   char portName[30];
   long baud_;
-  struct timespec start, end;
+
+#ifdef __linux__
+  struct timespec start;
+#elif __MACH__
+  uint64_t start;
+#endif
 };
 
 #endif
