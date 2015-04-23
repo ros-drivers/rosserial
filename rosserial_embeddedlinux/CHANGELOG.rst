@@ -2,8 +2,8 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.0 (2015-04-23)
+------------------
 * Use native 64-bit double on embeddedlinux.
 * Include time.h header for linux in embedded_linux_hardware.h.
 * Support OS X time in the embeddedlinux port.

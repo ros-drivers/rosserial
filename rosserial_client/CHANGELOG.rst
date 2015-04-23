@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.0 (2015-04-23)
+------------------
 * Initial release for Jade.
 * Make message generating error message more verbose.
 * Fix initializer for fixed-length arrays.
