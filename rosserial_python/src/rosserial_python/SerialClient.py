@@ -37,6 +37,7 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
 import roslib;
 import rospy
+import imp
 
 import thread
 import multiprocessing
@@ -56,14 +57,10 @@ import signal
 
 def load_pkg_module(package, directory):
     #check if its in the python path
-    in_path = False
     path = sys.path
-    pkg_src = package+'/src' #check for the source directory which
-                             # is added to path by roslib boostrapping
-    for entry in sys.path:
-        if pkg_src in entry:
-            in_path = True
-    if not in_path:
+    try:
+        imp.find_module(package)
+    except:
         roslib.load_manifest(package)
     try:
         m = __import__( package + '.' + directory )
