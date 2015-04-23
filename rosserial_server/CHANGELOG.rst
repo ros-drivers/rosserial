@@ -2,6 +2,14 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fill out description field in package.xml.
+* Bugfix for checksum.
+  Publishing topics fails when messages are over 256 bytes in length due to checksum() function or'ing high and low byte instead of adding them.
+* rosserial_server: Properly receive messages > 255 bytes.
+* Contributors: Chad Attermann, Mike Purvis
+
 0.6.3 (2014-11-05)
 ------------------
 * Add more log output, don't end the session for certain write errors.

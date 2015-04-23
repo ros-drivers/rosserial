@@ -2,6 +2,13 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Adds default queue_size of 10 for rosserial_python publisher.
+* Fixed queue size warning with diagnostics publisher.
+* We don't need roslib.load_manifest any more under catkin.
+* Contributors: Basheer Subei, David Lavoie-Boutin, Mike Purvis, eisoku9618
+
 0.6.3 (2014-11-05)
 ------------------
 
