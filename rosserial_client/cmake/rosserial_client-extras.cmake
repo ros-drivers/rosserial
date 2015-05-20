@@ -45,7 +45,7 @@ endfunction()
 # @public
 #
 function(rosserial_configure_client)
-  cmake_parse_arguments(client "" "DIRECTORY;TOOLCHAIN_FILE" "" ${ARGN})
+  cmake_parse_arguments(client "" "DIRECTORY;TOOLCHAIN_FILE" "CMAKE_ARGUMENTS" ${ARGN})
   if(NOT client_DIRECTORY)
     message(SEND_ERROR "rosserial_client_add_client called without DIRECTORY argument.")
   endif()
@@ -61,6 +61,7 @@ function(rosserial_configure_client)
     COMMAND ${CMAKE_COMMAND} ${PROJECT_SOURCE_DIR}/${client_DIRECTORY}
       -DROS_LIB_DIR=${${PROJECT_NAME}_ROS_LIB_DIR}
       -DEXECUTABLE_OUTPUT_PATH=${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}
+      ${client_CMAKE_ARGUMENTS}
       ${DTOOLCHAIN_FILE}
   )
   add_dependencies(${PROJECT_NAME}_${client_DIRECTORY} ${PROJECT_NAME}_ros_lib)
