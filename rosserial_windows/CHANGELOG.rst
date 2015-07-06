@@ -2,6 +2,9 @@
 Changelog for package rosserial_windows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.3 (2014-11-05)
 ------------------
 

@@ -2,6 +2,16 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Provide option to pass through CMake arguments.
+* Make make_library.py error more verbose.
+* createQuaternionFromYaw made static, fixes "multiple definition" error
+* Fix initializer for fixed-length arrays.
+* Generate constructors for messages.
+* Switch to stdint integers; this allows the client to run on 64-bit systems.
+* Contributors: Mickaël, Mike Purvis, chuck-h
+
 0.6.3 (2014-11-05)
 ------------------
 * Move avr serialization logic to Msg class, add gtest to exercise it.

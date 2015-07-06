@@ -2,6 +2,11 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add default queue_size of 10 for rosserial_python publisher, fixes warning.
+* Contributors: Basheer Subei, David Lavoie-Boutin
+
 0.6.3 (2014-11-05)
 ------------------
 
