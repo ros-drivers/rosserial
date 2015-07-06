@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.4 (2015-07-06)
+------------------
 * Bugfix for checksum, fixes messages > 255 chars in length.
 * Contributors: Chad Attermann, Mike Purvis
 

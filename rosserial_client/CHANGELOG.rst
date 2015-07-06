@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.4 (2015-07-06)
+------------------
 * Provide option to pass through CMake arguments.
 * Make make_library.py error more verbose.
 * createQuaternionFromYaw made static, fixes "multiple definition" error

@@ -2,8 +2,8 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.6.4 (2015-07-06)
+------------------
 * Use native 64-bit double on embeddedlinux.
 * Contributors: Mike Purvis
 
