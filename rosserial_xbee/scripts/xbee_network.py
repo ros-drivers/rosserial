@@ -88,7 +88,10 @@ class FakeSerial():
 	
 	def flushInput(self):
 		self.rxdata = ''
-		
+
+	# Returns the number of bytes available to be read
+        def inWaiting(self):
+            return len(self.rxdata)
 
 if __name__== '__main__':
 	print "RosSerial Xbee Network"
