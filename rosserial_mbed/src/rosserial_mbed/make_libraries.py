@@ -62,7 +62,7 @@ ROS_TO_EMBEDDED_TYPES = {
     'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
     'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
     'float32' :   ('float',             4, PrimitiveDataType, []),
-    'float64' :   ('float',             4, AVR_Float64DataType, []),
+    'float64' :   ('double',            8, PrimitiveDataType, []),
     'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
     'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
     'string'  :   ('char*',             0, StringDataType, []),
@@ -89,4 +89,3 @@ rosserial_client_copy_files(rospack, path+"/"+THIS_PACKAGE+"/ros_lib/")
 
 # generate messages
 rosserial_generate(rospack, path+"/"+THIS_PACKAGE+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
-

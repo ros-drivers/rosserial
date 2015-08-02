@@ -17,7 +17,7 @@ char hello[13] = "hello world!";
 char debug[]= "debug statements";
 char info[] = "infos";
 char warn[] = "warnings";
-char error[] = "errors";
+char errors[] = "errors";
 char fatal[] = "fatalities";
 
 int main() {
@@ -31,7 +31,7 @@ int main() {
         nh.logdebug(debug);
         nh.loginfo(info);
         nh.logwarn(warn);
-        nh.logerror(error);
+        nh.logerror(errors);
         nh.logfatal(fatal);
 
         nh.spinOnce();

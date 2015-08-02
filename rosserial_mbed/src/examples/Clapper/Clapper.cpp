@@ -3,8 +3,8 @@
  *
  * This code is a very simple example of the kinds of
  * custom sensors that you can easily set up with rosserial
- * and Arduino.  This code uses a microphone attached to
- * analog pin 5 detect two claps (2 loud sounds).
+ * and Mbed.  This code uses a microphone attached to
+ * analog pin p20 detect two claps (2 loud sounds).
  * You can use this clapper, for example, to command a robot
  * in the area to come do your bidding.
  */

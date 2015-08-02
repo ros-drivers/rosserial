@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-""" 
+"""
 Sample code to use with ServiceClient.pde
 """
 
-import roslib; roslib.load_manifest("rosserial_arduino")
+import roslib; roslib.load_manifest("rosserial_mbed")
 import rospy
 
-from rosserial_arduino.srv import *
+from rosserial_mbed.srv import *
 
 def callback(req):
-    print "The arduino is calling! Please send it a message:"
+    print "The mbed is calling! Please send it a message:"
     t = TestResponse()
     t.output = raw_input()
     return t
