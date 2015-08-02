@@ -1,6 +1,3 @@
-//#define COMPILE_HELLOWORLD_CODE_ROSSERIAL
-#ifdef  COMPILE_HELLOWORLD_CODE_ROSSERIAL
-
 /*
  * rosserial Publisher Example
  * Prints "hello world!"
@@ -15,8 +12,8 @@ ros::NodeHandle  nh;
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
-//char hello[13] = "hello world!";
-char hello[13] = "Gary Servin!";
+char hello[13] = "hello world!";
+
 DigitalOut led = LED1;
 
 int main() {
@@ -32,4 +29,3 @@ int main() {
     }
 }
 
-#endif

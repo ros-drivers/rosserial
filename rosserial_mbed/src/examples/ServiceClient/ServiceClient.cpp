@@ -1,17 +1,13 @@
-//#define COMPILE_SERVICECLIENT_CODE_ROSSERIAL
-#ifdef  COMPILE_SERVICECLIENT_CODE_ROSSERIAL
-
 /*
  * rosserial Service Client
  */
 
 #include <ros.h>
 #include <std_msgs/String.h>
-
-#include <rosserial_arduino/Test.h>
+#include <rosserial_mbed/Test.h>
 
 ros::NodeHandle  nh;
-using rosserial_arduino::Test;
+using rosserial_mbed::Test;
 
 ros::ServiceClient<Test::Request, Test::Response> client("test_srv");
 
@@ -37,4 +33,4 @@ int main() {
         wait_ms(100);
     }
 }
-#endif
+

@@ -1,6 +1,3 @@
-//#define COMPILE_TIMETF_CODE_ROSSERIAL
-#ifdef COMPILE_TIMETF_CODE_ROSSERIAL
-
 /*
  * rosserial Time and TF Example
  * Publishes a transform at current time
@@ -39,4 +36,3 @@ int main() {
     }
 }
 
-#endif

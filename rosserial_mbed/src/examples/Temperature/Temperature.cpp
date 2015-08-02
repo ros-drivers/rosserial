@@ -1,6 +1,3 @@
-//#define COMPILE_TEMPERATURE_CODE_ROSSERIAL
-#ifdef  COMPILE_TEMPERATURE_CODE_ROSSERIAL
-
 /*
  * rosserial Temperature Sensor Example
  *
@@ -29,10 +26,9 @@ ros::Publisher pub_temp("temperature", &temp_msg);
 // most significant bits for the address 0x91 >> 1 = 0x48
 // 0x90 >> 1 = 0x48 (72)
 
- int sensorAddress = 0x91 >>1;  // From datasheet sensor address is 0x91
-
-// shift the address 1 bit right, the Wire library only needs the 7
-// most significant bits for the address
+int sensorAddress = 0x91 >>1;  // From datasheet sensor address is 0x91
+                               // shift the address 1 bit right, the Wire library only needs the 7
+                               // most significant bits for the address
 
 Timer t;
 I2C i2c(p9, p10);        // sda, scl
@@ -60,13 +56,12 @@ int main() {
             int temperature;
             i2c.read(sensorAddress, &msb, 1); // receive high byte (full degrees)
             i2c.read(sensorAddress, &lsb, 1); // receive low byte (fraction degrees)
-            
+
             temperature = ((msb) << 4);  // MSB
             temperature |= (lsb >> 4);   // LSB
 
             temp_msg.data = temperature*0.0625;
             pub_temp.publish(&temp_msg);
-
 
             publisher_timer = t.read_ms() + 1000;
         }
@@ -75,4 +70,3 @@ int main() {
     }
 }
 
-#endif

@@ -1,15 +1,13 @@
-//#define COMPILE_SERVICESERVER_CODE_ROSSERIAL
-#ifdef  COMPILE_SERVICESERVER_CODE_ROSSERIAL
 /*
  * rosserial Service Server
  */
 
 #include <ros.h>
 #include <std_msgs/String.h>
-#include <rosserial_arduino/Test.h>
+#include <rosserial_mbed/Test.h>
 
 ros::NodeHandle  nh;
-using rosserial_arduino::Test;
+using rosserial_mbed::Test;
 
 int i;
 void callback(const Test::Request & req, Test::Response & res) {
@@ -39,4 +37,4 @@ int main(void) {
         wait_ms(10);
     }
 }
-#endif
+

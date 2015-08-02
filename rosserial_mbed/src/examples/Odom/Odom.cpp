@@ -1,6 +1,3 @@
-//#define COMPILE_ODOM_CODE_ROSSERIAL
-#ifdef  COMPILE_ODOM_CODE_ROSSERIAL
-
 /*
  * rosserial Planar Odometry Example
  */
@@ -53,4 +50,4 @@ int main(void) {
         wait_ms(10);
     }
 }
-#endif
+

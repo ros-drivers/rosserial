@@ -1,6 +1,3 @@
-#define COMPILE_BLINK_CODE_ROSSERIAL
-#ifdef COMPILE_BLINK_CODE_ROSSERIAL
-
 /*
  * rosserial Subscriber Example
  * Blinks an LED on callback
@@ -9,14 +6,14 @@
 #include <ros.h>
 #include <std_msgs/Empty.h>
 
-ros::NodeHandle  nh;
+ros::NodeHandle nh;
 DigitalOut myled(LED1);
 
-void messageCb( const std_msgs::Empty& toggle_msg) {
+void messageCb(const std_msgs::Empty& toggle_msg){
     myled = !myled;   // blink the led
 }
 
-ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
+ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb);
 
 int main() {
     nh.initNode();
@@ -28,4 +25,3 @@ int main() {
     }
 }
 
-#endif

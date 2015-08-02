@@ -1,6 +1,3 @@
-//#define COMPILE_BUTTON_EXAMPLE_CODE_ROSSERIAL
-#ifdef  COMPILE_BUTTON_EXAMPLE_CODE_ROSSERIAL
-
 /*
  * Button Example for Rosserial
  */
@@ -56,4 +53,4 @@ int main() {
         nh.spinOnce();
     }
 }
-#endif
+

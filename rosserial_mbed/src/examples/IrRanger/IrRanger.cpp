@@ -1,6 +1,3 @@
-//#define COMPILE_IRRANGER_CODE_ROSSERIAL
-#ifdef  COMPILE_IRRANGER_CODE_ROSSERIAL
-
 /*
  * rosserial IR Ranger Example
  *
@@ -30,7 +27,7 @@ float getRange(PinName pin_num) {
     sample = AnalogIn(pin_num).read_u16()/4;
     // if the ADC reading is too low,
     //   then we are really far away from anything
-    if (sample < 10)
+    if(sample < 10)
         return 254;     // max range
     // Magic numbers to get cm
     sample= 1309/(sample-3);
@@ -64,4 +61,3 @@ int main() {
     }
 }
 
-#endif

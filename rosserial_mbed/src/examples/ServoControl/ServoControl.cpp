@@ -1,6 +1,3 @@
-//#define COMPILE_SERVOCONTROL_CODE_ROSSERIAL
-#ifdef  COMPILE_SERVOCONTROL_CODE_ROSSERIAL
-
 /*
  * rosserial Servo Control Example
  *
@@ -8,11 +5,8 @@
  * using ROS and the arduiono
  *
  * For the full tutorial write up, visit
- * www.ros.org/wiki/rosserial_arduino_demos
+ * www.ros.org/wiki/rosserial_mbed_demos
  *
- * For more information on the Arduino Servo Library
- * Checkout :
- * http://www.arduino.cc/en/Reference/Servo
  */
 
 #include "mbed.h"
@@ -43,4 +37,4 @@ int main() {
         wait_ms(1);
     }
 }
-#endif
+

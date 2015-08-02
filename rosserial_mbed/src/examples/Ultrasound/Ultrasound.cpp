@@ -1,6 +1,3 @@
-//#define COMPILE_ULTRASOUND_CODE_ROSSERIAL
-#ifdef  COMPILE_ULTRASOUND_CODE_ROSSERIAL
-
 /*
  * rosserial Ultrasound Example
  *
@@ -62,4 +59,3 @@ int main() {
     }
 }
 
-#endif

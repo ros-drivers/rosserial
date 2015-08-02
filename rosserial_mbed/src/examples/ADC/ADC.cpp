@@ -1,6 +1,3 @@
-//#define COMPILE_ADC_CODE_ROSSERIAL
-#ifdef  COMPILE_ADC_CODE_ROSSERIAL
-
 /*
  * rosserial ADC Example
  *
@@ -48,4 +45,3 @@ int main() {
     }
 }
 
-#endif

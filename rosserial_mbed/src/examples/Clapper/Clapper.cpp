@@ -1,6 +1,3 @@
-//#define COMPILE_CLAPPER_CODE_ROSSERIAL
-#ifdef  COMPILE_CLAPPER_CODE_ROSSERIAL
-
 /*
  * rosserial Clapper Example
  *
@@ -86,4 +83,3 @@ int main() {
     }
 }
 
-#endif

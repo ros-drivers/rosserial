@@ -39,7 +39,7 @@ __usage__ = """
 make_libraries.py generates the Mbed rosserial library files.  It
 requires the location of your Mbed sketchbook/libraries folder.
 
-rosrun rosserial_arduino make_libraries.py <output_path>
+rosrun rosserial_mbed make_libraries.py <output_path>
 """
 
 import rospkg
