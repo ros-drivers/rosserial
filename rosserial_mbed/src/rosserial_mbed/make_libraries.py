@@ -84,8 +84,8 @@ rospack = rospkg.RosPack()
 
 # copy ros_lib stuff in
 rosserial_mbed_dir = rospack.get_path(THIS_PACKAGE)
-shutil.copytree(rosserial_mbed_dir+"/src", path+"/"+THIS_PACKAGE)
-rosserial_client_copy_files(rospack, path+"/"+THIS_PACKAGE+"/ros_lib/")
+shutil.copytree(rosserial_mbed_dir+"/src/ros_lib", path+"/ros_lib")
+rosserial_client_copy_files(rospack, path+"/ros_lib/")
 
 # generate messages
-rosserial_generate(rospack, path+"/"+THIS_PACKAGE+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
+rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)

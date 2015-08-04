@@ -12,10 +12,10 @@ Note: This has been tested and currently supports building using the [gcc4mbed](
 ### Usage/Workflow
 
 * Make sure you have the gcc4mbed installed on your system
-* `rosrun rosserial_mbed make_libraries.py <output-path-for-library>`
-* Copy (or move) <output-path-for-library>/rosserial_mbed/ros_lib to the desired example folder
-    * `cp -r <output-path-for-library>/rosserial_mbed/ros_lib <output-path-for-library>/rosserial_mbed/examples/HelloWorld`
-* Move to the example's folder and modify the makefile to use the correct `GCC4MBED_DIR` path
+* Install the library inside your project folder
+    * `rosrun rosserial_mbed make_libraries.py <project-dir>`
+    * To install it to one of the examples: `rosrun rosserial_mbed make_libraries.py <rosserial_mbed_dir>/examples/Blink`
+* Move to the project's folder and modify the makefile to use the correct `GCC4MBED_DIR` path
 * `make all && make deploy`
 
 Please see the [rosserial Tutorials on the ROS wiki](http://wiki.ros.org/rosserial_arduino/Tutorials) to get started.
