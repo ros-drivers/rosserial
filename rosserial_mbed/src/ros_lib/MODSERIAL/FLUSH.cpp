@@ -28,10 +28,10 @@ namespace AjK {
 void
 MODSERIAL::flushBuffer(IrqType type)
 {
-    uint32_t ier = _IER;
+    uint32_t irq_req = MODSERIAL_IRQ_REG;
     switch(type) {
-        case TxIrq: _IER &= ~(1UL << 1); break;
-        case RxIrq: _IER &= ~(1UL << 0); break;
+        case TxIrq: DISABLE_TX_IRQ; break;
+        case RxIrq: DISABLE_RX_IRQ; break;
         default: break;
     }
     buffer_in[type]       = 0;
@@ -39,11 +39,11 @@ MODSERIAL::flushBuffer(IrqType type)
     buffer_count[type]    = 0;
     buffer_overflow[type] = 0;  
     switch(type) {
-        case TxIrq: _FCR = MODSERIAL_FIFO_TX_RESET; break;
-        case RxIrq: _FCR = MODSERIAL_FIFO_RX_RESET; break;
+        case TxIrq: RESET_TX_FIFO; break;
+        case RxIrq: RESET_RX_FIFO; break;
         default: break;
     }
-    _IER = ier;
+    MODSERIAL_IRQ_REG = irq_req;
 }
 
 }; // namespace AjK ends

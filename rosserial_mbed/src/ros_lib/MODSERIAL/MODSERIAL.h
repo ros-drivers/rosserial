@@ -200,6 +200,7 @@ public:
  * #include "mbed.h"
  * #include "MODSERIAL.h"
  *
+ * MODSERIAL pc(USBTX, USBRX); // tx, rx
  *
  * int main() {
  *     pc.printf("Hello World!");
@@ -215,6 +216,7 @@ public:
  * #include "MODSERIAL.h"
  *
  * // Make TX and RX buffers 512byes in length
+ * MODSERIAL pc(USBTX, USBRX, 512); // tx, rx
  *
  * int main() {
  *     pc.printf("Hello World!");
@@ -230,6 +232,7 @@ public:
  * #include "MODSERIAL.h"
  *
  * // Make TX 1024bytes and RX 512byes in length
+ * MODSERIAL pc(USBTX, USBRX, 1024, 512); // tx, rx
  *
  * int main() {
  *     pc.printf("Hello World!");
@@ -678,16 +681,7 @@ public:
      */
     char rxGetLastChar(void) { return rxc; }
     
-    /**
-     * Function: txIsBusy
-     *
-     * If the Uart is still actively sending characters this
-     * function will return true.
-     *
-     * @ingroup API
-     * @return bool
-     */
-    bool txIsBusy(void);
+
     
     /**
      * Function: autoDetectChar
@@ -734,6 +728,31 @@ public:
     int move(char *s, int max) {
         return move(s, max, auto_detect_char);
     }
+    
+    /**
+    * Function: claim
+    *
+    * Redirect a stream to this MODSERIAL object
+    *
+    * Important: A name parameter must have been added when creating the MODSERIAL object:
+    *
+    * @code
+    * #include "MODSERIAL.h"
+    * ...
+    * MODSERIAL pc(USBTX, USBRX, "modser");
+    * 
+    * int main() {
+    *   pc.claim()            // capture <stdout>
+    *   pc.printf("Uses the MODSERIAL library\r\n");
+    *   printf("So does this!\r\n");
+    * }
+    * @endcode
+    *
+    * @ingroup API
+    * @param FILE *stream The stream to redirect (default = stdout)
+    * @return true if succeeded, else false
+    */    
+    bool claim(FILE *stream = stdout);
     
     #if 0 // Inhereted from Serial/Stream, for documentation only
     /**
@@ -884,19 +903,7 @@ private:
      */
     void isr_rx(void);
     
-    /**
-     * Disable the interrupts for this Uart.
-     * @ingroup INTERNALS
-     */
-    void disableIrq(void);
-    
-    /**
-     * Enable the interrupts for this Uart.
-     * @ingroup INTERNALS
-     */
-    void enableIrq(void);
-    
-    /**
+        /**
      * Get a character from the RX buffer
      * @ingroup INTERNALS
      * @param bool True to block (wait for input)
@@ -942,140 +949,42 @@ private:
      * @ingroup INTERNALS
      */
     int resizeBuffer(int size, IrqType type = RxIrq, bool memory_check = true);   
-    
+       
     /** 
-     * Function: downSizeBuffer
+     * Function: moveRingBuffer
      * @ingroup INTERNALS
      */
-    int downSizeBuffer(int size, IrqType type, bool memory_check); 
+    void moveRingBuffer(char * newBuffer, IrqType type);
     
-    /** 
-     * Function: upSizeBuffer
-     * @ingroup INTERNALS
-     */
-    int upSizeBuffer(int size, IrqType type, bool memory_check); 
-
-    /*
-     * If MODDMA is available the compile in code to handle sending
-     * an arbitary char buffer. Note, the parts before teh #ifdef
-     * are declared so that MODSERIAL can access then even if MODDMA
-     * isn't avaiable. Since MODDMA.h is only available at this point
-     * all DMA functionality must be declared inline in the class
-     * definition.
-     */
-public:
-
-    int dmaSendChannel;
-    void *moddma_p;
     
-#ifdef MODDMA_H
 
-    MODDMA_Config *config;
+
+//DEVICE SPECIFIC FUNCTIONS:
+    private:
+    /**
+    * Set pointers to UART and IRQ
+    */
+    void setBase( void );
     
     /**
-     * Set the "void pointer" moddma_p to be a pointer to a
-     * MODDMA controller class instance. Used to manage the
-     * data transfer of DMA configurations.
+    * If required, allows for adding specific settings
+    */
+    void initDevice( void );
+    
+    IRQn_Type _IRQ;
+    
+    public:
+     /**
+     * Function: txIsBusy
+     *
+     * If the Uart is still actively sending characters this
+     * function will return true.
      *
      * @ingroup API
-     * @param p A pointer to "the" instance of MODDMA.
+     * @return bool
      */
-    void MODDMA(MODDMA *p) { moddma_p = p; }
+    bool txIsBusy(void);
     
-    /**
-     * Send a char buffer to the Uarts TX system
-     * using DMA. This blocks regular library
-     * sending.
-     *
-     * @param buffer A char buffer of bytes to send.
-     * @param len The length of the buffer to send.
-     * @param dmaChannel The DMA channel to use, defaults to 7
-     * @return MODDMA::Status MODDMA::ok if all went ok
-     */   
-    int dmaSend(char *buffer, int len, int dmaChannel = 7) 
-    {
-        if (moddma_p == (void *)NULL) return -2;
-        class MODDMA *dma = (class MODDMA *)moddma_p;
-        
-        dmaSendChannel = dmaChannel & 0x7;
-        
-        uint32_t conn = MODDMA::UART0_Tx;
-        switch(_uidx) {
-            case 0: conn = MODDMA::UART0_Tx; break;
-            case 1: conn = MODDMA::UART1_Tx; break;
-            case 2: conn = MODDMA::UART2_Tx; break;
-            case 3: conn = MODDMA::UART3_Tx; break;
-        }
-        
-        config = new MODDMA_Config;
-        config
-         ->channelNum    ( (MODDMA::CHANNELS)(dmaSendChannel & 0x7) )
-         ->srcMemAddr    ( (uint32_t) buffer )
-         ->transferSize  ( len )
-         ->transferType  ( MODDMA::m2p )
-         ->dstConn       ( conn )
-         ->attach_tc     ( this, &MODSERIAL::dmaSendCallback )
-         ->attach_err    ( this, &MODSERIAL::dmaSendCallback )
-        ; // config end
-        
-        // Setup the configuration.
-        if (dma->Setup(config) == 0) { 
-            return -1;
-        }
-        
-        //dma.Enable( MODDMA::Channel_0 );
-        dma->Enable( config->channelNum() );
-        return MODDMA::Ok;
-    }
-    
-    /**
-     * Attach a callback to the DMA completion.
-     *
-     * @ingroup API
-     * @param fptr A function pointer to call
-     * @return this
-     */
-    void attach_dmaSendComplete(void (*fptr)(MODSERIAL_IRQ_INFO *)) {  
-        _isrDmaSendComplete.attach(fptr);         
-    }
-    
-    /**
-     * Attach a callback to the DMA completion.
-     *
-     * @ingroup API
-     * @param tptr A template pointer to the calling object
-     * @param mptr A method pointer within the object to call.
-     * @return this
-     */
-    template<typename T>
-    void attach_dmaSendComplete(T* tptr, void (T::*mptr)(MODSERIAL_IRQ_INFO *)) {  
-        if((mptr != NULL) && (tptr != NULL)) {
-            _isrDmaSendComplete.attach(tptr, mptr);         
-        }
-    }
-    
-    MODSERIAL_callback _isrDmaSendComplete;
-    
-protected:    
-    /**
-     * Callback for dmaSend(). 
-     */
-    void dmaSendCallback(void) 
-    {
-        if (moddma_p == (void *)NULL) return;
-        class MODDMA *dma = (class MODDMA *)moddma_p;
-        
-        MODDMA_Config *config = dma->getConfig();
-        dma->haltAndWaitChannelComplete( (MODDMA::CHANNELS)config->channelNum());
-        dma->Disable( (MODDMA::CHANNELS)config->channelNum() );
-        if (dma->irqType() == MODDMA::TcIrq)  dma->clearTcIrq();
-        if (dma->irqType() == MODDMA::ErrIrq) dma->clearErrIrq();
-        dmaSendChannel = -1;
-        _isrDmaSendComplete.call(&this->callbackInfo);
-        delete(config);
-    }
-    
-#endif // MODDMA_H
 
 };
 
@@ -1084,3 +993,4 @@ protected:
 using namespace AjK;
 
 #endif
+

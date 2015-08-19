@@ -32,17 +32,17 @@ MODSERIAL::__putc(int c, bool block) {
     // Note, we must block in this case and ignore bool "block" 
     // so as to maintain compat with Mbed Serial.
     if (buffer[TxIrq] == (char *)NULL || buffer_size[TxIrq] == 0) {
-        while (! MODSERIAL_THR_HAS_SPACE) ; // Wait for space in the TX FIFO.
-        _THR = (uint32_t)c;
+        while (! MODSERIAL_WRITABLE) ; // Wait for space in the TX FIFO.
+        MODSERIAL_WRITE_REG = (uint32_t)c;
         return 0;
     }
-    
-    if ( MODSERIAL_THR_HAS_SPACE && MODSERIAL_TX_BUFFER_EMPTY && dmaSendChannel == -1 ) {
-        _THR = (uint32_t)c;
+        
+    if ( MODSERIAL_WRITABLE && MODSERIAL_TX_BUFFER_EMPTY ) {
+        MODSERIAL_WRITE_REG = (uint32_t)c;
     }
     else {
         if (block) {
-            uint32_t ier = _IER; _IER = 1;
+            uint32_t irq_reg = MODSERIAL_IRQ_REG; DISABLE_TX_IRQ;
             while ( MODSERIAL_TX_BUFFER_FULL ) {  // Blocks!
                 // If putc() is called from an ISR then we are stuffed
                 // because in an ISR no bytes from the TX buffer will 
@@ -56,14 +56,14 @@ MODSERIAL::__putc(int c, bool block) {
                 // are blocking.
                 isr_tx(false);
             }
-            _IER = ier;
+            MODSERIAL_IRQ_REG = irq_reg;
         }
         else if( MODSERIAL_TX_BUFFER_FULL ) {
             buffer_overflow[TxIrq] = c; // Oh dear, no room in buffer.
             _isr[TxOvIrq].call(&this->callbackInfo);
             return -1;
         }
-        _IER &= ~2;
+        DISABLE_TX_IRQ;
         buffer[TxIrq][buffer_in[TxIrq]] = c;
         __disable_irq();
         buffer_count[TxIrq]++;
@@ -72,7 +72,7 @@ MODSERIAL::__putc(int c, bool block) {
         if (buffer_in[TxIrq] >= buffer_size[TxIrq]) {
             buffer_in[TxIrq] = 0;
         }            
-        _IER |= 2;        
+        ENABLE_TX_IRQ;        
     }
       
     return 0;

@@ -28,13 +28,14 @@ namespace AjK {
 void 
 MODSERIAL::isr_rx(void)
 {
+    if (RX_IRQ_ENABLED) {
     if (! _base || buffer_size[RxIrq] == 0 || buffer[RxIrq] == (char *)NULL) {
         _isr[RxIrq].call(&this->callbackInfo); 
         return;
     } 
     
-    while( MODSERIAL_RBR_HAS_DATA ) {
-        rxc = (char)(_RBR & 0xFF); 
+    while( MODSERIAL_READABLE ) {
+        rxc = (char)(MODSERIAL_READ_REG & 0xFF); 
         if ( MODSERIAL_RX_BUFFER_FULL ) {
             buffer_overflow[RxIrq] = rxc; // Oh dear, no room in buffer.
             _isr[RxOvIrq].call(&this->callbackInfo);
@@ -53,7 +54,8 @@ MODSERIAL::isr_rx(void)
         if (auto_detect_char == rxc) {
             _isr[RxAutoDetect].call(&this->callbackInfo);
         }
-    }    
+    }  
+    }  
 }
 
 }; // namespace AjK ends

@@ -27,97 +27,70 @@ namespace AjK {
 
 int
 MODSERIAL::resizeBuffer(int size, IrqType type, bool memory_check)
-{
-    int rval = Ok;
+{    
+    // Make sure the ISR cannot use the buffers while we are manipulating them.
+    NVIC_DisableIRQ(_IRQ);
     
     // If the requested size is the same as the current size there's nothing to do,
     // just continue to use the same buffer as it's fine as it is.
-    if (buffer_size[type] == size) return rval;
-    
-    // Make sure the ISR cannot use the buffers while we are manipulating them.
-    disableIrq();
-    
-    // If the requested buffer size is larger than the current size, 
-    // attempt to create a new buffer and use it.
-    if (buffer_size[type] < size) {
-        rval = upSizeBuffer(size, type, memory_check);
-    }
-    else if (buffer_size[type] > size) {
-        rval = downSizeBuffer(size, type, memory_check);
+    if (buffer_size[type] == size)
+    {
+        NVIC_EnableIRQ(_IRQ);  
+        return Ok;
     }
     
-    // Start the ISR system again with the new buffers.
-    enableIrq();
-    
-    return rval;
-}
-
-int 
-MODSERIAL::downSizeBuffer(int size, IrqType type, bool memory_check)
-{
-    if (size >= buffer_count[type]) {
+    // is new buffer is big enough?
+    if (size <= buffer_count[type])
+    {
+        NVIC_EnableIRQ(_IRQ);  
         return BufferOversize;
     }
     
-    char *s = (char *)malloc(size);
+    // allocate new buffer
+    char * newBuffer = (char*)malloc(size);
     
-    if (s == (char *)NULL) {
-        if (memory_check) {
+    // allocation failed?
+    if (newBuffer == (char*)NULL)
+    {
+        if (memory_check)
             error("Failed to allocate memory for %s buffer", type == TxIrq ? "TX" : "RX");
-        }
+            
         return NoMemory;
     }
     
-    int c, new_in = 0;
+    // copy old buffer content to new one
+    moveRingBuffer(newBuffer, type);
     
-    do {
-        c = __getc(false);
-        if (c != -1) s[new_in++] = (char)c;
-        if (new_in >= size) new_in = 0;
-    }
-    while (c != -1);
+    // free old buffer and reset ring buffer cursor
+    free((char*)buffer[type]);
+        
+    buffer[type]      = newBuffer;
+    buffer_size[type] = size;
+    buffer_in[type]   = buffer_count[type];
+    buffer_out[type]  = 0;    
     
-    free((char *)buffer[type]);
-    buffer[type]      = s;
-    buffer_in[type]   = new_in;
-    buffer_out[type]  = 0;
-    return Ok;        
+    // Start the ISR system again with the new buffers.
+    NVIC_EnableIRQ(_IRQ);    
+    return Ok;
 }
 
-int 
-MODSERIAL::upSizeBuffer(int size, IrqType type, bool memory_check)
-{
-    char *s = (char *)malloc(size);
-    
-    if (s == (char *)NULL) {
-        if (memory_check) {
-            error("Failed to allocate memory for %s buffer", type == TxIrq ? "TX" : "RX");
-        }
-        return NoMemory;
+void MODSERIAL::moveRingBuffer(char * newBuffer, IrqType type)
+{   
+    // copy old buffer content to new one
+    if(buffer_in[type] > buffer_out[type])      
+    {   // content in the middle of the ring buffer
+        memcpy(&newBuffer[0], (char*)&buffer[type][buffer_out[type]], buffer_count[type]);
+    }  
+    else if(buffer_in[type] < buffer_out[type]) 
+    {   // content split, free space in the middle
+        // copy last part of the old buffer
+        int end_count= buffer_size[type] - buffer_out[type];
+        memcpy(&newBuffer[0], (char*)&buffer[type][buffer_out[type]], end_count);
+        
+        // copy first part of old buffer
+        memcpy(&newBuffer[end_count], (char*)buffer[type], buffer_in[type]);
     }
-    
-    if (buffer_count[type] == 0) { // Current buffer empty?
-        free((char *)buffer[type]);
-        buffer[type]      = s;
-        buffer_in[type]   = 0;
-        buffer_out[type]  = 0;
-    }        
-    else { // Copy the current contents into the new buffer.
-        int c, new_in = 0;
-        do {
-            c = __getc(false);
-            if (c != -1) s[new_in++] = (char)c;
-            if (new_in >= size) new_in = 0; // Shouldn't happen, but be sure.
-        }
-        while (c != -1);
-        free((char *)buffer[type]);
-        buffer[type]      = s;
-        buffer_in[type]   = new_in;
-        buffer_out[type]  = 0;
-    }
-    
-    buffer_size[type] = size;
-    return Ok;
+    // else old buffer empty
 }
 
 }; // namespace AjK ends

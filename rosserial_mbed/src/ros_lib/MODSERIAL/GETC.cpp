@@ -32,8 +32,8 @@ MODSERIAL::__getc(bool block)
     // Note, we must block in this case and ignore bool "block" 
     // so as to maintain compat with Mbed Serial.
     if (buffer_size[RxIrq] == 0 || buffer[RxIrq] == (char *)NULL) {
-        while(! MODSERIAL_RBR_HAS_DATA ) ;
-        return (int)(_RBR & 0xFF);
+        while(! MODSERIAL_READABLE ) ;
+        return (int)(MODSERIAL_READ_REG & 0xFF);
     }
 
     if (block) { while ( MODSERIAL_RX_BUFFER_EMPTY ) ; } // Blocks.
@@ -50,10 +50,10 @@ MODSERIAL::__getc(bool block)
     // Temporarily disable the RX IRQ so that we do not re-enter 
     // it under interrupts.
     if ( ! MODSERIAL_RX_BUFFER_FULL ) {
-        uint32_t ier = _IER;
-        _IER &= ~(1UL << 0);
+        uint32_t irq_reg = MODSERIAL_IRQ_REG;
+        DISABLE_RX_IRQ;
         isr_rx();    
-        _IER = ier;
+        MODSERIAL_IRQ_REG = irq_reg;
     }
     
     __disable_irq();

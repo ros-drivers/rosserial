@@ -1,4 +1,19 @@
 /* $Id:$
+1.32    12th October 2013
+    * Improved claim documentation: http://mbed.org/questions/1817/Redirect-stdout-via-MODSERIAL-is-this-po/ by http://mbed.org/users/WiredHome/
+
+1.31    11th October 2013
+    * Added claim function to redirect for example stdout
+
+1.30    1st September 2013
+    * Removed all DMA related code (not supported in this version currently)
+    * Minor bug fix
+
+1.29    12th July 2013
+    * Added KL25Z support + split code in device dependent and independent part
+
+1.26    10th June 2013
+    * _uidx reference in DMA code replaced by _serial.index
 
 1.25    8th January 2013
     

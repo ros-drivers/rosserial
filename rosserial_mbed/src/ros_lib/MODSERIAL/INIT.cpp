@@ -23,39 +23,25 @@
 #include "MODSERIAL.h"
 #include "MACROS.h"
 
+    #define MODSERIAL_FCR  0x08
+    #define _FCR    *((char *)_base+MODSERIAL_FCR)
+    
+    #define MODSERIAL_FIFO_ENABLE   1
+#define MODSERIAL_FIFO_RX_RESET 2
+#define MODSERIAL_FIFO_TX_RESET 4
+
 
 namespace AjK {
 
 void
 MODSERIAL::init( int txSize, int rxSize, PinName rx )
 {
-    disableIrq();
     
+    NVIC_DisableIRQ(_IRQ);
+    setBase();
+
     callbackInfo.setSerial(this);
 
-#ifdef __LPC11UXX_H__
-
-    _base = LPC_USART;
-    
-#elif defined MKL25Z4_H_
-    switch( _serial.index ) {
-        case 0: _base = UART0; break;
-        case 1: _base = UART1; break;
-        case 2: _base = UART2; break;
-        default: _base = NULL;      break;
-    }
-#else    
-    switch( _serial.index ) {
-        case 0: _base = LPC_UART0; break;
-        case 1: _base = LPC_UART1; break;
-        case 2: _base = LPC_UART2; break;
-        case 3: _base = LPC_UART3; break;
-        default: _base = NULL;      break;
-    }
-#endif
-    
-    dmaSendChannel  = -1;
-    moddma_p        = (void *)NULL;
     
     if ( _base != NULL ) {
         buffer_size[RxIrq]     = rxSize;
@@ -78,11 +64,15 @@ MODSERIAL::init( int txSize, int rxSize, PinName rx )
         error("MODSERIAL must have a defined UART to function.");
     }
     
-    _FCR = MODSERIAL_FIFO_ENABLE | MODSERIAL_FIFO_RX_RESET | MODSERIAL_FIFO_TX_RESET;
+
+    initDevice();
+
+    //_FCR = MODSERIAL_FIFO_ENABLE | MODSERIAL_FIFO_RX_RESET | MODSERIAL_FIFO_TX_RESET;
     
     auto_detect_char = 0;
     
-    enableIrq();
+    NVIC_EnableIRQ(_IRQ);
 }
 
 }; // namespace AjK ends
+

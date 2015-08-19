@@ -48,86 +48,33 @@ MODSERIAL::MODSERIAL( PinName tx, PinName rx, int txSize, int rxSize, const char
 
 MODSERIAL::~MODSERIAL()
 {
-    disableIrq();
+    NVIC_DisableIRQ(_IRQ);
     if ( buffer[0] != NULL) free((char *)buffer[0] );
     if ( buffer[1] != NULL) free((char *)buffer[1] );    
 }
 
-bool 
-MODSERIAL::txBufferFull( void ) 
+bool MODSERIAL::txBufferFull( void ) 
 { 
     return MODSERIAL_TX_BUFFER_FULL; 
 }
 
-bool 
-MODSERIAL::rxBufferFull( void ) 
+bool MODSERIAL::rxBufferFull( void ) 
 { 
     return MODSERIAL_RX_BUFFER_FULL; 
 }
 
-bool 
-MODSERIAL::txBufferEmpty( void ) 
+bool MODSERIAL::txBufferEmpty( void ) 
 { 
     return MODSERIAL_TX_BUFFER_EMPTY; 
 }
 
-bool 
-MODSERIAL::rxBufferEmpty( void ) 
+bool MODSERIAL::rxBufferEmpty( void ) 
 { 
     return MODSERIAL_RX_BUFFER_EMPTY; 
 }
 
-bool 
-MODSERIAL::txIsBusy( void ) 
-{ 
-    return ( (_LSR & ( 3UL << 5 )) == 0 ) ? true : false; 
-} 
 
-void
-MODSERIAL::disableIrq( void )
-{
-
-#ifdef __LPC11UXX_H__
-    NVIC_DisableIRQ( UART_IRQn );
-#elif defined MKL25Z4_H_
-    switch( _serial.index ) {
-        case 0:   NVIC_DisableIRQ( UART0_IRQn ); break;
-        case 1:   NVIC_DisableIRQ( UART1_IRQn ); break;
-        case 2:   NVIC_DisableIRQ( UART2_IRQn ); break;
-    }
-#else
-    switch( _serial.index ) {
-        case 0:   NVIC_DisableIRQ( UART0_IRQn ); break;
-        case 1:   NVIC_DisableIRQ( UART1_IRQn ); break;
-        case 2:   NVIC_DisableIRQ( UART2_IRQn ); break;
-        case 3:   NVIC_DisableIRQ( UART3_IRQn ); break;
-    }
-#endif
-}
-
-void
-MODSERIAL::enableIrq(void)
-{
-#ifdef __LPC11UXX_H__
-    NVIC_EnableIRQ( UART_IRQn );
-#elif defined MKL25Z4_H_
-    switch( _serial.index ) {
-        case 0:   NVIC_EnableIRQ( UART0_IRQn ); break;
-        case 1:   NVIC_EnableIRQ( UART1_IRQn ); break;
-        case 2:   NVIC_EnableIRQ( UART2_IRQn ); break;
-    }
-#else
-    switch( _serial.index ) {
-        case 0:   NVIC_EnableIRQ( UART0_IRQn ); break;
-        case 1:   NVIC_EnableIRQ( UART1_IRQn ); break;
-        case 2:   NVIC_EnableIRQ( UART2_IRQn ); break;
-        case 3:   NVIC_EnableIRQ( UART3_IRQn ); break;
-    }
-#endif
-}
-
-int 
-MODSERIAL::rxDiscardLastChar( void )
+int MODSERIAL::rxDiscardLastChar( void )
 {
     // This function can only be called indirectly from
     // an rxCallback function. Therefore, we know we 
@@ -144,6 +91,29 @@ MODSERIAL::rxDiscardLastChar( void )
     
     return (int)c;
 }
+
+
+bool MODSERIAL::claim (FILE *stream) {
+    if ( _name == NULL) {
+        error("claim requires a name to be given in the instantiator of the MODSERIAL instance!\r\n");
+    }
+    
+    //Add '/' before name:
+    char *path = new char[strlen(_name) + 2];
+    sprintf(path, "/%s", _name);
+    
+    if (freopen(path, "w", stream) == NULL) {
+        // Failed, should not happen
+        return false;
+    }
+    
+    delete(path);
+    
+    //No buffering
+    setvbuf(stdout, NULL, _IONBF, buffer_size[TxIrq]);
+    return true;
+} 
+
 
 
 }; // namespace AjK ends
