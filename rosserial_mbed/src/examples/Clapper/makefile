@@ -1,7 +1,6 @@
 PROJECT         := rosserial_mbed_Clapper
 DEVICES         := LPC1768
-#GCC4MBED_DIR    := /home/gary/devel/mbed/gcc4mbed
-INCDIRS         := ros_lib/
+GCC4MBED_DIR    := $(GCC4MBED_DIR)
 NO_FLOAT_SCANF  := 1
 NO_FLOAT_PRINTF := 1
 

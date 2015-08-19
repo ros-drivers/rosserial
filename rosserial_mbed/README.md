@@ -15,7 +15,8 @@ Note: This has been tested and currently supports building using the [gcc4mbed](
 * Install the library inside your project folder
     * `rosrun rosserial_mbed make_libraries.py <project-dir>`
     * To install it to one of the examples: `rosrun rosserial_mbed make_libraries.py <rosserial_mbed_dir>/examples/Blink`
-* Move to the project's folder and modify the makefile to use the correct `GCC4MBED_DIR` path
+* Move to the project's folder and set the env var for the compiler path
+    * Example: `$ export GCC4MBED_DIR=/home/gary/devel/mbed/gcc4mbed`
 * `make all && make deploy`
 
 Please see the [rosserial Tutorials on the ROS wiki](http://wiki.ros.org/rosserial_arduino/Tutorials) to get started.
