@@ -12,25 +12,18 @@
 
 #include "MODSERIAL.h"
 
-#define ROSSERIAL_BAUDRATE 57600
-
 class MbedHardware {
   public:
-    MbedHardware(MODSERIAL* io , long baud= ROSSERIAL_BAUDRATE)
-      :iostream(*io){
+    MbedHardware(PinName tx, PinName rx, long baud = 57600)
+      :iostream(tx, rx){
       baud_ = baud;
       t.start();
     }
 
     MbedHardware()
       :iostream(USBTX, USBRX) {
-        baud_ = ROSSERIAL_BAUDRATE;
+        baud_ = 57600;
         t.start();
-    }
-    MbedHardware(MbedHardware& h)
-      :iostream(h.iostream) {
-      this->baud_ = h.baud_;
-      t.start();
     }
 
     void setBaud(long baud){
