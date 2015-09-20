@@ -1,5 +1,5 @@
 PROJECT         := rosserial_mbed_Odom
-DEVICES         := LPC1768
+DEVICES         := LPC1768 KL25Z NUCLEO_F401RE
 GCC4MBED_DIR    := $(GCC4MBED_DIR)
 NO_FLOAT_SCANF  := 1
 NO_FLOAT_PRINTF := 1

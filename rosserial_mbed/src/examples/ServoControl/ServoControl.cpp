@@ -16,7 +16,13 @@
 
 ros::NodeHandle  nh;
 
+#ifdef TARGET_LPC1768
 Servo servo(p21);
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+Servo servo(D8);
+#else
+#error "You need to specify a pin for the Servo"
+#endif
 DigitalOut myled(LED1);
 
 void servo_cb( const std_msgs::UInt16& cmd_msg) {

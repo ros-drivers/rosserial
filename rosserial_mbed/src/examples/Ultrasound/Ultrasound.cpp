@@ -14,7 +14,13 @@ ros::NodeHandle  nh;
 sensor_msgs::Range range_msg;
 ros::Publisher pub_range( "/ultrasound", &range_msg);
 
+#if defined(TARGET_LPC1768)
 const PinName adc_pin = p20;
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+const PinName adc_pin = A0;
+#else
+#error "You need to specify a pin for the sensor"
+#endif
 
 char frameid[] = "/ultrasound";
 
@@ -47,8 +53,6 @@ int main() {
         //publish the adc value every 50 milliseconds
         //since it takes that long for the sensor to stablize
         if ( t.read_ms() >= range_time ) {
-            int r =0;
-
             range_msg.range = getRange_Ultrasound(adc_pin);
             range_msg.header.stamp = nh.now();
             pub_range.publish(&range_msg);

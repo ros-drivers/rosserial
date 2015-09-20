@@ -14,7 +14,13 @@ ros::NodeHandle  nh;
 sensor_msgs::Range range_msg;
 ros::Publisher pub_range( "range_data", &range_msg);
 
+#if defined(TARGET_LPC1768)
 PinName analog_pin = p20;
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+PinName analog_pin = A0;
+#else
+#error "You need to specify a pin for the mic"
+#endif
 unsigned long range_timer;
 
 /*

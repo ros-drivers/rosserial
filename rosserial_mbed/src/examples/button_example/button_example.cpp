@@ -6,13 +6,22 @@
 #include <ros.h>
 #include <std_msgs/Bool.h>
 
+#ifdef TARGET_LPC1768
+PinName button = p20;
+#elif defined(TARGET_KL25Z)
+PinName button = D10;
+#elif defined(TARGET_NUCLEO_F401RE)
+PinName button = USER_BUTTON;
+#else
+#error "You need to specify a pin for the button"
+#endif
 
 ros::NodeHandle nh;
 
 std_msgs::Bool pushed_msg;
 ros::Publisher pub_button("pushed", &pushed_msg);
 
-DigitalIn button_pin(p8);
+DigitalIn button_pin(button);
 DigitalOut led_pin(LED1);
 
 bool last_reading;

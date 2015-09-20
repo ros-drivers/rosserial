@@ -12,6 +12,14 @@
 #include <ros.h>
 #include <std_msgs/Empty.h>
 
+#if defined(TARGET_LPC1768)
+PinName mic = p20;
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+PinName mic = A0;
+#else
+#error "You need to specify a pin for the mic"
+#endif
+
 ros::NodeHandle  nh;
 
 std_msgs::Empty clap_msg;
@@ -22,7 +30,7 @@ clapper_state clap;
 
 int volume_thresh = 200;  //a clap sound needs to be:
 //abs(clap_volume) > average noise + volume_thresh
-AnalogIn mic_pin(p20);
+AnalogIn mic_pin(mic);
 int adc_ave=0;
 
 Timer t;

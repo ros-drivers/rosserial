@@ -10,11 +10,28 @@
 #include <ros.h>
 #include <rosserial_mbed/Adc.h>
 
+#if defined(TARGET_LPC1768)
+PinName adc0 = p15;
+PinName adc1 = p16;
+PinName adc2 = p17;
+PinName adc3 = p18;
+PinName adc4 = p19;
+PinName adc5 = p20;
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+PinName adc0 = A0;
+PinName adc1 = A1;
+PinName adc2 = A2;
+PinName adc3 = A3;
+PinName adc4 = A4;
+PinName adc5 = A5;
+#else
+#error "You need to specify the pins for the adcs"
+#endif
+
 ros::NodeHandle nh;
 
 rosserial_mbed::Adc adc_msg;
 ros::Publisher p("adc", &adc_msg);
-
 
 
 //We average the analog reading to elminate some of the noise
@@ -32,12 +49,12 @@ int main() {
     nh.advertise(p);
 
     while (1) {
-        adc_msg.adc0 = averageAnalog(p15);
-        adc_msg.adc1 = averageAnalog(p16);
-        adc_msg.adc2 = averageAnalog(p17);
-        adc_msg.adc3 = averageAnalog(p18);
-        adc_msg.adc4 = averageAnalog(p19);
-        adc_msg.adc5 = averageAnalog(p20);
+        adc_msg.adc0 = averageAnalog(adc0);
+        adc_msg.adc1 = averageAnalog(adc1);
+        adc_msg.adc2 = averageAnalog(adc2);
+        adc_msg.adc3 = averageAnalog(adc3);
+        adc_msg.adc4 = averageAnalog(adc4);
+        adc_msg.adc5 = averageAnalog(adc5);
 
         p.publish(&adc_msg);
 

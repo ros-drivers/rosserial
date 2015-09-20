@@ -31,7 +31,13 @@ int sensorAddress = 0x91 >>1;  // From datasheet sensor address is 0x91
                                // most significant bits for the address
 
 Timer t;
+#ifdef TARGET_LPC1768
 I2C i2c(p9, p10);        // sda, scl
+#elif defined(TARGET_KL25Z) || defined(TARGET_NUCLEO_F401RE)
+I2C i2c(D14, D15);       // sda, scl
+#else
+#error "You need to specify a pin for the sensor"
+#endif
 
 int main() {
     t.start();
