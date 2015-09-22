@@ -200,8 +200,17 @@ namespace ros {
         while( true )
         {
           int data = hardware_.read();
-          if( data < 0 )
+          if( data < 0 ) {
+#if defined(USE_WIFICON)
+		    if (!hardware_.isConnectionUp()) {		// check connection, if it is broken try to repair it N.B. should really add interrupt timer as this blocks !
+				configured_ = false;
+				return -3;
+			} else
+				break;
+#else
             break;
+#endif	    
+		  }
           checksum_ += data;
           if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
             message_in[index_++] = data;

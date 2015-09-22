@@ -50,6 +50,18 @@
 #elif defined(USE_USBCON)
   // Arduino Leonardo USB Serial Port
   #define SERIAL_CLASS Serial_
+#elif defined(USE_WIFICON) 
+  // connection to TCP socket
+  #if defined(ESP8266)
+	#include <ESP8266WiFi.h>
+  #else
+	#include <WiFi.h>
+  #endif
+  
+  #define SERIAL_CLASS WiFiClient
+  #if !defined(ROSSERIAL_PORTNUM)
+	#define ROSSERIAL_PORTNUM 11411					// default port number
+  #endif
 #else 
   #include <HardwareSerial.h>  // Arduino AVR
   #define SERIAL_CLASS HardwareSerial
@@ -66,7 +78,7 @@ class ArduinoHardware {
 #if defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
-#else
+#elif !defined(USE_WIFICON)
       iostream = &Serial;
 #endif
       baud_ = 57600;
@@ -82,6 +94,19 @@ class ArduinoHardware {
   
     int getBaud(){return baud_;}
 
+#if defined(USE_WIFICON)
+	void init(char* hostname) {
+	  iostream = new WiFiClient();
+	  strcpy(this->hostname, hostname);
+	  
+	  while (!iostream->connect(hostname, ROSSERIAL_PORTNUM)) {
+		for (int i = 0; i < 100; i++) {
+		  delay(50);
+		}
+		return;
+	  }
+	}
+#else
     void init(){
 #if defined(USE_USBCON)
       // Startup delay as a fail-safe to upload a new sketch
@@ -89,6 +114,7 @@ class ArduinoHardware {
 #endif
       iostream->begin(baud_);
     }
+#endif  //   if defined(USE_WIFICON)
 
     int read(){return iostream->read();};
     void write(uint8_t* data, int length){
@@ -98,7 +124,21 @@ class ArduinoHardware {
 
     unsigned long time(){return millis();}
 
+#if defined(USE_WIFICON)
+    bool isConnectionUp(){
+	  if(iostream->connected())
+		return true;
+	  else {
+		iostream->stop();
+		return iostream->connect(this->hostname, ROSSERIAL_PORTNUM);
+	  }
+	}
+#endif
+
   protected:
+#if defined(USE_WIFICON)
+	char hostname[256];
+#endif
     SERIAL_CLASS* iostream;
     long baud_;
 };
