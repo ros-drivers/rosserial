@@ -35,8 +35,8 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
-#include "ros/node_handle.h"
 #include "MbedHardware.h"
+#include "ros/node_handle.h"
 
 namespace ros
 {

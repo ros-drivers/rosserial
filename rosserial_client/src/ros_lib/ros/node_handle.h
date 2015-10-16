@@ -116,7 +116,11 @@ namespace ros {
        * Setup Functions
        */
     public:
+#ifdef ROS_MBED_HARDWARE_H_ 
+      NodeHandle_(PinName tx = USBTX, PinName rx = USBRX) : hardware_(tx, rx), configured_(false) {
+#else
       NodeHandle_() : configured_(false) {
+#endif
 
         for(unsigned int i=0; i< MAX_PUBLISHERS; i++)
 	   publishers[i] = 0;
