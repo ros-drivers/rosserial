@@ -21,7 +21,11 @@ class MbedHardware {
     }
 
     MbedHardware()
+#if defined(MBEDTX) && defined(MBEDRX)
+      :iostream(MBEDTX, MBEDRX) {
+#else
       :iostream(USBTX, USBRX) {
+#endif
         baud_ = 57600;
         t.start();
     }
