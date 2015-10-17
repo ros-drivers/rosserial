@@ -7,7 +7,7 @@
 #include <ros.h>
 #include <std_msgs/String.h>
 
-ros::NodeHandle  nh;
+ros::NodeHandle  nh(p13,p14);
 
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
