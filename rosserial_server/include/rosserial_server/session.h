@@ -271,6 +271,8 @@ private:
         ROS_WARN_THROTTLE(1, "Socket write operation returned IO error.");
       } else if (error == boost::system::errc::no_such_device) {
         ROS_WARN_THROTTLE(1, "Socket write operation returned no device.");
+      } else if (error == boost::system::errc::connection_reset) {
+        ROS_WARN_THROTTLE(1, "Socket write operation returned connection reset.");
       } else {
         socket_.cancel();
         ROS_WARN_STREAM_THROTTLE(1, "Unknown error returned during write operation: " << error);
@@ -298,7 +300,7 @@ private:
     if (error == boost::asio::error::operation_aborted) {
       return;
     }
-    ROS_WARN("Sync with device lost.");
+    ROS_WARN_STREAM("Sync with device lost (" << error << ")");
     attempt_sync();
   }
 
