@@ -214,8 +214,7 @@ private:
       // When some other read error has occurred, delete the whole session, which destroys
       // all publishers and subscribers.
       socket_.cancel();
-      ROS_DEBUG_STREAM("Socket asio error: " << error);
-      ROS_WARN("Stopping session due to read error.");
+      ROS_WARN_STREAM("Stopping session due to read error: " << error);
       delete this;
     }
   }
@@ -273,6 +272,8 @@ private:
         ROS_WARN_THROTTLE(1, "Socket write operation returned no device.");
       } else if (error == boost::system::errc::connection_reset) {
         ROS_WARN_THROTTLE(1, "Socket write operation returned connection reset.");
+      } else if (error == boost::system::errc::broken_pipe) {
+        ROS_WARN_THROTTLE(1, "Socket write operation returned broken pipe.");
       } else {
         socket_.cancel();
         ROS_WARN_STREAM_THROTTLE(1, "Unknown error returned during write operation: " << error);
