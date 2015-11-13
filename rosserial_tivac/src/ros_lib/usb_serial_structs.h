@@ -53,8 +53,8 @@ uint32_t TxHandler(void *pvCBData, uint32_t ui32Event,
 uint32_t ControlHandler(void *pvCBData, uint32_t ui32Event,
                         uint32_t ui32MsgValue, void *pvMsgData);
 
-extern const tUSBBuffer g_sTxBuffer;
-extern const tUSBBuffer g_sRxBuffer;
+extern tUSBBuffer g_sTxBuffer;
+extern tUSBBuffer g_sRxBuffer;
 extern tUSBDCDCDevice g_sCDCDevice;
 extern uint8_t g_pui8USBTxBuffer[];
 extern uint8_t g_pui8USBRxBuffer[];
