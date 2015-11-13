@@ -29,6 +29,7 @@
 #include "MODSERIAL_KL05Z.h"
 #include "MODSERIAL_KSDK.h"
 #include "MODSERIAL_NUCLEO_F401RE.h"
+#include "MODSERIAL_PAC_F401RB.h"
 
 #define MODSERIAL_TX_BUFFER_EMPTY (buffer_count[TxIrq]==0)
 #define MODSERIAL_RX_BUFFER_EMPTY (buffer_count[RxIrq]==0)
