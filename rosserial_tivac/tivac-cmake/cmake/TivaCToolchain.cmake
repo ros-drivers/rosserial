@@ -1,3 +1,47 @@
+# 
+# Copyright (c) 2015, Robosavvy Ltd.
+# Author: Vitor Matos
+#
+# Quick and dirty cmake script which prepares cross-compilation for catkinized, rosserial_client enabled projects.
+# 
+# Requires two enviroment variables:
+#   TIVA_WARE_PATH        - TI TivaWare SDK path
+#   TIVA_FLASH_EXECUTABLE - lm4flash tool executable
+#
+# Defines function to be included in cross-compiled project's CMakeLists.txt:
+#   generate_tivac_firmware
+# 
+# With Arguments:
+#     USB     - Optional argument, if you wish to have rosserial over USB CDC device.
+#     BOARD   - Required. Takes one argument, tm4c123gxl or tm4c1294xl.
+#     STARTUP - Optional argument. Takes the name of custom startup file.
+#     SRCS    - Required. List of source files to compile.
+#     INCS    - Optional. List of include directories.
+#     LIBS    - Optional. List of libraries to be linked.
+#
+# Creates custom targets for project:
+#   <parent_catkin_project>_${CMAKE_PROJECT_NAME}.axf   - Build binary file
+#   <parent_catkin_project>_${CMAKE_PROJECT_NAME}_flash - Flashes board with binary file
+#   <parent_catkin_project>_${CMAKE_PROJECT_NAME}_size  - Prints out the size of sections and totals of binary file
+#   <parent_catkin_project>_${CMAKE_PROJECT_NAME}_dump  - Prints table of symbols and such
+#
+# Example usage:
+#
+#   generate_tivac_firmware(
+#     USB
+#     STARTUP custom_startup.c
+#     SRCS buttons.cpp buttons.c
+#     INCS .
+#     BOARD tm4c123gxl
+#   )
+# 
+# This example sets rosserial communication through USB CDC device. 
+# Adds two source files to be compiled on the project.
+# Includes the project directory.
+# It will compile the project for tm4c123gxl board.
+# Includes a custom startup file to specify on the interrupt vector some interrupt handlers.
+# 
+
 cmake_minimum_required(VERSION 2.8.3)
 include(CMakeParseArguments)
 
@@ -13,7 +57,6 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 
 # GCC toolchain prefix
 set(TOOLCHAIN_PREFIX "arm-none-eabi")
-
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
 set(CMAKE_ASM_COMPILER ${TOOLCHAIN_PREFIX}-as)
@@ -40,9 +83,7 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 set(CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT_TM4C123GXL} -specs=${LINKER_SPECS} -Wl,-Map=memmap.map" CACHE STRING "" FORCE)
 
-
 # Processor specific definitions
-
 add_definitions(-Dgcc)
 
 # How could we find Tivaware SDK paths? similarly to Arduino toolchain?

@@ -21,7 +21,7 @@ install(
 
 install(
   PROGRAMS 
-    src/rosserial_tivac/make_libraries
-    src/rosserial_tivac/make_libraries.py
+    src/rosserial_tivac/make_libraries_tiva
+    src/rosserial_tivac/make_libraries_energia
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

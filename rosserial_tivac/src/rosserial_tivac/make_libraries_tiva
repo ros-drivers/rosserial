@@ -38,14 +38,11 @@
 THIS_PACKAGE = "rosserial_tivac"
 
 __usage__ = """
-This generic make_libraries generates the non-platform specific part of a
-rosserial client library, including messages. It assumes the target platform
-has native float64 support, and is therefore unsuitable for use with AVR.
-To generate messages for AVR, use the make_libraries script in
-rosserial_arduino.
-This script also does not provide the ros.h file or other hardware
-abstraction. This will need to be supplied by the user.
-rosrun rosserial_tivac make_libraries <output_path>
+This script generates the message library for TivaC projects.
+It also copies the rosserial client for make/cmake projects using GNU arm-none-eabi toolchain.
+
+Usage:
+rosrun rosserial_tivac make_libraries_tiva <output_path>
 """
 
 import rospkg
