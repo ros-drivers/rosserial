@@ -2,23 +2,23 @@
  * Copyright (c) 2015, Robosavvy Ltd.
  * All rights reserved.
  * Author: Vitor Matos
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the 
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
  * following conditions are met:
- * 
- *   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+ *
+ *   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the
  * following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the 
+ *   2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
  * following disclaimer in the documentation and/or other materials provided with the distribution.
- *   3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote 
+ *   3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote
  * products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -35,6 +35,8 @@
 #ifndef ROS_LIB_TIVAC_HARDWARE_H
 #define ROS_LIB_TIVAC_HARDWARE_H
 
+#include <stdbool.h>
+#include <stdint.h>
 extern "C"
 {
   #include <inc/hw_memmap.h>
@@ -71,6 +73,11 @@ extern "C"
 #define ROSSERIAL_BAUDRATE 57600
 #endif
 
+extern tRingBufObject rxBuffer;
+extern tRingBufObject txBuffer;
+extern volatile uint32_t g_ui32milliseconds;
+extern volatile uint32_t g_ui32heartbeat;
+
 class TivaCHardware
 {
   public:
@@ -79,10 +86,10 @@ class TivaCHardware
     void init()
     {
 #ifdef TARGET_IS_TM4C123_RA1
-      TivaCHardware::ui32SysClkFreq = MAP_SysCtlClockGet();
+      this->ui32SysClkFreq = MAP_SysCtlClockGet();
 #endif
 #ifdef TARGET_IS_TM4C129_RA0
-      TivaCHardware::ui32SysClkFreq = TM4C129FREQ;
+      this->ui32SysClkFreq = TM4C129FREQ;
 #endif
 
       // Setup LEDs
@@ -97,10 +104,10 @@ class TivaCHardware
 #endif
 
       // Enable time keeping
-      TivaCHardware::milliseconds = 0;
+      g_ui32milliseconds = 0;
       // Set up timer such that it produces one tick for each millisecond
       SysTickIntRegister(TivaCHardware::SystickIntHandler);
-      MAP_SysTickPeriodSet(TivaCHardware::ui32SysClkFreq/SYSTICKHZ);
+      MAP_SysTickPeriodSet(this->ui32SysClkFreq/SYSTICKHZ);
       MAP_SysTickEnable();
       MAP_SysTickIntEnable();
 
@@ -112,13 +119,13 @@ class TivaCHardware
       MAP_GPIOPinConfigure(GPIO_PA1_U0TX);
       MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
       // Configure UART0
-      MAP_UARTConfigSetExpClk(UART0_BASE, TivaCHardware::ui32SysClkFreq, ROSSERIAL_BAUDRATE,
+      MAP_UARTConfigSetExpClk(UART0_BASE, this->ui32SysClkFreq, ROSSERIAL_BAUDRATE,
           (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
       // Supposedely MCU resets with FIFO 1 byte depth. Just making sure.
       MAP_UARTFIFODisable(UART0_BASE);
       // UART buffers to transmit and receive
-      RingBufInit(&TivaCHardware::rxBuffer, this->ui8rxBufferData, RX_BUFFER_SIZE);
-      RingBufInit(&TivaCHardware::txBuffer, this->ui8txBufferData, TX_BUFFER_SIZE);
+      RingBufInit(&rxBuffer, this->ui8rxBufferData, RX_BUFFER_SIZE);
+      RingBufInit(&txBuffer, this->ui8txBufferData, TX_BUFFER_SIZE);
 
       // Enable RX and TX interrupt
       UARTIntRegister(UART0_BASE, TivaCHardware::UARTIntHandler);
@@ -133,8 +140,8 @@ class TivaCHardware
     // read a byte from the serial port. -1 = failure
     int read()
     {
-      if (!RingBufEmpty(&TivaCHardware::rxBuffer))
-        return RingBufReadOne(&TivaCHardware::rxBuffer);
+      if (!RingBufEmpty(&rxBuffer))
+        return RingBufReadOne(&rxBuffer);
       else
         return -1;
     }
@@ -144,20 +151,19 @@ class TivaCHardware
     {
       RingBufWrite(&txBuffer, data, length);
       // Trigger sending buffer
-      MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&TivaCHardware::txBuffer));
+      MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&txBuffer));
     }
 
     // returns milliseconds since start of program
     uint32_t time()
     {
-      return TivaCHardware::milliseconds;
+      return g_ui32milliseconds;
     }
 
     // UART buffer structures
-    static tRingBufObject rxBuffer;
     uint8_t ui8rxBufferData[RX_BUFFER_SIZE];
-    static tRingBufObject txBuffer;
     uint8_t ui8txBufferData[TX_BUFFER_SIZE];
+
     // UARD interrupt handler
     // For each received byte, pushes it into the buffer.
     // For each transmitted byte, read the next available from the buffer.
@@ -173,12 +179,12 @@ class TivaCHardware
       // RX the next character from the UART and put it on RingBuffer.
       // We should verify if buffer is not full. Let's assume not, for faster interrupt routine.
       if (ui32Status & UART_INT_RX)
-        RingBufWriteOne(&TivaCHardware::rxBuffer, MAP_UARTCharGetNonBlocking(UART0_BASE));
+        RingBufWriteOne(&rxBuffer, MAP_UARTCharGetNonBlocking(UART0_BASE));
 
       // TX the next available char on the buffer
       if (ui32Status & UART_INT_TX)
-        if (!RingBufEmpty(&TivaCHardware::txBuffer))
-          MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&TivaCHardware::txBuffer));
+        if (!RingBufEmpty(&txBuffer))
+          MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&txBuffer));
 
 #ifdef LED_COMM
       // Blink the LED to show a character transfer is occuring.
@@ -187,40 +193,35 @@ class TivaCHardware
     }
 
     // Timing variables and System Tick interrupt handler.
-    static volatile uint32_t milliseconds;
-    static volatile uint32_t heartbeat;
     static void SystickIntHandler()
     {
-      ++TivaCHardware::milliseconds;
+      ++g_ui32milliseconds;
 #ifdef LED_HEARTBEAT
-      if (++TivaCHardware::heartbeat >= SYSTICKHZ)
+      if (++g_ui32heartbeat >= SYSTICKHZ)
       {
         MAP_GPIOPinWrite(LED_PORT, LED1, MAP_GPIOPinRead(LED_PORT, LED1)^LED1);
-        TivaCHardware::heartbeat = 0;
+        g_ui32heartbeat = 0;
       }
 #endif
     }
 
-    static uint32_t ui32SysClkFreq;
+    // System frequency
+    uint32_t ui32SysClkFreq;
+    uint32_t getSysClkFreq(void)
+    {
+      return this->ui32SysClkFreq;
+    }
+
+    // Not really accurate ms delay. But good enough for our purposes.
+    // For a more elaborate delay check out ``Energia/hardware/lm4f/cores/lm4f/wiring.c``
+    void delay(uint32_t ms)
+    {
+      while (ms > 500)
+      {
+        MAP_SysCtlDelay(this->ui32SysClkFreq/3/SYSTICKHZ * 500);
+        ms -= 500;
+      }
+      MAP_SysCtlDelay(this->ui32SysClkFreq/3/SYSTICKHZ * ms);
+    }
 };
-
-// Static class members
-volatile uint32_t TivaCHardware::milliseconds = 0;
-volatile uint32_t TivaCHardware::heartbeat = 0;
-uint32_t TivaCHardware::ui32SysClkFreq;
-tRingBufObject TivaCHardware::rxBuffer;
-tRingBufObject TivaCHardware::txBuffer;
-
-// Not really accurate ms delay. But good enough for our purposes.
-// For a more elaborate delay check out ``Energia/hardware/lm4f/cores/lm4f/wiring.c``
-void delay(uint32_t ms)
-{
-  while (ms > 500)
-  {
-    MAP_SysCtlDelay(TivaCHardware::ui32SysClkFreq/3/SYSTICKHZ * 500);
-    ms -= 500;
-  }
-  MAP_SysCtlDelay(TivaCHardware::ui32SysClkFreq/3/SYSTICKHZ * ms);
-}
-
 #endif  // ROS_LIB_TIVAC_HARDWARE_H

@@ -166,6 +166,7 @@ function(GENERATE_TIVAC_FIRMWARE)
     ${TIVA_WARE_PATH}/utils/ringbuf.c
     ${ROS_LIB_DIR}/duration.cpp 
     ${ROS_LIB_DIR}/time.cpp
+    ${ROS_LIB_DIR}/tivac_hardware.cpp
     ${OTHER_SRCS}
   )
   target_link_libraries(${CMAKE_PROJECT_NAME}.axf 
