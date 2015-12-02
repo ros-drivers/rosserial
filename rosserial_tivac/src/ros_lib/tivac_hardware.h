@@ -39,8 +39,10 @@
 #include <stdint.h>
 extern "C"
 {
+  #include <inc/hw_types.h>
   #include <inc/hw_memmap.h>
   #include <inc/hw_ints.h>
+  #include <driverlib/sysctl.h>
   #include <driverlib/gpio.h>
   #include <driverlib/rom.h>
   #include <driverlib/rom_map.h>
