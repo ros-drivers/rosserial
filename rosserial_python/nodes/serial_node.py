@@ -43,9 +43,6 @@ import sys
    
 if __name__=="__main__":
 
-    rospy.init_node("serial_node")
-    rospy.loginfo("ROS Serial Python Node")
-
     port_name = rospy.get_param('~port','/dev/ttyUSB0')
     baud = int(rospy.get_param('~baud','57600'))
 
@@ -59,6 +56,9 @@ if __name__=="__main__":
         port_name  = sys.argv[1]
     if len(sys.argv) == 3 :
         tcp_portnum = int(sys.argv[2])
+
+    rospy.init_node("serial_node{}".format(port_name.replace('/', '_')))
+    rospy.loginfo("ROS Serial Python Node")
     
     if port_name == "tcp" :
         server = RosSerialServer(tcp_portnum, fork_server)
