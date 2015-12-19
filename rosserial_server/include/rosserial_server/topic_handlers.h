@@ -75,7 +75,10 @@ public:
     publisher_.publish(message_);
   }
 
-  std::string get_topic() {
+  ROS_DEPRECATED std::string get_topic() {
+      return get_name();
+  }
+  std::string get_name() {
     return publisher_.getTopic();
   }
 
@@ -103,7 +106,10 @@ public:
     subscriber_ = nh.subscribe(opts);
   }
 
-  std::string get_topic() {
+  ROS_DEPRECATED std::string get_topic() {
+      return get_name();
+  }
+  std::string get_name() {
     return subscriber_.getTopic();
   }
 
@@ -178,6 +184,10 @@ public:
     ros::serialization::OStream ostream(&buffer[0], length);
     ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, response_message_);
     write_fn_(buffer,topic_id_);
+  }
+
+  std::string get_name() {
+    return service_client_.getService();
   }
 
 private:

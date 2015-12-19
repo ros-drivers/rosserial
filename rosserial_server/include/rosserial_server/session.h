@@ -342,8 +342,10 @@ private:
   void required_topics_check(const boost::system::error_code& error) {
     if (ros::param::has("~require")) {
       if (!check_set("~require/publishers", publishers_) ||
-          !check_set("~require/subscribers", subscribers_)) {
-        ROS_WARN("Connected client failed to establish the publishers and subscribers dictated by require parameter. Re-requesting topics.");
+          !check_set("~require/subscribers", subscribers_) ||
+          !check_set("~require/service_clients", service_clients_) ||
+          !check_set("~require/service_servers", service_servers_)) {
+        ROS_WARN("Connected client failed to establish the interfaces dictated by require parameter. Re-requesting.");
         request_topics();
       }
     }
@@ -356,12 +358,12 @@ private:
     ROS_ASSERT(param_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     for (int i = 0; i < param_list.size(); ++i) {
       ROS_ASSERT(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeString);
-      std::string required_topic((std::string(param_list[i])));
-      // Iterate through map of registered topics, to ensure that this one is present.
+      std::string required_name((std::string(param_list[i])));
+      // Iterate through map of registered names, to ensure that this one is present.
       bool found = false;
       for (typename M::iterator j = map.begin(); j != map.end(); ++j) {
-        if (nh_.resolveName(j->second->get_topic()) ==
-            nh_.resolveName(required_topic)) {
+        if (nh_.resolveName(j->second->get_name()) ==
+            nh_.resolveName(required_name)) {
           found = true;
           break;
         }
