@@ -354,7 +354,7 @@ private:
   template<typename M>
   bool check_set(std::string param_name, M map) {
     XmlRpc::XmlRpcValue param_list;
-    ros::param::get(param_name, param_list);
+    if(!ros::param::get(param_name, param_list)) return true;
     ROS_ASSERT(param_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     for (int i = 0; i < param_list.size(); ++i) {
       ROS_ASSERT(param_list[i].getType() == XmlRpc::XmlRpcValue::TypeString);
