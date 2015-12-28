@@ -197,10 +197,20 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
             set(GEN_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_NAME}.cpp")
             set(TEMPLATE_FILE "${SOURCE}.in")
             if(NOT EXISTS "${TEMPLATE_FILE}")
-                set(TEMPLATE_FILE "/home/david/demo/catkin_ws/src/ros_teensy/teensy-cmake/Arduino.inc.in")
+                message(WARNING "TEMPLATE FILE does not exist")
+                set(TEMPLATE_FILE_PATH 
+                    ~/demo
+                    ~/rover
+                    ~/auv
+                    ~/drone
+                    )
+                unset(TEMPLATE_FILE)
+                find_file(TEMPLATE_FILE "catkin_ws/src/ros_teensy/teensy-cmake/Arduino.inc.in"#Arduino.inc.in
+                    PATH ${TEMPLATE_FILE_PATH}
+                    )
             endif()
 
-            # configure_file("${TEMPLATE_FILE}" "${GEN_SOURCE}")
+            configure_file("${TEMPLATE_FILE}" "${GEN_SOURCE}")
             set(FINAL_SOURCES ${FINAL_SOURCES} ${GEN_SOURCE})
         else()
             set(FINAL_SOURCES ${FINAL_SOURCES} ${SOURCE})
