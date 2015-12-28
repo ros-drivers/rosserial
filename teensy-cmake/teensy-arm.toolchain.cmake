@@ -229,7 +229,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
     add_executable(${TARGET_NAME} ${FINAL_SOURCES})
     set_source_files_properties(${FINAL_SOURCES}
         PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
-    target_link_libraries(${TARGET_NAME} ${TARGET_NAME}_TeensyCore ros)
+    target_link_libraries(${TARGET_NAME} ${TARGET_NAME}_TeensyCore)
     set_target_properties(${TARGET_NAME} PROPERTIES
         OUTPUT_NAME ${TARGET_NAME}
         SUFFIX ".elf"
