@@ -18,6 +18,7 @@ if(NOT ARDUINO_SDK_PATH)
             /opt/arduino
             /usr/local/share/arduino
             ~/arduino
+            ~/arduino-1.6.5
             )
     elseif(WIN32)
         set(SDK_PATH_HINTS "C:\\Program Files\\Arduino"
@@ -27,7 +28,7 @@ if(NOT ARDUINO_SDK_PATH)
 endif()
 
 find_path(ARDUINO_SDK_PATH lib/version.txt
-    hint ${SDK_PATH_HINTS} ENV arduino_location
+    PATHS ${SDK_PATH_HINTS} #ENV arduino_location
     DOC "Arduino SDK path."
     )
 

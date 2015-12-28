@@ -31,13 +31,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-
 set(TRIPLE "arm-none-eabi")
 set(TOOLCHAIN_ROOT "/usr")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+
 # Find arduino sdk from cmake module
 include(FindArduino)
-# include(Teensy)
+
 set(TEENSY_BASE "${ARDUINO_SDK_PATH}/hardware/teensy/avr")
 set(TEENSY_LIB_ROOT "${TEENSY_BASE}/libraries")
 set(TEENSY_CORES_ROOT "${TEENSY_BASE}/cores")# CACHE PATH "Path to the Teensy 'cores' repository")
