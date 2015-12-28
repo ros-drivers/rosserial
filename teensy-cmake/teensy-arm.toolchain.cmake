@@ -38,7 +38,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 # Find arduino sdk from cmake module
 include(FindArduino)
 
-set(TEENSY_BASE "${ARDUINO_SDK_PATH}/hardware/teensy/avr")
+find_file(TEENSY_BASE hardware/teensy/avr ${ARDUINO_SDK_PATH})
+if(NOT EXISTS ${TEENSY_BASE})
+    message(FATAL_ERROR "Could not find the teensy SDK under the arduino SDK, make sure teensyduino is properly installed or set $TEENSY_BASE yourself")
+endif()
+
 set(TEENSY_LIB_ROOT "${TEENSY_BASE}/libraries")
 set(TEENSY_CORES_ROOT "${TEENSY_BASE}/cores")# CACHE PATH "Path to the Teensy 'cores' repository")
 set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy3")
@@ -197,7 +201,6 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
             set(GEN_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_NAME}.cpp")
             set(TEMPLATE_FILE "${SOURCE}.in")
             if(NOT EXISTS "${TEMPLATE_FILE}")
-                message(WARNING "TEMPLATE FILE does not exist")
                 set(TEMPLATE_FILE_PATH 
                     ~/demo
                     ~/rover
