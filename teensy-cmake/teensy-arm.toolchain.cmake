@@ -235,13 +235,6 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
     add_custom_target(${TARGET_NAME}_Firmware ALL
                       DEPENDS ${TARGET_ELF}.eep ${TARGET_ELF}.hex)
     add_dependencies(${TARGET_NAME}_Firmware ${TARGET_NAME})
-    
-    if(EXISTS "${TY_EXECUTABLE}")
-        add_custom_target(${TARGET_NAME}_Upload
-                          DEPENDS ${TY_EXECUTABLE} ${TARGET_ELF}.hex
-                          COMMAND "${TY_EXECUTABLE}" upload ${TARGET_ELF}.hex)
-        add_dependencies(${TARGET_NAME}_Upload ${TARGET_NAME}_Firmware)
-    endif(EXISTS "${TY_EXECUTABLE}")
 endmacro(add_teensy_executable) 
 
 macro(import_arduino_library LIB_NAME)
