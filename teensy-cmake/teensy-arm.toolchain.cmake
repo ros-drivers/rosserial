@@ -65,25 +65,19 @@ set_property(CACHE TEENSY_FREQUENCY PROPERTY STRINGS 96 72 48 24 16 8 4 2)
 set(TEENSY_USB_MODE "SERIAL" CACHE STRING "What kind of USB device the Teensy should emulate")
 set_property(CACHE TEENSY_USB_MODE PROPERTY STRINGS SERIAL HID SERIAL_HID MIDI RAWHID FLIGHTSIM)
 
-if(WIN32)
-    set(TOOL_OS_SUFFIX .exe)
-else(WIN32)
-    set(TOOL_OS_SUFFIX )
-endif(WIN32)
-
-set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_NAME Teensy)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_CROSSCOMPILING 1)
 
-set(CMAKE_C_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-gcc${TOOL_OS_SUFFIX}" CACHE PATH "gcc" FORCE)
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-g++${TOOL_OS_SUFFIX}" CACHE PATH "g++" FORCE)
-set(CMAKE_AR "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ar${TOOL_OS_SUFFIX}" CACHE PATH "archive" FORCE)
-set(CMAKE_LINKER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ld${TOOL_OS_SUFFIX}" CACHE PATH "linker" FORCE)
-set(CMAKE_NM "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-nm${TOOL_OS_SUFFIX}" CACHE PATH "nm" FORCE)
-set(CMAKE_OBJCOPY "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-objcopy${TOOL_OS_SUFFIX}" CACHE PATH "objcopy" FORCE)
-set(CMAKE_OBJDUMP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-objdump${TOOL_OS_SUFFIX}" CACHE PATH "objdump" FORCE)
-set(CMAKE_STRIP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-strip${TOOL_OS_SUFFIX}" CACHE PATH "strip" FORCE)
-set(CMAKE_RANLIB "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ranlib${TOOL_OS_SUFFIX}" CACHE PATH "ranlib" FORCE)
+set(CMAKE_C_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-gcc$" CACHE PATH "gcc" FORCE)
+set(CMAKE_CXX_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-g++$" CACHE PATH "g++" FORCE)
+set(CMAKE_AR "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ar$" CACHE PATH "archive" FORCE)
+set(CMAKE_LINKER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ld$" CACHE PATH "linker" FORCE)
+set(CMAKE_NM "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-nm$" CACHE PATH "nm" FORCE)
+set(CMAKE_OBJCOPY "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-objcopy$" CACHE PATH "objcopy" FORCE)
+set(CMAKE_OBJDUMP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-objdump$" CACHE PATH "objdump" FORCE)
+set(CMAKE_STRIP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-strip$" CACHE PATH "strip" FORCE)
+set(CMAKE_RANLIB "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ranlib$" CACHE PATH "ranlib" FORCE)
 
 include_directories("${TEENSY_ROOT}")
 
@@ -94,7 +88,6 @@ set(CMAKE_C_FLAGS "${BASE_FLAGS} -DTIME_T=1421620748" CACHE STRING "c flags") # 
 set(CMAKE_CXX_FLAGS "${BASE_FLAGS} -fno-exceptions -fno-rtti -felide-constructors -std=gnu++0x" CACHE STRING "c++ flags")
 
 set(LINKER_FLAGS "-Os -Wl,--gc-sections ${TARGET_FLAGS} -T${TEENSY_ROOT}/mk20dx256.ld" )
-#set(LINKER_LIBS "-larm_cortexM4l_math -lm" )
 set(LINKER_LIBS "-lm" )
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
@@ -186,7 +179,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
         ${TEENSY_C_CORE_FILES}
         ${TEENSY_CXX_CORE_FILES}
     )
-    set_source_files_properties(${TEENSY_C_CORE_FILES}
+    set_source_files_properties(${TEENSY_C_CORE_FILES} 
         PROPERTIES COMPILE_FLAGS ${TARGET_C_FLAGS})
     set_source_files_properties(${TEENSY_CXX_CORE_FILES}
         PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
@@ -208,7 +201,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
                     ~/drone
                     )
                 unset(TEMPLATE_FILE)
-                find_file(TEMPLATE_FILE "catkin_ws/src/ros_teensy/teensy-cmake/Arduino.inc.in"#Arduino.inc.in
+                find_file(TEMPLATE_FILE "catkin_ws/src/ros_teensy/teensy-cmake/Arduino.inc.in"
                     PATH ${TEMPLATE_FILE_PATH}
                     )
             endif()
@@ -264,7 +257,7 @@ macro(import_arduino_library LIB_NAME)
     set(ARD_LIB_DIR "${ARDUINO_LIB_ROOT}/${LIB_NAME}/src")
     set(TEN_LIB_DIR "${TEENSY_LIB_ROOT}/${LIB_NAME}")
     if(NOT EXISTS "${ARD_LIB_DIR}" AND NOT EXISTS ${TEN_LIB_DIR})
-        message(FATAL_ERROR "Could not find the directory for library '${LIB_NAME}'")
+        message(FATAL_ERROR 'Could not find the directory for library "${LIB_NAME}"')
     endif(NOT EXISTS "${ARD_LIB_DIR}" AND NOT EXISTS ${TEN_LIB_DIR})
 
     # We prioritize the implementation of the library in the teensy cores

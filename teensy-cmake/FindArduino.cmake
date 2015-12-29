@@ -28,7 +28,7 @@ if(NOT ARDUINO_SDK_PATH)
 endif()
 
 find_path(ARDUINO_SDK_PATH lib/version.txt
-    PATHS ${SDK_PATH_HINTS} #ENV arduino_location
+    PATHS ${SDK_PATH_HINTS} ENV arduino_location
     DOC "Arduino SDK path."
     )
 
