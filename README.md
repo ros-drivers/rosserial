@@ -69,7 +69,6 @@ following:
 include_directories(${ROS_LIB_DIR})
 
 FILE(GLOB_RECURSE ros_src
-    "${ROS_LIB_DIR}/*.c"
     "${ROS_LIB_DIR}/*.cpp"
     "${ROS_LIB_DIR}/*.h")
 add_library(ros_lib ${ros_src})
@@ -78,9 +77,26 @@ add_teensy_executable(target1 main.cpp)
 target_link_libraries(target1 ros_lib)
 ```
 
-You will need to explicitly build and link to the ros_lib target for each 
-different architecture. Additionally, each target needs to be linked to those 
+You will need to explicitly build and link to the ros_lib target for each
+different architecture. Additionally, each target needs to be linked to those
 libraries as well.
 
 Note that it is the same principle for any other external libraries.
+
+Additionnaly, if your MCU code uses some of the arduino/teensy external
+libraries such as Servo, SPI, PID, etc. You will need to add them to the
+compilation process by adding this line before you create the executable.
+
+```
+
+include_directories(${ROS_LIB_DIR})
+
+import_arduino_library(Servo)
+...
+add_teensy_executable(...)
+
+```
+
+We use the `import_arduino_library()` command regardless of if the library is
+an arduino or a teensyduino library.
 
