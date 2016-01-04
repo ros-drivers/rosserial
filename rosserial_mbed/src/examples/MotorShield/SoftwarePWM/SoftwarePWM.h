@@ -52,45 +52,46 @@
  */
 
 
-class SoftwarePWM {
+class SoftwarePWM
+{
 
 public:
-    /** Create a new SoftwarePWM object on any mbed pin
-      *
-      * @param Pin Pin on mbed to connect PWM device to
-     */
-    SoftwarePWM(PinName Pin);
+  /** Create a new SoftwarePWM object on any mbed pin
+    *
+    * @param Pin Pin on mbed to connect PWM device to
+   */
+  SoftwarePWM(PinName Pin);
 
-    /** Change the position of the PWM. Position in us
-      *
-      * @param NewPos The new value of the PWM position (us)
-     */
-    void SetPosition(int NewPos);
+  /** Change the position of the PWM. Position in us
+    *
+    * @param NewPos The new value of the PWM position (us)
+   */
+  void SetPosition(int NewPos);
 
-    /** Enable the PWM. Without enabling the PWM won't be running. Startposition and period both in us.
-      *
-      * @param StartPos The position of the PWM to start (us)
-      * @param Period The time between every pulse. 20000 us = 50 Hz(standard) (us)
-     */
-    void Enable(int StartPos, int Period);
+  /** Enable the PWM. Without enabling the PWM won't be running. Startposition and period both in us.
+    *
+    * @param StartPos The position of the PWM to start (us)
+    * @param Period The time between every pulse. 20000 us = 50 Hz(standard) (us)
+   */
+  void Enable(int StartPos, int Period);
 
-    /** Disable the PWM. After disabling the PWM won't get any signal anymore
-      *
-      */
-    void Disable();
+  /** Disable the PWM. After disabling the PWM won't get any signal anymore
+    *
+    */
+  void Disable();
 
 private:
-    void StartPulse();
-    void EndPulse();
+  void StartPulse();
+  void EndPulse();
 
-    int Position;
-    DigitalOut SoftwarePWMPin;
-    Ticker Pulse;
-    Timeout PulseStop;
+  int Position;
+  DigitalOut SoftwarePWMPin;
+  Ticker Pulse;
+  Timeout PulseStop;
 };
 
 
 extern SoftwarePWM Intensity[] ;
-#define INTENSITY_FACTOR 10 
+#define INTENSITY_FACTOR 10
 
 #endif

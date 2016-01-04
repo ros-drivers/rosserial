@@ -27,22 +27,25 @@ DigitalIn sig1(D6);
 #error "You need to specify a pin for the sensor"
 #endif
 
-int main() {
-    t.start();
+int main()
+{
+  t.start();
 
-    nh.initNode();
-    nh.advertise(pub_motion);
+  nh.initNode();
+  nh.advertise(pub_motion);
 
-    long publisher_timer = 0;
+  long publisher_timer = 0;
 
-    while (1) {
+  while (1)
+  {
 
-        if (t.read_ms() > publisher_timer) {
-            motion_msg.data = sig1;
-            pub_motion.publish(&motion_msg);
-            publisher_timer = t.read_ms() + 1000;
-        }
-        nh.spinOnce();
+    if (t.read_ms() > publisher_timer)
+    {
+      motion_msg.data = sig1;
+      pub_motion.publish(&motion_msg);
+      publisher_timer = t.read_ms() + 1000;
     }
+    nh.spinOnce();
+  }
 }
 

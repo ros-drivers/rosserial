@@ -32,54 +32,68 @@
 #error "You need to specify a pin for the sensor"
 #endif
 
-MotorDriver motorDriver(MOTORSHIELD_IN1,MOTORSHIELD_IN2,MOTORSHIELD_IN3,MOTORSHIELD_IN4,SPEEDPIN_A,SPEEDPIN_B);
+MotorDriver motorDriver(MOTORSHIELD_IN1, MOTORSHIELD_IN2, MOTORSHIELD_IN3, MOTORSHIELD_IN4, SPEEDPIN_A, SPEEDPIN_B);
 ros::NodeHandle nh;
 
-void messageCb(const geometry_msgs::Twist& msg){
-    if (msg.angular.z == 0 && msg.linear.x == 0 ){
-        motorDriver.stop();
-    } else{
-        if (msg.angular.z < 0){
-            int speed = (int) (msg.angular.z * -100);
-            motorDriver.setSpeed(speed, MOTORA);
-            motorDriver.setSpeed(speed, MOTORB);
-            motorDriver.goRight();
-        } else if(msg.angular.z > 0){
-            int speed = (int) (msg.angular.z * 100);
-            motorDriver.setSpeed(speed, MOTORA);
-            motorDriver.setSpeed(speed, MOTORB);
-            motorDriver.goLeft();
-        }else if(msg.linear.x < 0){
-            int speed = (int) (msg.linear.x * -100);
-            motorDriver.setSpeed(speed, MOTORA);
-            motorDriver.setSpeed(speed, MOTORB);
-            motorDriver.goBackward();
-        }else if(msg.linear.x > 0){
-            int speed = (int) (msg.linear.x * 100);
-            motorDriver.setSpeed(speed, MOTORA);
-            motorDriver.setSpeed(speed, MOTORB);
-            motorDriver.goForward();
-        }
+void messageCb(const geometry_msgs::Twist& msg)
+{
+  if (msg.angular.z == 0 && msg.linear.x == 0)
+  {
+    motorDriver.stop();
+  }
+  else
+  {
+    if (msg.angular.z < 0)
+    {
+      int speed = (int)(msg.angular.z * -100);
+      motorDriver.setSpeed(speed, MOTORA);
+      motorDriver.setSpeed(speed, MOTORB);
+      motorDriver.goRight();
     }
+    else if (msg.angular.z > 0)
+    {
+      int speed = (int)(msg.angular.z * 100);
+      motorDriver.setSpeed(speed, MOTORA);
+      motorDriver.setSpeed(speed, MOTORB);
+      motorDriver.goLeft();
+    }
+    else if (msg.linear.x < 0)
+    {
+      int speed = (int)(msg.linear.x * -100);
+      motorDriver.setSpeed(speed, MOTORA);
+      motorDriver.setSpeed(speed, MOTORB);
+      motorDriver.goBackward();
+    }
+    else if (msg.linear.x > 0)
+    {
+      int speed = (int)(msg.linear.x * 100);
+      motorDriver.setSpeed(speed, MOTORA);
+      motorDriver.setSpeed(speed, MOTORB);
+      motorDriver.goForward();
+    }
+  }
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel", &messageCb);
 Timer t;
 
-int main() {
-    t.start();
-    long vel_timer = 0;
-    nh.initNode();
-    nh.subscribe(sub);
-    motorDriver.init();
-    motorDriver.setSpeed(90,MOTORB);
-    motorDriver.setSpeed(90,MOTORA);
-    while (1) {
-        if (t.read_ms() > vel_timer) {
-            motorDriver.stop();
-            vel_timer = t.read_ms() + 500;
-        }
-        nh.spinOnce();
-        wait_ms(1);
+int main()
+{
+  t.start();
+  long vel_timer = 0;
+  nh.initNode();
+  nh.subscribe(sub);
+  motorDriver.init();
+  motorDriver.setSpeed(90, MOTORB);
+  motorDriver.setSpeed(90, MOTORA);
+  while (1)
+  {
+    if (t.read_ms() > vel_timer)
+    {
+      motorDriver.stop();
+      vel_timer = t.read_ms() + 500;
     }
+    nh.spinOnce();
+    wait_ms(1);
+  }
 }

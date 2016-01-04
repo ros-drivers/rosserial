@@ -41,10 +41,11 @@
 
 #define MOTOR_PERIOD            10000 //10ms
 
-struct MotorStruct {
-    uint8_t speed;
-    uint8_t direction;
-    uint8_t position;
+struct MotorStruct
+{
+  uint8_t speed;
+  uint8_t direction;
+  uint8_t position;
 };
 
 /** Motor Driver class.
@@ -55,95 +56,96 @@ class MotorDriver
 
 public:
 
-    /** Create Motor Driver instance
-     *  @param int1 pin 1 of motor movement control
-     *  @param int2 pin 2 of motor movement control
-     *  @param int3 pin 3 of motor movement control
-     *  @param int4 pin 4 of motor movement control
-        @param speedA speed control of motorA
-        @param speedB speed control of motorB
-     */
-    MotorDriver(PinName int1, PinName int2, PinName int3, PinName int4, PinName speedA, PinName speedB):_int1(int1),_int2(int2),_int3(int3),_int4(int4),_speedA(speedA),_speedB(speedB) {
-        _int1 = 0;
-        _int2 = 0;
-        _int3 = 0;
-        _int4 = 0;
-    };
+  /** Create Motor Driver instance
+   *  @param int1 pin 1 of motor movement control
+   *  @param int2 pin 2 of motor movement control
+   *  @param int3 pin 3 of motor movement control
+   *  @param int4 pin 4 of motor movement control
+      @param speedA speed control of motorA
+      @param speedB speed control of motorB
+   */
+  MotorDriver(PinName int1, PinName int2, PinName int3, PinName int4, PinName speedA, PinName speedB): _int1(int1), _int2(int2), _int3(int3), _int4(int4), _speedA(speedA), _speedB(speedB)
+  {
+    _int1 = 0;
+    _int2 = 0;
+    _int3 = 0;
+    _int4 = 0;
+  };
 
-    /** set motor to initialized state
-     */
-    void init();
+  /** set motor to initialized state
+   */
+  void init();
 
-    /** config position of motor
-     *  @param position the position set to motor,MOTOR_POSITION_LEFT or MOTOR_POSITION_RIGHT will be allowed
-     *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
-     */
-    void configure(uint8_t position, uint8_t motorID);
+  /** config position of motor
+   *  @param position the position set to motor,MOTOR_POSITION_LEFT or MOTOR_POSITION_RIGHT will be allowed
+   *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
+   */
+  void configure(uint8_t position, uint8_t motorID);
 
-    /** set speed of motor
-     *  @param speed speed value set to motor, [0,100] will be allowed
-     *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
-     */
-    void setSpeed(uint8_t speed, uint8_t motorID);
+  /** set speed of motor
+   *  @param speed speed value set to motor, [0,100] will be allowed
+   *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
+   */
+  void setSpeed(uint8_t speed, uint8_t motorID);
 
-    /** set direction of motor,
-     *  @param direction the direction of motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
-     *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
-     */
-    void setDirection(uint8_t direction, uint8_t motorID);
+  /** set direction of motor,
+   *  @param direction the direction of motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
+   *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
+   */
+  void setDirection(uint8_t direction, uint8_t motorID);
 
-    /** rotate motor
-     *  @param direction the direction set to motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
-     *  @param motor_position the position set to motor,MOTOR_POSITION_LEFT or MOTOR_POSITION_RIGHT will be allowed
-     */
-    void rotate(uint8_t direction, uint8_t motor_position);
+  /** rotate motor
+   *  @param direction the direction set to motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
+   *  @param motor_position the position set to motor,MOTOR_POSITION_LEFT or MOTOR_POSITION_RIGHT will be allowed
+   */
+  void rotate(uint8_t direction, uint8_t motor_position);
 
-    /** rotate motorA or motorB
-     *  @param direction the direction set to motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
-     *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
-     */
-    void rotateWithID(uint8_t direction, uint8_t motorID);
+  /** rotate motorA or motorB
+   *  @param direction the direction set to motor, MOTOR_CLOCKWISE or MOTOR_ANTICLOCKWISE will be allowed
+   *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
+   */
+  void rotateWithID(uint8_t direction, uint8_t motorID);
 
-    /** make motor go forward
-     */
-    void goForward();
+  /** make motor go forward
+   */
+  void goForward();
 
-    /** make motor go backward
-     */
-    void goBackward();
+  /** make motor go backward
+   */
+  void goBackward();
 
-    /** make motor go left
-     */
-    void goLeft();
+  /** make motor go left
+   */
+  void goLeft();
 
-    /** make motor go right
-     */
-    void goRight();
+  /** make motor go right
+   */
+  void goRight();
 
-    /** make motor stop
-     */
-    void stop();
+  /** make motor stop
+   */
+  void stop();
 
-    /** make motorA or motorB stop
-     *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
-     */
-    void stop(uint8_t motorID);
+  /** make motorA or motorB stop
+   *  @param motorID the ID define which motor will be set, you can choose MOTORA or MOTORB
+   */
+  void stop(uint8_t motorID);
 
-    /** motor A
-     */
-    MotorStruct motorA;
+  /** motor A
+   */
+  MotorStruct motorA;
 
-    /** motor B
-     */
-    MotorStruct motorB;
+  /** motor B
+   */
+  MotorStruct motorB;
 
 private:
 
-    DigitalOut  _int1;
-    DigitalOut  _int2;
-    DigitalOut  _int3;
-    DigitalOut  _int4;
-    SoftwarePWM _speedA;
-    SoftwarePWM _speedB;
+  DigitalOut  _int1;
+  DigitalOut  _int2;
+  DigitalOut  _int3;
+  DigitalOut  _int4;
+  SoftwarePWM _speedA;
+  SoftwarePWM _speedB;
 };
 #endif

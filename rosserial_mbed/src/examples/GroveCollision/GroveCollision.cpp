@@ -28,22 +28,25 @@ DigitalIn sig1(D6);
 #error "You need to specify a pin for the sensor"
 #endif
 
-int main() {
-    t.start();
+int main()
+{
+  t.start();
 
-    nh.initNode();
-    nh.advertise(pub_collision);
+  nh.initNode();
+  nh.advertise(pub_collision);
 
-    long publisher_timer = 0;
+  long publisher_timer = 0;
 
-    while (1) {
+  while (1)
+  {
 
-        if (t.read_ms() > publisher_timer) {
-            collision_msg.data = !sig1;
-            pub_collision.publish(&collision_msg);
-            publisher_timer = t.read_ms() + 1000;
-        }
-        nh.spinOnce();
+    if (t.read_ms() > publisher_timer)
+    {
+      collision_msg.data = !sig1;
+      pub_collision.publish(&collision_msg);
+      publisher_timer = t.read_ms() + 1000;
     }
+    nh.spinOnce();
+  }
 }
 
