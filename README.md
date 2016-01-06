@@ -100,3 +100,11 @@ add_teensy_executable(...)
 We use the `import_arduino_library()` command regardless of if the library is
 an arduino or a teensyduino library.
 
+After the build completes, three files should be created for each teensy target 
+you added and they should be `target.elf`, `target.elf.eep` and 
+`target1.elf.hex`. They should be located in the build folder of the catkin 
+workspace: `catkin_ws/src/<package_name>/architecture/bin`. Out of those files,
+the `*.hex` file is the one that will get flashed to the microcontroller using 
+your favorite utility.
+
+
