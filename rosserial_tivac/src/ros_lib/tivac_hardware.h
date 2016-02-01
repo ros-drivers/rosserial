@@ -151,9 +151,16 @@ class TivaCHardware
     // write data to the connection to ROS
     void write(uint8_t* data, int length)
     {
-      RingBufWrite(&txBuffer, data, length);
-      // Trigger sending buffer
-      MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&txBuffer));
+      // Trigger sending buffer, if not already sending
+      if (RingBufEmpty(&txBuffer))
+      {
+        RingBufWrite(&txBuffer, data, length);
+        MAP_UARTCharPutNonBlocking(UART0_BASE, RingBufReadOne(&txBuffer));
+      }
+      else
+      {
+        RingBufWrite(&txBuffer, data, length);
+      }        
     }
 
     // returns milliseconds since start of program
