@@ -71,7 +71,7 @@ find_path(ARDUINO_SDK_PATH
           PATH_SUFFIXES share/arduino
                         Arduino.app/Contents/Resources/Java/
                         ${ARDUINO_PATHS}
-          HINTS ${SDK_PATH_HINTS}
+                        HINTS ${SDK_PATH_HINTS} ENV arduino_location_cmake
           DOC "Arduino SDK path.")
 
 if(ARDUINO_SDK_PATH)
