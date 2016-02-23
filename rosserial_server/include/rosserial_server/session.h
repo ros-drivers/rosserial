@@ -42,6 +42,7 @@
 
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
+#include <rosserial_msgs/Log.h>
 #include <topic_tools/shape_shifter.h>
 #include <std_msgs/Time.h>
 
@@ -78,6 +79,8 @@ public:
         = boost::bind(&Session::setup_service_client_publisher, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
         = boost::bind(&Session::setup_service_client_subscriber, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_LOG]
+        = boost::bind(&Session::handle_log, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_TIME]
         = boost::bind(&Session::handle_time, this, _1);
   }
@@ -442,6 +445,16 @@ private:
         topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
     }
     set_sync_timeout(timeout_interval_);
+  }
+
+  void handle_log(ros::serialization::IStream& stream) {
+    rosserial_msgs::Log l;
+    ros::serialization::Serializer<rosserial_msgs::Log>::read(stream, l);
+    if(l.level == rosserial_msgs::Log::ROSDEBUG) ROS_DEBUG("%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::INFO) ROS_INFO("%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::WARN) ROS_WARN("%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::ERROR) ROS_ERROR("%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::FATAL) ROS_FATAL("%s", l.msg.c_str());
   }
 
   void handle_time(ros::serialization::IStream& stream) {
