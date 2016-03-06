@@ -232,13 +232,8 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      *(outbuffer + offset++) = 0;\n')
             f.write('      *(outbuffer + offset++) = 0;\n')
             f.write('      *(outbuffer + offset++) = 0;\n')
-            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % self.name)
-            c.serialize(f)
-            f.write('      }\n')
-        else:
-            f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
-            c.serialize(f)
-            f.write('      }\n')
+        f.write('      memcpy(outbuffer + offset, this->%s, sizeof(%s));\n' % (self.name, self.name) )
+        f.write('      offset += sizeof(this->%s);\n' % self.name)
 
     def deserialize(self, f):
         if self.size == None:
