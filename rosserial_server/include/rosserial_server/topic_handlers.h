@@ -35,6 +35,8 @@
 #ifndef ROSSERIAL_SERVER_TOPIC_HANDLERS_H
 #define ROSSERIAL_SERVER_TOPIC_HANDLERS_H
 
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
 #include <rosserial_msgs/RequestMessageInfo.h>

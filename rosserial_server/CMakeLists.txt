@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rosserial_msgs topic_tools)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include ${Boost_INCLUDE_DIRS}
   CATKIN_DEPENDS roscpp rosserial_msgs topic_tools
 )
 
