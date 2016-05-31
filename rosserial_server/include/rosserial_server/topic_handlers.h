@@ -75,7 +75,10 @@ public:
     publisher_.publish(message_);
   }
 
-  std::string get_topic() {
+  ROS_DEPRECATED std::string get_topic() {
+      return get_name();
+  }
+  std::string get_name() {
     return publisher_.getTopic();
   }
 
@@ -103,7 +106,10 @@ public:
     subscriber_ = nh.subscribe(opts);
   }
 
-  std::string get_topic() {
+  ROS_DEPRECATED std::string get_topic() {
+      return get_name();
+  }
+  std::string get_name() {
     return subscriber_.getTopic();
   }
 
@@ -180,6 +186,10 @@ public:
     write_fn_(buffer,topic_id_);
   }
 
+  std::string get_name() {
+    return service_client_.getService();
+  }
+
 private:
   topic_tools::ShapeShifter request_message_;
   topic_tools::ShapeShifter response_message_;
@@ -194,6 +204,116 @@ private:
 
 ros::ServiceClient ServiceClient::service_info_service_;
 typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
+
+class ServiceServer {
+  class ServiceCallbackHelper : public ros::ServiceCallbackHelper {
+    boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
+    uint16_t topic_id_;
+    int got_response_;
+    boost::mutex mutex_;
+    boost::condition_variable cond_;
+    topic_tools::ShapeShifter response_message_;
+ public:
+    ServiceCallbackHelper(boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn):
+    write_fn_(write_fn), topic_id_(-1) {}
+    virtual bool call(ros::ServiceCallbackHelperCallParams& params){
+      std::vector<uint8_t> buffer(params.request.message_start, params.request.message_start + params.request.num_bytes);
+
+      boost::mutex::scoped_lock lock(mutex_);
+      got_response_ = 0;
+      write_fn_(buffer,topic_id_);
+
+      while (!got_response_){
+          cond_.wait(lock);
+      }
+
+      if(got_response_ == 1) {
+        params.response = ros::serialization::serializeServiceResponse(true, response_message_);
+        return true;
+      }
+      return false;
+    }
+    void handle(ros::serialization::IStream stream) {
+      ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, response_message_);
+      boost::mutex::scoped_lock lock(mutex_);
+      got_response_ = 1;
+      cond_.notify_all();
+    }
+
+    void abort() {
+      boost::mutex::scoped_lock lock(mutex_);
+      got_response_ = -1;
+      cond_.notify_all();
+    }
+
+    void setTopicId(uint16_t topic_id) {
+        topic_id_ = topic_id;
+    }
+  };
+public:
+  ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
+      boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn)
+  {
+    if (!service_info_service_.isValid()) {
+      // lazy-initialize the service caller.
+      service_info_service_ = nh.serviceClient<rosserial_msgs::RequestServiceInfo>("service_info");
+      if (!service_info_service_.waitForExistence(ros::Duration(5.0))) {
+        ROS_WARN("Timed out waiting for service_info service to become available.");
+      }
+    }
+
+    rosserial_msgs::RequestServiceInfo info;
+    info.request.service = topic_info.message_type;
+    ROS_DEBUG("Calling service_info service for topic name %s",topic_info.topic_name.c_str());
+    if (service_info_service_.call(info)) {
+      request_message_md5_ = info.response.request_md5;
+      response_message_md5_ = info.response.response_md5;
+    } else {
+      ROS_WARN("Failed to call service_info service. The service client will be created with blank md5sum.");
+    }
+
+    ros::AdvertiseServiceOptions opts;
+    opts.service = topic_info.topic_name;
+    opts.md5sum = info.response.service_md5;
+    opts.datatype = topic_info.message_type;
+    opts.req_datatype = request_message_md5_;
+    opts.res_datatype = response_message_md5_;
+
+    service_call_helper_.reset(new ServiceCallbackHelper(write_fn));
+    opts.helper = service_call_helper_;
+
+    service_server_ = nh.advertiseService(opts);
+  }
+  void setTopicId(uint16_t topic_id) {
+    service_call_helper_->setTopicId(topic_id);
+  }
+  std::string getRequestMessageMD5() {
+    return request_message_md5_;
+  }
+  std::string getResponseMessageMD5() {
+    return response_message_md5_;
+  }
+  void handle(ros::serialization::IStream stream) {
+    service_call_helper_->handle(stream);
+  }
+  void abort() {
+    service_call_helper_->abort();
+  }
+  std::string get_name() {
+    return service_server_.getService();
+  }
+
+private:
+  ros::ServiceServer service_server_;
+  static ros::ServiceClient service_info_service_;
+  boost::shared_ptr<ServiceCallbackHelper> service_call_helper_;
+  std::string request_message_md5_;
+  std::string response_message_md5_;
+};
+
+ros::ServiceClient ServiceServer::service_info_service_;
+typedef boost::shared_ptr<ServiceServer> ServiceServerPtr;
+
 
 }  // namespace
 
