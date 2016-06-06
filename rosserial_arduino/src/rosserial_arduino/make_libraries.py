@@ -49,25 +49,6 @@ from rosserial_client.make_library import *
 # for copying files
 import shutil
 
-ROS_TO_EMBEDDED_TYPES = {
-    'bool'    :   ('bool',              1, PrimitiveDataType, []),
-    'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
-    'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
-    'char'    :   ('uint8_t',           1, PrimitiveDataType, []),
-    'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
-    'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
-    'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
-    'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
-    'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
-    'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
-    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
-    'float32' :   ('float',             4, PrimitiveDataType, []),
-    'float64' :   ('float',             4, AVR_Float64DataType, []),
-    'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
-    'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
-    'string'  :   ('char*',             0, StringDataType, []),
-    'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
-}
 
 # need correct inputs
 if (len(sys.argv) < 2):
@@ -85,8 +66,48 @@ rospack = rospkg.RosPack()
 # copy ros_lib stuff in
 rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
 shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
-rosserial_client_copy_files(rospack, path+"/ros_lib/")
+
+rosserial_client_copy_files(rospack, path+"/ros_lib/" )
+
+class ArduinoMessage( Message ) :
+  ros_to_embedded_types_ = {
+    'bool'    :   ('bool',              1, PrimitiveDataType, []),
+    'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'char'    :   ('uint8_t',           1, PrimitiveDataType, []),
+    'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
+    'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
+    'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
+    'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
+    'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
+    'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
+    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
+    'float32' :   ('float',             4, PrimitiveDataType, []),
+    'float64' :   ('float',             4, AVR_Float64DataType, []),
+    'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
+    'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
+    'string'  :   ('char*',             0, StringDataType, []),
+    'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
+  }
+  
+  def _write_std_includes(self, f):
+      f.write('#include <stdint.h>\n')
+      f.write('#include <string.h>\n')
+      f.write('#include <stdlib.h>\n')
+      f.write('#include "ros/msg.h"\n')
+      f.write('#include "ArduinoIncludes.h"\n')
+        
+  def _write_getType(self, f):
+      f.write('    const char * getType(){ return PSTR( "%s/%s" ); };\n'%(self.package, self.name))
+
+  def _write_getMD5(self, f):
+      f.write('    const char * getMD5(){ return PSTR( "%s" ); };\n'%self.md5)
+
+class ArduinoService( Service ):
+
+    def write_type_decl(self, f):
+        f.write('static const char %s[] PROGMEM = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
+
 
 # generate messages
-rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
-
+rosserial_generate(rospack, path+"/ros_lib", ArduinoMessage, ArduinoService )

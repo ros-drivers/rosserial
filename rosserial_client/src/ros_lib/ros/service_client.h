@@ -49,6 +49,15 @@ namespace ros {
         pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
       {
         this->topic_ = topic_name;
+	this->has_flash_topic_ = false;
+        this->waiting = true;
+      }
+      
+      ServiceClient(const __FlashStringHelper* topic_name) : 
+        pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+      {
+        this->topic_ = reinterpret_cast<const char *>( topic_name );
+	this->has_flash_topic_ = true;
         this->waiting = true;
       }
 
@@ -77,7 +86,6 @@ namespace ros {
       bool waiting;
       Publisher pub;
   };
-
 }
 
 #endif
