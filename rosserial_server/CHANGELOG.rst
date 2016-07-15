@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.2 (2016-07-15)
+------------------
 * Implementation of native UDP rosserial server. (`#231 <https://github.com/ros-drivers/rosserial/issues/231>`_)
 * Explicit session lifecycle for the serial server. (`#228 <https://github.com/ros-drivers/rosserial/issues/228>`_)
   This is a long overdue change which will resolve some crashes when

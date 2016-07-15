@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.2 (2016-07-15)
+------------------
 * Add ros.h include to transform_broadcaster
 * Add environment variable for arduino location
 * Add support for HW Serial ports on the Teensy
