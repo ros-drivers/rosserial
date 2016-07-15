@@ -2,6 +2,11 @@
 Changelog for package rosserial_xbee
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Adding inWaiting method to FakeSerial class. Fixing issue `#179 <https://github.com/ros-drivers/rosserial/issues/179>`_
+* Contributors: Lucas
+
 0.7.1 (2015-07-06)
 ------------------
 

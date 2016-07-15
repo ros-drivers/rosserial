@@ -2,6 +2,17 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Implementation of native UDP rosserial server. (`#231 <https://github.com/ros-drivers/rosserial/issues/231>`_)
+* Explicit session lifecycle for the serial server. (`#228 <https://github.com/ros-drivers/rosserial/issues/228>`_)
+  This is a long overdue change which will resolve some crashes when
+  USB serial devices return error states in the face of noise or other
+  interruptions.
+* Support for VER1 protocol has been dropped.
+* Handle log messages in rosserial_server
+* Contributors: Mike Purvis, mkrauter
+
 0.7.1 (2015-07-06)
 ------------------
 
