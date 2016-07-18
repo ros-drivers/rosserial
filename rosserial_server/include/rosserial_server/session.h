@@ -75,6 +75,7 @@ public:
     attempt_interval_ = boost::posix_time::milliseconds(1000);
     require_check_interval_ = boost::posix_time::milliseconds(1000);
     ros_spin_interval_ = boost::posix_time::milliseconds(10);
+    require_param_name_ = "~require";
 
     nh_.setCallbackQueue(&ros_callback_queue_);
 
@@ -133,6 +134,17 @@ public:
   bool is_active()
   {
     return active_;
+  }
+
+  /**
+   * This is to set the name of the required topics parameter from the
+   * default of ~require. You might want to do this to avoid a conflict
+   * with something else in that namespace, or because you're embedding
+   * multiple instances of rosserial_server in a single process.
+   */
+  void set_require_param(std::string param_name)
+  {
+    require_param_name_ = param_name;
   }
 
 private:
@@ -319,9 +331,9 @@ private:
   }
 
   void required_topics_check(const boost::system::error_code& error) {
-    if (ros::param::has("~require")) {
-      if (!check_set("~require/publishers", publishers_) ||
-          !check_set("~require/subscribers", subscribers_)) {
+    if (ros::param::has(require_param_name_)) {
+      if (!check_set(require_param_name_ + "/publishers", publishers_) ||
+          !check_set(require_param_name_ + "/subscribers", subscribers_)) {
         ROS_WARN("Connected client failed to establish the publishers and subscribers dictated by require parameter. Re-requesting topics.");
         request_topics();
       }
@@ -342,10 +354,14 @@ private:
         if (nh_.resolveName(j->second->get_topic()) ==
             nh_.resolveName(required_topic)) {
           found = true;
+          ROS_INFO_STREAM("Verified connection to topic " << required_topic << ", given in parameter " << param_name);
           break;
         }
       }
-      if (!found) return false;
+      if (!found) {
+        ROS_WARN_STREAM("Missing connection to topic " << required_topic << ", required by parameter " << param_name);
+        return false;
+      }
     }
     return true;
   }
@@ -476,6 +492,7 @@ private:
   boost::asio::deadline_timer sync_timer_;
   boost::asio::deadline_timer require_check_timer_;
   boost::asio::deadline_timer ros_spin_timer_;
+  std::string require_param_name_;
 
   std::map<uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
   std::map<uint16_t, PublisherPtr> publishers_;
