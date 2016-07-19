@@ -2,6 +2,13 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.2 (2016-07-15)
+------------------
+* Add ros.h include to transform_broadcaster
+* Add environment variable for arduino location
+* Supported 32bit array lengths in python make_libraries script
+* Contributors: Alan Meekins, David Lavoie-Boutin
+
 0.7.1 (2015-07-06)
 ------------------
 * Provide option to pass through CMake arguments in the CMAKE_COMMAND

@@ -2,7 +2,7 @@
 Changelog for package rosserial_tivac
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.1 (2015-11-12)
+0.7.2 (2016-07-15)
 ------------------
-* Initial package
-* Contributor: Vitor Matos
+* rosserial package for TivaC Launchpad boards.
+* Contributors: Vitor Matos

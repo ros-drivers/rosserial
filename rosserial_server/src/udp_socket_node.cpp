@@ -1,9 +1,9 @@
 /**
  *
  *  \file
- *  \brief      TCP server for rosserial
+ *  \brief      Main entry point for the UDP socket server node.
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
- *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
+ *  \copyright  Copyright (c) 2016, Clearpath Robotics, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,62 +31,35 @@
  *
  */
 
-#ifndef ROSSERIAL_SERVER_TCP_SERVER_H
-#define ROSSERIAL_SERVER_TCP_SERVER_H
-
-#include <iostream>
-#include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
 
 #include <ros/ros.h>
 
-#include "rosserial_server/session.h"
+#include "rosserial_server/udp_socket_session.h"
+
+using boost::asio::ip::udp;
+using boost::asio::ip::address;
 
 
-namespace rosserial_server
+int main(int argc, char* argv[])
 {
+  ros::init(argc, argv, "rosserial_server_udp_socket_node");
 
-using boost::asio::ip::tcp;
+  int server_port;
+  int client_port;
+  std::string client_addr;
+  ros::param::param<int>("~server_port", server_port, 11411);
+  ros::param::param<int>("~client_port", client_port, 11411);
+  ros::param::param<std::string>("~client_addr", client_addr, "127.0.0.1");
 
-template< typename Session = rosserial_server::Session<tcp::socket> >
-class TcpServer
-{
-public:
-  TcpServer(boost::asio::io_service& io_service, short port)
-    : io_service_(io_service),
-      acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
-  {
-    start_accept();
-  }
+  boost::asio::io_service io_service;
+  rosserial_server::UdpSocketSession udp_socket_session(
+      io_service,
+      udp::endpoint(udp::v4(), server_port),
+      udp::endpoint(address::from_string(client_addr), client_port));
+  io_service.run();
 
-private:
-  void start_accept()
-  {
-    Session* new_session = new Session(io_service_);
-    acceptor_.async_accept(new_session->socket(),
-        boost::bind(&TcpServer::handle_accept, this, new_session,
-          boost::asio::placeholders::error));
-  }
-
-  void handle_accept(Session* new_session,
-      const boost::system::error_code& error)
-  {
-    if (!error)
-    {
-      new_session->start();
-    }
-    else
-    {
-      delete new_session;
-    }
-
-    start_accept();
-  }
-
-  boost::asio::io_service& io_service_;
-  tcp::acceptor acceptor_;
-};
-
-}  // namespace
-
-#endif  // ROSSERIAL_SERVER_TCP_SERVER_H
+  return 0;
+}

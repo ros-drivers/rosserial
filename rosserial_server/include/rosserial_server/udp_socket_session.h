@@ -1,9 +1,9 @@
 /**
  *
  *  \file
- *  \brief      TCP server for rosserial
+ *  \brief      Reconnecting class for a UDP rosserial session.
  *  \author     Mike Purvis <mpurvis@clearpathrobotics.com>
- *  \copyright  Copyright (c) 2013, Clearpath Robotics, Inc.
+ *  \copyright  Copyright (c) 2016, Clearpath Robotics, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef ROSSERIAL_SERVER_TCP_SERVER_H
-#define ROSSERIAL_SERVER_TCP_SERVER_H
+#ifndef ROSSERIAL_SERVER_UDP_SOCKET_SESSION_H
+#define ROSSERIAL_SERVER_UDP_SOCKET_SESSION_H
 
 #include <iostream>
 #include <boost/bind.hpp>
@@ -41,52 +41,50 @@
 #include <ros/ros.h>
 
 #include "rosserial_server/session.h"
+#include "rosserial_server/udp_stream.h"
 
 
 namespace rosserial_server
 {
 
-using boost::asio::ip::tcp;
+using boost::asio::ip::udp;
 
-template< typename Session = rosserial_server::Session<tcp::socket> >
-class TcpServer
+class UdpSocketSession : public Session<UdpStream>
 {
 public:
-  TcpServer(boost::asio::io_service& io_service, short port)
-    : io_service_(io_service),
-      acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
+  UdpSocketSession(boost::asio::io_service& io_service,
+                   udp::endpoint server_endpoint,
+                   udp::endpoint client_endpoint)
+    : Session(io_service), timer_(io_service),
+      server_endpoint_(server_endpoint), client_endpoint_(client_endpoint)
   {
-    start_accept();
+    ROS_INFO_STREAM("rosserial_server UDP session created between " << server_endpoint << " and " << client_endpoint);
+    check_connection();
   }
 
 private:
-  void start_accept()
+  void check_connection()
   {
-    Session* new_session = new Session(io_service_);
-    acceptor_.async_accept(new_session->socket(),
-        boost::bind(&TcpServer::handle_accept, this, new_session,
-          boost::asio::placeholders::error));
-  }
-
-  void handle_accept(Session* new_session,
-      const boost::system::error_code& error)
-  {
-    if (!error)
+    if (!is_active())
     {
-      new_session->start();
-    }
-    else
-    {
-      delete new_session;
+      socket().open(server_endpoint_, client_endpoint_);
+      start();
     }
 
-    start_accept();
+    // Every second, check again if the connection should be reinitialized,
+    // if the ROS node is still up.
+    if (ros::ok())
+    {
+      timer_.expires_from_now(boost::posix_time::milliseconds(1000));
+      timer_.async_wait(boost::bind(&UdpSocketSession::check_connection, this));
+    }
   }
 
-  boost::asio::io_service& io_service_;
-  tcp::acceptor acceptor_;
+  boost::asio::deadline_timer timer_;
+  udp::endpoint server_endpoint_;
+  udp::endpoint client_endpoint_;
 };
 
 }  // namespace
 
-#endif  // ROSSERIAL_SERVER_TCP_SERVER_H
+#endif  // ROSSERIAL_SERVER_UDP_SOCKET_SESSION_H
