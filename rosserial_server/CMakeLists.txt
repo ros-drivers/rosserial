@@ -31,7 +31,7 @@ set_target_properties(${PROJECT_NAME}_udp_socket_node PROPERTIES OUTPUT_NAME udp
 add_dependencies(${PROJECT_NAME}_udp_socket_node rosserial_msgs_gencpp)
 
 install(
-  TARGETS ${PROJECT_NAME}_socket_node ${PROJECT_NAME}_serial_node
+  TARGETS ${PROJECT_NAME}_serial_node ${PROJECT_NAME}_socket_node  ${PROJECT_NAME}_udp_socket_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
