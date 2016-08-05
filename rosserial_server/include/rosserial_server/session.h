@@ -119,6 +119,10 @@ public:
     // Abort any pending ROS callbacks.
     ros_callback_queue_.clear();
 
+    // Abort active session timer callbacks, if present.
+    sync_timer_.cancel();
+    require_check_timer_.cancel();
+
     // Reset the state of the session, dropping any publishers or subscribers
     // we currently know about from this client.
     callbacks_.clear();
@@ -273,7 +277,7 @@ private:
     memcpy(stream.advance(message.size()), &message[0], message.size());
     stream << msg_checksum;
 
-    ROS_DEBUG("Sending buffer of %d bytes to client.", length);
+    ROS_DEBUG_NAMED("async_write", "Sending buffer of %d bytes to client.", length);
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_completion_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
@@ -310,11 +314,10 @@ private:
   }
 
   void sync_timeout(const boost::system::error_code& error) {
-    if (error == boost::asio::error::operation_aborted) {
-      return;
+    if (error != boost::asio::error::operation_aborted) {
+      ROS_DEBUG("Sync with device lost.");
+      stop();
     }
-    ROS_DEBUG("Sync with device lost.");
-    stop();
   }
 
   //// HELPERS ////
@@ -331,11 +334,13 @@ private:
   }
 
   void required_topics_check(const boost::system::error_code& error) {
-    if (ros::param::has(require_param_name_)) {
-      if (!check_set(require_param_name_ + "/publishers", publishers_) ||
-          !check_set(require_param_name_ + "/subscribers", subscribers_)) {
-        ROS_WARN("Connected client failed to establish the publishers and subscribers dictated by require parameter. Re-requesting topics.");
-        request_topics();
+    if (error != boost::asio::error::operation_aborted) {
+      if (ros::param::has(require_param_name_)) {
+        if (!check_set(require_param_name_ + "/publishers", publishers_) ||
+            !check_set(require_param_name_ + "/subscribers", subscribers_)) {
+          ROS_WARN("Connected client failed to establish the publishers and subscribers dictated by require parameter. Re-requesting topics.");
+          request_topics();
+        }
       }
     }
   }
