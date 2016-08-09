@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -114,12 +114,27 @@ public:
     if (exp != 0)
     {
       *val |= ((exp) - 1023 + 127) << 23;
-    }  
+    }
 
     // Copy negative sign.
     *val |= ((uint32_t)(*(inbuffer++)) & 0x80) << 24;
 
     return 8;
+  }
+
+  template<typename A, typename V>
+  static void varToArr(A arr, const V var)
+  {
+    for(size_t i = 0; i < sizeof(V); i++)
+      arr[i] = (var >> (8 * i));
+  }
+
+  template<typename V, typename A>
+  static void arrToVar(V& var, const A arr)
+  {
+    var = 0;
+    for(size_t i = 0; i < sizeof(V); i++)
+      var |= (arr[i] << (8 * i));
   }
 
 };
