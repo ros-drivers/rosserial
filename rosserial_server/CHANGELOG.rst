@@ -2,6 +2,13 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.3 (2016-08-05)
+------------------
+* Avoid runaway async condition when port is bad. (`#236 <https://github.com/ros-drivers/rosserial/issues/236>`_)
+* Add missing install rule for udp_socket_node
+* Make the ~require param configurable from Session. (`#233 <https://github.com/ros-drivers/rosserial/issues/233>`_)
+* Contributors: Mike Purvis
+
 0.7.2 (2016-07-15)
 ------------------
 * Implementation of native UDP rosserial server. (`#231 <https://github.com/ros-drivers/rosserial/issues/231>`_)

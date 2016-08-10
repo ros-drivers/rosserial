@@ -2,6 +2,11 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.3 (2016-08-05)
+------------------
+* Order packages by alpha rather than topologically. (`#234 <https://github.com/ros-drivers/rosserial/issues/234>`_)
+* Contributors: Mike Purvis
+
 0.7.2 (2016-07-15)
 ------------------
 * Add ros.h include to transform_broadcaster
