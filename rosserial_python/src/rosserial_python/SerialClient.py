@@ -224,6 +224,7 @@ class RosSerialServer:
 
     def listen(self):
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
         self.serversocket.listen(1)
@@ -300,9 +301,6 @@ class RosSerialServer:
                 raise RuntimeError("RosSerialServer.read() socket connection broken")
             self.msg = self.msg + chunk
         return self.msg
-
-    def close(self):
-        self.port.close()
 
     def inWaiting(self):
         try: # the caller checks just for <1, so we'll peek at just one byte
