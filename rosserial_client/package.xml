@@ -12,6 +12,7 @@
   <url>http://ros.org/wiki/rosserial_client</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_export_depend>rosbash</build_export_depend>
 
   <exec_depend>rosserial_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
