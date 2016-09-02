@@ -57,7 +57,7 @@ if __name__=="__main__":
 
     # TODO: do we really want command line params in addition to parameter server params?
     sys.argv = rospy.myargv(argv=sys.argv)
-    if len(sys.argv) == 2 :
+    if len(sys.argv) >= 2 :
         port_name  = sys.argv[1]
     if len(sys.argv) == 3 :
         tcp_portnum = int(sys.argv[2])
@@ -81,18 +81,14 @@ if __name__=="__main__":
         while not rospy.is_shutdown():
             rospy.loginfo("Connecting to %s at %d baud" % (port_name,baud) )
             try:
-                rospy.loginfo("qqq")
                 client = SerialClient(port_name, baud)
-                rospy.loginfo("aaa")
                 client.run()
             except KeyboardInterrupt:
                 break
             except SerialException:
-                rospy.loginfo("xxxx")
                 sleep(1.0)
                 continue
             except OSError:
-                rospy.loginfo("zzzz")
                 sleep(1.0)
                 continue
 
