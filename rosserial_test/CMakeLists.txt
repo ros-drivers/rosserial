@@ -9,7 +9,7 @@ if(CATKIN_ENABLE_TESTING)
   # Generate a client library for the test harnesses to use.
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/include/rosserial
-    COMMAND rosrun rosserial_test generate_client_ros_lib ${PROJECT_BINARY_DIR}/include
+    COMMAND ${CATKIN_DEVEL_PREFIX}/env.sh rosrun rosserial_test generate_client_ros_lib ${PROJECT_BINARY_DIR}/include
   )
   add_custom_target(${PROJECT_NAME}_rosserial_lib DEPENDS ${PROJECT_BINARY_DIR}/include/rosserial)
   add_dependencies(${PROJECT_NAME}_rosserial_lib std_msgs_genpy rosserial_msgs_genpy)
