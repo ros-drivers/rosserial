@@ -42,9 +42,10 @@ public:
 class SocketSetup : public AbstractSetup {
 public:
   virtual void SetUp() {
+    ros::param::get("~tcp_port", tcp_port);
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(11411);
+    serv_addr.sin_port = htons(tcp_port);
     ASSERT_GE(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr), 0);
 
     // Try a bunch of times; we don't know how long it will take for the
@@ -68,6 +69,7 @@ public:
     close(fd);
   }
   struct sockaddr_in serv_addr;
+  int tcp_port;
 };
 
 class SingleClientFixture : public ::testing::Test {

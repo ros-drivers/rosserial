@@ -22,12 +22,12 @@ TEST_F(SingleClientFixture, single_publish) {
   client_nh.initNode();
   char s[] = "from-rosserial-client";
   string_msg.data = s;
-  
+
   // Roscpp subscriber to receive the message from the client.
   StringCallback str_callback;
   ros::Subscriber check_sub = nh.subscribe("chatter", 1, &StringCallback::callback, &str_callback);
 
-  for(int attempt = 0; attempt < 50; attempt++) { 
+  for(int attempt = 0; attempt < 50; attempt++) {
     client_pub.publish(&string_msg);
     client_nh.spinOnce();
     ros::spinOnce();
@@ -57,10 +57,10 @@ TEST_F(SingleClientFixture, single_subscribe) {
   client_nh.initNode();
 
   ros::Publisher pub = nh.advertise<std_msgs::String>("chatter", 1);
-  
+
   std_msgs::String string_msg;
   string_msg.data = "to-rosserial-client";
-  for(int attempt = 0; attempt < 50; attempt++) { 
+  for(int attempt = 0; attempt < 50; attempt++) {
     pub.publish(string_msg);
     ros::spinOnce();
     client_nh.spinOnce();
