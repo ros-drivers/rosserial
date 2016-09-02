@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-THIS_PACKAGE = "rosserial_test"
-
 __usage__ = """
-make_libraries generates the rosserial library files.  It 
+make_libraries generates the rosserial library files.  It
 is passed the output folder. This version does not copy a ros.h,
-as that is provided by the test harnesses. For use by the 
+as that is provided by the test harnesses. For use only by the
 rosserial_test CMake setup.
 """
 
@@ -28,7 +26,6 @@ ROS_TO_EMBEDDED_TYPES = {
     'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
     'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
     'float32' :   ('float',             4, PrimitiveDataType, []),
-    #'float64' :   ('float',             4, AVR_Float64DataType, []),
     'float64' :   ('double',             4, PrimitiveDataType, []),
     'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
     'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
@@ -40,7 +37,7 @@ ROS_TO_EMBEDDED_TYPES = {
 if (len(sys.argv) < 2):
     print __usage__
     exit()
-    
+
 # output path
 path = path.join(sys.argv[1], 'rosserial')
 print "\nExporting to %s" % path
@@ -50,17 +47,16 @@ rosserial_client_copy_files(rospack, path + sep)
 rosserial_generate(rospack, path, ROS_TO_EMBEDDED_TYPES)
 
 # Rewrite includes to find headers in a subdirectory. This is important in the context of
-# test nodes as we must distinguishing the rosserial client headers from roscpp headers
-# of the same name.
+# test nodes as we must distinguish the rosserial client headers from roscpp headers of
+# the same name.
 for dname, dirs, files in walk(path):
     for fname in files:
         fpath = os.path.join(dname, fname)
         with open(fpath) as f:
             s = f.read()
         with open(fpath, "w") as f:
-            #f.write(re.sub('^#include "([^/"]+/[^"]+)"', 
-            f.write(re.sub('^#include "([^"]+)"', 
-                           '#include "rosserial/\\1"', 
+            f.write(re.sub('^#include "([^"]+)"',
+                           '#include "rosserial/\\1"',
                            s, flags=re.MULTILINE))
 
 
