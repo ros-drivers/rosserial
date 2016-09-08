@@ -35,7 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib;
+import roslib
 import rospy
 import imp
 
@@ -50,10 +50,12 @@ from rosserial_msgs.srv import *
 
 import diagnostic_msgs.msg
 
-import socket
-import time
-import struct
+import errno
 import signal
+import socket
+import struct
+import time
+
 
 def load_pkg_module(package, directory):
     #check if its in the python path
