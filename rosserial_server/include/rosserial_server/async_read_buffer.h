@@ -49,7 +49,7 @@ class AsyncReadBuffer
 public:
   AsyncReadBuffer(AsyncReadStream& s, size_t capacity,
                   boost::function<void(const boost::system::error_code&)> error_callback)
-       : stream_(s), error_callback_(error_callback) {
+       : stream_(s), read_requested_bytes_(0), error_callback_(error_callback) {
     reset();
     mem_.resize(capacity);
     ROS_ASSERT_MSG(error_callback_, "Bad error callback passed to read buffer.");
