@@ -69,7 +69,7 @@ private:
     // if the ROS node is still up.
     if (ros::ok())
     {
-      timer_.expires_from_now(boost::posix_time::milliseconds(1000));
+      timer_.expires_from_now(boost::posix_time::milliseconds(2000));
       timer_.async_wait(boost::bind(&SerialSession::check_connection, this));
     }
   }
