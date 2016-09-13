@@ -68,7 +68,7 @@
 
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
-#include "msg.h"
+#include "ros/msg.h"
 
 namespace ros {
 
@@ -80,10 +80,10 @@ namespace ros {
     };
 }
 
-#include "publisher.h"
-#include "subscriber.h"
-#include "service_server.h"
-#include "service_client.h"
+#include "ros/publisher.h"
+#include "ros/subscriber.h"
+#include "ros/service_server.h"
+#include "ros/service_client.h"
 
 namespace ros {
 
