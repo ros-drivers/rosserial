@@ -151,7 +151,7 @@ set(TEENSY_CXX_CORE_FILES
     ${TEENSY_ROOT}/WString.cpp
 )
 
-macro(add_teensy_executable TARGET_NAME SOURCES)
+macro(add_teensy_executable TARGET_NAME)
     # Determine the target flags for this executable.
     set(USB_MODE_DEF)
     if(${TEENSY_USB_MODE} STREQUAL SERIAL)
@@ -185,7 +185,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
         PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
 
     set(FINAL_SOURCES ${TEENSY_LIB_SOURCES})
-    foreach(SOURCE ${SOURCES})
+    foreach(SOURCE ${ARGN})
         get_filename_component(SOURCE_EXT ${SOURCE} EXT)
         get_filename_component(SOURCE_NAME ${SOURCE} NAME_WE)
         get_filename_component(SOURCE_PATH ${SOURCE} REALPATH)
@@ -211,7 +211,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
         else()
             set(FINAL_SOURCES ${FINAL_SOURCES} ${SOURCE})
         endif()
-    endforeach(SOURCE ${SOURCES})
+    endforeach(SOURCE ${ARGN})
     
     # Add the Arduino library directory to the include path if found.
     if(EXISTS ${ARDUINO_LIB_ROOT})
