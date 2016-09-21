@@ -2,6 +2,9 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.7.3 (2016-08-05)
 ------------------
 

@@ -2,6 +2,14 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Try to read more serial bytes in a loop (`#248 <https://github.com/ros-drivers/rosserial/issues/248>`_)
+* Add missing "import errno" to rosserial_python
+* Integration tests for rosserial (`#243 <https://github.com/ros-drivers/rosserial/issues/243>`_)
+* rosserial_python tcp server allowing socket address reuse (`#242 <https://github.com/ros-drivers/rosserial/issues/242>`_)
+* Contributors: Mike Purvis, Vitor Matos, davidshin172
+
 0.7.3 (2016-08-05)
 ------------------
 
