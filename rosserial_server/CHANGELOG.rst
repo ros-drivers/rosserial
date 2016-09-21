@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.4 (2016-09-21)
+------------------
 * Use catkin_EXPORTED_TARGETS to avoid CMake warning (`#246 <https://github.com/ros-drivers/rosserial/issues/246>`_)
 * Fix AsyncReadBuffer for UDP socket case. (`#245 <https://github.com/ros-drivers/rosserial/issues/245>`_)
 * Contributors: Mike Purvis

@@ -2,8 +2,8 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.4 (2016-09-21)
+------------------
 * Try to read more serial bytes in a loop (`#248 <https://github.com/ros-drivers/rosserial/issues/248>`_)
 * Add missing "import errno" to rosserial_python
 * Integration tests for rosserial (`#243 <https://github.com/ros-drivers/rosserial/issues/243>`_)

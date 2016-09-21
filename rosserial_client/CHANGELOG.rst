@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.4 (2016-09-21)
+------------------
 * Integration tests for rosserial (`#243 <https://github.com/ros-drivers/rosserial/issues/243>`_)
 * Support member functions as subscriber callbacks.
 * Contributors: Mike O'Driscoll, Mike Purvis
