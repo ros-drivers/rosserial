@@ -499,7 +499,7 @@ private:
   boost::asio::deadline_timer ros_spin_timer_;
   std::string require_param_name_;
 
-  std::map<uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
+  std::map<uint16_t, boost::function<void(ros::serialization::IStream&)> > callbacks_;
   std::map<uint16_t, PublisherPtr> publishers_;
   std::map<uint16_t, SubscriberPtr> subscribers_;
   std::map<std::string, ServiceClientPtr> services_;
