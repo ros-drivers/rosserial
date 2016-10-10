@@ -69,7 +69,7 @@ set(CMAKE_SIZE ${TOOLCHAIN_PREFIX}-size)
 # enable_language(ASM) 
 
 set(CPU "-mcpu=cortex-m4")
-set(FPU "-mfpu=fpv4-sp-d16 -mfloat-abi=softfp")
+set(FPU "-mfpu=fpv4-sp-d16 -mfloat-abi=hard")
 # Cache if it set before project command (e.g. in toolchain):
 set(CMAKE_ASM_FLAGS "-mthumb ${CPU}  ${FPU} -MD" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS "-mthumb ${CPU} ${FPU} -std=gnu99 -Os -ffunction-sections -fdata-sections -MD -Wall -pedantic -fsingle-precision-constant" CACHE STRING "" FORCE)
