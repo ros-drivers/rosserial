@@ -160,7 +160,7 @@ class StringDataType(PrimitiveDataType):
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
-        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)
+        f.write('      varToArr(outbuffer + offset, length_%s);\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
         f.write('      offset += length_%s;\n' % cn)
@@ -168,7 +168,7 @@ class StringDataType(PrimitiveDataType):
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s;\n' % cn)
-        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(uint32_t));\n' % cn)
+        f.write('      arrToVar(length_%s, (inbuffer + offset));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
