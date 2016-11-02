@@ -84,7 +84,7 @@ class PrimitiveDataType:
         f.write('      %s(0)%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      %s %s;\n' % (self.type, self.name) )
+        f.write('      typedef %s _%s_type;\n      _%s_type %s;\n' % (self.type, self.name, self.name, self.name) )
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
@@ -139,7 +139,7 @@ class AVR_Float64DataType(PrimitiveDataType):
         f.write('      %s(0)%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      float %s;\n' % self.name )
+        f.write('      typedef float _%s_type;\n      _%s_type %s;\n' % (self.name, self.name, self.name) )
 
     def serialize(self, f):
         f.write('      offset += serializeAvrFloat64(outbuffer + offset, this->%s);\n' % self.name)
@@ -155,7 +155,7 @@ class StringDataType(PrimitiveDataType):
         f.write('      %s("")%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      const char* %s;\n' % self.name)
+        f.write('      typedef const char* _%s_type;\n      _%s_type %s;\n' % (self.name, self.name, self.name) )
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
@@ -190,7 +190,7 @@ class TimeDataType(PrimitiveDataType):
         f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      %s %s;\n' % (self.type, self.name))
+        f.write('      typedef %s _%s_type;\n      _%s_type %s;\n' % (self.type, self.name, self.name, self.name) )
 
     def serialize(self, f):
         self.sec.serialize(f)
@@ -220,8 +220,9 @@ class ArrayDataType(PrimitiveDataType):
         c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
             f.write('      uint32_t %s_length;\n' % self.name)
-            f.write('      %s st_%s;\n' % (self.type, self.name)) # static instance for copy
-            f.write('      %s * %s;\n' % (self.type, self.name))
+            f.write('      typedef %s _%s_type;\n' % (self.type, self.name))
+            f.write('      _%s_type st_%s;\n' % (self.name, self.name)) # static instance for copy
+            f.write('      _%s_type * %s;\n' % (self.name, self.name))
         else:
             f.write('      %s %s[%d];\n' % (self.type, self.name, self.size))
 
