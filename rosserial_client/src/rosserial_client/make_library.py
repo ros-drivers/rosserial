@@ -40,11 +40,9 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 import roslib
 import roslib.srvs
 import roslib.message
-import rospkg
-import rospy
 import traceback
 
-import os, sys, subprocess, re
+import os, sys, re
 
 # for copying files
 import shutil
@@ -217,7 +215,6 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
             f.write('      uint32_t %s_length;\n' % self.name)
             f.write('      typedef %s _%s_type;\n' % (self.type, self.name))
@@ -512,7 +509,6 @@ def MakeLibrary(package, output_path, rospack):
                 messages.append( Message(f[0:-4], package, definition, md5sum) )
 
     # find the services in this package
-    services = list()
     if (os.path.exists(pkg_dir+"/srv/")):
         if messages == list():
             print('Exporting %s\n'%package)
