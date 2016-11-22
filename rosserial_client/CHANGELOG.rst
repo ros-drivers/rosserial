@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.5 (2016-11-22)
+------------------
 * rosserial client variable typedefs (`#254 <https://github.com/ros-drivers/rosserial/issues/254>`_)
   * Add typedefs to generated messages
   This brings rosserial message headers in line with
