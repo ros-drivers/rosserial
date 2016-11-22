@@ -2,6 +2,11 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Missing 'h' inside constructor ArduinoHardware(ArduinoHardware& h) (`#251 <https://github.com/ros-drivers/rosserial/issues/251>`_)
+* Contributors: MalcolmReynlods
+
 0.7.4 (2016-09-21)
 ------------------
 

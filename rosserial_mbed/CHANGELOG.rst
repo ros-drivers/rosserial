@@ -2,6 +2,9 @@
 Changelog for package rosserial_mbed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.7.4 (2016-09-21)
 ------------------
 

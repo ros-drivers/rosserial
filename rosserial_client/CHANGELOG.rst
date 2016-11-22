@@ -2,6 +2,17 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rosserial client variable typedefs (`#254 <https://github.com/ros-drivers/rosserial/issues/254>`_)
+  * Add typedefs to generated messages
+  This brings rosserial message headers in line with
+  roscpp headers that provide a typedef for the message
+  variable member.
+  * Removing unused imports and variables.
+* Added functions for endian-agnostic memory copying (`#240 <https://github.com/ros-drivers/rosserial/issues/240>`_)
+* Contributors: Mike O'Driscoll, ivan
+
 0.7.4 (2016-09-21)
 ------------------
 * Integration tests for rosserial (`#243 <https://github.com/ros-drivers/rosserial/issues/243>`_)
