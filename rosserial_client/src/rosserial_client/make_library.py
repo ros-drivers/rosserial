@@ -501,12 +501,17 @@ def MakeLibrary(package, output_path, rospack):
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/msg"):
             if f.endswith(".msg"):
-                file = pkg_dir + "/msg/" + f
+                msg_file = pkg_dir + "/msg/" + f
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
-                definition = open(file).readlines()
-                md5sum = roslib.message.get_message_class(package+'/'+f[0:-4])._md5sum
-                messages.append( Message(f[0:-4], package, definition, md5sum) )
+                definition = open(msg_file).readlines()
+                msg_class = roslib.message.get_message_class(package+'/'+f[0:-4])
+                if msg_class:
+                    md5sum = msg_class._md5sum
+                    messages.append( Message(f[0:-4], package, definition, md5sum) )
+                else:
+                    err_msg = "Unable to build message: %s/%s\n" % (package, f[0:-4])
+                    sys.stderr.write(err_msg)
 
     # find the services in this package
     if (os.path.exists(pkg_dir+"/srv/")):
@@ -518,14 +523,19 @@ def MakeLibrary(package, output_path, rospack):
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/srv"):
             if f.endswith(".srv"):
-                file = pkg_dir + "/srv/" + f
+                srv_file = pkg_dir + "/srv/" + f
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
-                definition, service = roslib.srvs.load_from_file(file)
-                definition = open(file).readlines()
-                md5req = roslib.message.get_service_class(package+'/'+f[0:-4])._request_class._md5sum
-                md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
-                messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+                definition, service = roslib.srvs.load_from_file(srv_file)
+                definition = open(srv_file).readlines()
+                srv_class = roslib.message.get_service_class(package+'/'+f[0:-4])
+                if srv_class:
+                    md5req = srv_class._request_class._md5sum
+                    md5res = srv_class._response_class._md5sum
+                    messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+                else:
+                    err_msg = "Unable to build service: %s/%s\n" % (package, f[0:-4])
+                    sys.stderr.write(err_msg)
         print('\n')
     elif messages != list():
         print('\n')
