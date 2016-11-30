@@ -413,7 +413,7 @@ class SerialClient:
 
             if bytes_remaining != 0:
                 rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
-                              % (length, len(length - bytes_remaining)))
+                              % (length, length - bytes_remaining))
                 raise IOError()
 
             return bytes(result)

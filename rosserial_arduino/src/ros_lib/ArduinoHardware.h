@@ -78,7 +78,7 @@ class ArduinoHardware {
       baud_ = 57600;
     }
     ArduinoHardware(ArduinoHardware& h){
-      this->iostream = iostream;
+      this->iostream = h.iostream;
       this->baud_ = h.baud_;
     }
   
