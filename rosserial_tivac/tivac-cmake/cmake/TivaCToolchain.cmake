@@ -14,6 +14,7 @@
 # With Arguments:
 #     USB     - Optional argument, if you wish to have rosserial over USB CDC device.
 #     BOARD   - Required. Takes one argument, tm4c123gxl or tm4c1294xl.
+#     DEVICE_SERIAL  - Optional argument. Creates flash target for specific device.
 #     STARTUP - Optional argument. Takes the name of custom startup file.
 #     SRCS    - Required. List of source files to compile.
 #     INCS    - Optional. List of include directories.
@@ -114,7 +115,7 @@ endfunction()
 function(GENERATE_TIVAC_FIRMWARE)
   message(STATUS "[TIVAC] Generating firmware ${CMAKE_PROJECT_NAME}")
   set(options USB)
-  set(oneValueArgs BOARD STARTUP)
+  set(oneValueArgs BOARD STARTUP DEVICE_SERIAL)
   set(multiValueArgs SRCS INCS LIBS)
   cmake_parse_arguments(INPUT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
@@ -184,8 +185,16 @@ function(GENERATE_TIVAC_FIRMWARE)
     COMMAND ${CMAKE_SIZE} -A -x ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.axf
   )
 
-  add_custom_target("flash" DEPENDS ${CMAKE_PROJECT_NAME}.axf 
+  if(INPUT_DEVICE_SERIAL)
+    message(STATUS "[TIVAC] Creating flash target for the device ${INPUT_DEVICE_SERIAL} only.")
+    set(DEV_SERIAL "-s${INPUT_DEVICE_SERIAL}")
+  else()
+    set(DEV_SERIAL "")
+  endif()
+
+  add_custom_target("flash"
     COMMAND ${CMAKE_OBJCOPY} -O binary ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.axf ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.bin 
-    COMMAND ${FLASH_EXECUTABLE} ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.bin
+    COMMAND ${FLASH_EXECUTABLE} ${DEV_SERIAL} ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_PROJECT_NAME}.bin
+    DEPENDS ${CMAKE_PROJECT_NAME}.axf 
   )
 endfunction()
