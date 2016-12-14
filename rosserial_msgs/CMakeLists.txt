@@ -11,9 +11,8 @@ add_message_files(FILES
 add_service_files(FILES
                   RequestParam.srv
                   RequestMessageInfo.srv
+                  RequestServiceInfo.srv
                  )
 
 generate_messages()
-
 catkin_package(CATKIN_DEPENDS message_runtime)
-
