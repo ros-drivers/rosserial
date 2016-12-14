@@ -9,3 +9,7 @@ catkin_python_setup()
 install(DIRECTORY src/ros_lib
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
+
+install(PROGRAMS src/rosserial_client/make_library.py
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
