@@ -1,0 +1,24 @@
+sudo: required
+dist: trusty
+language: generic
+
+env:
+  - CI_ROS_DISTRO=indigo CC=gcc CXX=g++
+
+before_install:
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update
+  - sudo apt-get install python-rosdep -y
+  - sudo rosdep init
+  - rosdep update
+
+install:
+  - mkdir -p ~/catkin_ws/src
+  - cd ~/catkin_ws
+  - ln -s $TRAVIS_BUILD_DIR src
+  - rosdep install --from-paths src --ignore-src --rosdistro=$CI_ROS_DISTRO -y
+
+script:
+  - source /opt/ros/$CI_ROS_DISTRO/setup.bash
+  - catkin_make install
