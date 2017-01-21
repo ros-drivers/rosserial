@@ -59,14 +59,14 @@ extern "C"
 
 #define SYSTICKHZ  1000UL
 
-#ifdef TARGET_IS_TM4C123_RA1
+#ifdef TM4C123GXL
 #define LED1        GPIO_PIN_3  // Green LED
 #define LED2        GPIO_PIN_2  // Blue LED
 #define LED_PORT    GPIO_PORTF_BASE
 #define LED_PERIPH  SYSCTL_PERIPH_GPIOF
 #endif
 
-#ifdef TARGET_IS_TM4C129_RA0
+#ifdef TM4C1294XL
 #define LED1        GPIO_PIN_1  // D1 LED
 #define LED2        GPIO_PIN_0  // D2 LED
 #define LED_PORT    GPIO_PORTN_BASE
@@ -86,10 +86,10 @@ class TivaCHardware
 
     void init()
     {
-#ifdef TARGET_IS_TM4C123_RA1
+#ifdef TM4C123GXL
       this->ui32SysClkFreq = MAP_SysCtlClockGet();
 #endif
-#ifdef TARGET_IS_TM4C129_RA0
+#ifdef TM4C1294XL
       this->ui32SysClkFreq = TM4C129FREQ;
 #endif
 
@@ -113,12 +113,12 @@ class TivaCHardware
       MAP_SysTickIntEnable();
 
       MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_USB0);
-#ifdef TARGET_IS_TM4C123_RA1
+#ifdef TM4C123GXL
       // Configure the required pins for USB operation.
       MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
       MAP_GPIOPinTypeUSBAnalog(GPIO_PORTD_BASE, GPIO_PIN_5 | GPIO_PIN_4);
 #endif
-#ifdef TARGET_IS_TM4C129_RA0
+#ifdef TM4C1294XL
       MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOL);
       MAP_GPIOPinTypeUSBAnalog(GPIO_PORTL_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 #endif
