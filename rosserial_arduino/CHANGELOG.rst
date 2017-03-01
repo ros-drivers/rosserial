@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.6 (2017-03-01)
+------------------
 * Fixed issue with CMake CMP0054 (`#273 <https://github.com/ros-drivers/rosserial/issues/273>`_)
 * Add Teensy LC support (`#270 <https://github.com/ros-drivers/rosserial/issues/270>`_)
 * Support Teensy 3.5, 3.6. (`#259 <https://github.com/ros-drivers/rosserial/issues/259>`_)

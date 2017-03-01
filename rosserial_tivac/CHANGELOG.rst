@@ -2,8 +2,8 @@
 Changelog for package rosserial_tivac
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.6 (2017-03-01)
+------------------
 * Allows to specify chip's silicon revision for TivaWare. (`#268 <https://github.com/ros-drivers/rosserial/issues/268>`_)
 * Updating rosserial_tivac for new TivaWare compilation flags (`#260 <https://github.com/ros-drivers/rosserial/issues/260>`_)
 * Contributors: Vitor Matos

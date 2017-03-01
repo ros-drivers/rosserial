@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.6 (2017-03-01)
+------------------
 * Fixing message has no attribute _md5sum (`#257 <https://github.com/ros-drivers/rosserial/issues/257>`_)
 * Contributors: Mike O'Driscoll
 
