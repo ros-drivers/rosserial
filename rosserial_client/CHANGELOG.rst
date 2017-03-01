@@ -2,6 +2,11 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixing message has no attribute _md5sum (`#257 <https://github.com/ros-drivers/rosserial/issues/257>`_)
+* Contributors: Mike O'Driscoll
+
 0.7.5 (2016-11-22)
 ------------------
 * rosserial client variable typedefs (`#254 <https://github.com/ros-drivers/rosserial/issues/254>`_)
