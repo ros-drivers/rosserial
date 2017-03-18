@@ -503,8 +503,8 @@ namespace ros {
       }
 
     public:
-      bool getParam(const char* name, int* param, int length =1){
-        if (requestParam(name) ){
+      bool getParam(const char* name, int* param, int length =1, int timeout = 1000){
+        if (requestParam(name, timeout) ){
           if (length == req_param_resp.ints_length){
             //copy it over
             for(int i=0; i<length; i++)
@@ -514,8 +514,8 @@ namespace ros {
         }
         return false;
       }
-      bool getParam(const char* name, float* param, int length=1){
-        if (requestParam(name) ){
+      bool getParam(const char* name, float* param, int length=1, int timeout = 1000){
+        if (requestParam(name, timeout) ){
           if (length == req_param_resp.floats_length){
             //copy it over
             for(int i=0; i<length; i++)
@@ -525,8 +525,8 @@ namespace ros {
         }
         return false;
       }
-      bool getParam(const char* name, char** param, int length=1){
-        if (requestParam(name) ){
+      bool getParam(const char* name, char** param, int length=1, int timeout = 1000){
+        if (requestParam(name, timeout) ){
           if (length == req_param_resp.strings_length){
             //copy it over
             for(int i=0; i<length; i++)
