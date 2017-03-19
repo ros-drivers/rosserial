@@ -497,7 +497,10 @@ namespace ros {
         uint16_t end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
-          if (hardware_.time() > end_time) return false;
+          if (hardware_.time() > end_time) {
+            logwarn("Failed to get param: timeout expired");
+            return false;
+          }
         }
         return true;
       }
@@ -510,6 +513,8 @@ namespace ros {
             for(int i=0; i<length; i++)
               param[i] = req_param_resp.ints[i];
             return true;
+          } else {
+            logwarn("Failed to get param: length missmatch");
           }
         }
         return false;
@@ -521,6 +526,8 @@ namespace ros {
             for(int i=0; i<length; i++)
               param[i] = req_param_resp.floats[i];
             return true;
+          } else {
+            logwarn("Failed to get param: length missmatch");
           }
         }
         return false;
@@ -532,6 +539,8 @@ namespace ros {
             for(int i=0; i<length; i++)
               strcpy(param[i],req_param_resp.strings[i]);
             return true;
+          } else {
+            logwarn("Failed to get param: length missmatch");
           }
         }
         return false;
