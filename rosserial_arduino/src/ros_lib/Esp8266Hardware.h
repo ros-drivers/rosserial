@@ -1,8 +1,6 @@
 /* 
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Willow Garage, Inc.
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,32 +30,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_H_
-#define _ROS_H_
+#ifndef ESP8266HARDWARE_H
+#define ESP8266HARDWARE_H
 
-#include "ros/node_handle.h"
-#include "ArduinoHardware.h"
-#include "Esp8266Hardware.h"
+#include <ESP8266WiFi.h>
 
-namespace ros
-{
-#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega168__)
-  /* downsize our buffers */
-  typedef NodeHandle_<ArduinoHardware, 6, 6, 150, 150> NodeHandle;
+class Esp8266Hardware {
+  public:
+    Esp8266Hardware()
+    {
+    }
+    
+    void setConnection(IPAddress &server, int port) {
+      this->server = server;
+      this->serverPort = port;
+    }
+    
+    IPAddress getLocalIP() {
+      return tcp.localIP();
+    }
 
-#elif defined(__AVR_ATmega328P__)
+    void init() { 
+      this->tcp.connect(this->server, this->serverPort);
+    }
 
-  typedef NodeHandle_<ArduinoHardware, 25, 25, 280, 280> NodeHandle;
+    int read() {
+      if (this->tcp.connected()) {
+        return tcp.read();
+      } else {
+        this->tcp.connect(this->server, this->serverPort);
+      }
+      return -1;
+    };
+    
+    void write(const uint8_t* data, size_t length) {
+      tcp.write(data, length);
+    }
 
-#elif defined(ESP8266)
+    unsigned long time() {return millis();}
 
-  typedef NodeHandle_<Esp8266Hardware> NodeHandle;
+  protected:
+    WiFiClient tcp;
+    IPAddress server; 
+    uint16_t serverPort = 11411;
+};
 
-#else
-
-  typedef NodeHandle_<ArduinoHardware> NodeHandle;
-
-#endif   
-}
-
-#endif
+#endif  // ESP8266HARDWARE_H
