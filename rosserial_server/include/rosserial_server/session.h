@@ -36,6 +36,7 @@
 #define ROSSERIAL_SERVER_SESSION_H
 
 #include <map>
+#include <typeinfo>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
@@ -43,6 +44,7 @@
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
 #include <rosserial_msgs/Log.h>
+#include <rosserial_msgs/RequestParam.h>
 #include <topic_tools/shape_shifter.h>
 #include <std_msgs/Time.h>
 
@@ -83,6 +85,8 @@ public:
         = boost::bind(&Session::handle_log, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_TIME]
         = boost::bind(&Session::handle_time, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST]
+        = boost::bind(&Session::handle_param, this, _1);
   }
 
   virtual ~Session()
@@ -472,6 +476,55 @@ private:
     // The MCU requesting the time from the server is the sync notification. This
     // call moves the timeout forward.
     set_sync_timeout(timeout_interval_);
+  }
+  
+  void handle_param(ros::serialization::IStream& stream)
+  {
+    rosserial_msgs::RequestParamRequest req;
+    ros::serialization::Serializer<rosserial_msgs::RequestParamRequest>::read(stream, req);
+
+    if (ros::param::has(req.name.c_str())) {
+      ROS_INFO("[Param req] parameter %s exists", req.name.c_str());
+
+      rosserial_msgs::RequestParamResponse resp;
+
+      XmlRpc::XmlRpcValue param_value;
+      if (ros::param::get(req.name.c_str(), param_value)) {
+        switch (param_value.getType())
+        {
+          case XmlRpc::XmlRpcValue::TypeInt:
+            ROS_INFO("%s is type int: %d", req.name.c_str(), (int) param_value);
+            resp.ints.push_back((int32_t)param_value);
+            break;
+          case XmlRpc::XmlRpcValue::TypeDouble:
+            ROS_INFO("%s is type float: %f", req.name.c_str(), (double) param_value);
+            resp.floats.push_back((float)((double)param_value));
+            break;
+          case XmlRpc::XmlRpcValue::TypeString:
+            ROS_INFO("%s is type string: %s", req.name.c_str(), ((std::string)param_value).c_str());
+            resp.strings.push_back((std::string)param_value);
+            break;
+          case XmlRpc::XmlRpcValue::TypeArray:
+            ROS_INFO("%s is type array.", req.name.c_str());
+            // How can I get here? Arrays are not strings.
+            break;
+          default:
+            ROS_WARN("Parameter type not handled: %s", req.name.c_str());
+            return;
+        }
+        // Send response
+        size_t length = ros::serialization::serializationLength(resp);
+        std::vector<uint8_t> message(length);
+        ros::serialization::OStream ostream(&message[0], length);
+        ros::serialization::Serializer<rosserial_msgs::RequestParamResponse>::write(ostream, resp);
+        write_message(message, rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, client_version);
+        set_sync_timeout(timeout_interval_);
+      } else {
+        ROS_WARN("Parameter %s does not exist", req.name.c_str());
+      }
+    } else {
+      ROS_WARN("Parameter %s does not exist", req.name.c_str());
+    }
   }
 
   Socket socket_;
