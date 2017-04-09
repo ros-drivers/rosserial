@@ -37,23 +37,20 @@
 
 #include <ros/ros.h>
 
-#include "rosserial_server/session.h"
 #include "rosserial_server/tcp_server.h"
+
 
 int main(int argc, char* argv[])
 {
-  // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_socket_node");
+
   int port;
   ros::param::param<int>("~port", port, 11411);
 
-  // Listen for rosserial TCP connections in background thread.
   boost::asio::io_service io_service;
-  rosserial_server::TcpServer<
-      rosserial_server::Session<boost::asio::ip::tcp::socket> > s(io_service, port);
-  boost::thread(boost::bind(&boost::asio::io_service::run, &io_service));
-  ROS_INFO_STREAM("Listening on port " << port);
+  rosserial_server::TcpServer<> tcp_server(io_service, port);
 
-  ros::spin();
+  ROS_INFO_STREAM("Listening for rosserial TCP connections on port " << port);
+  io_service.run();
   return 0;
 }

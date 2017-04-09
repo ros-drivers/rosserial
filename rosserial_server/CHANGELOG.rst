@@ -2,6 +2,38 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.6 (2017-03-01)
+------------------
+
+0.7.5 (2016-11-22)
+------------------
+* Fixing build errors for boost >=1.60 (`#226 <https://github.com/ros-drivers/rosserial/issues/226>`_) (`#250 <https://github.com/ros-drivers/rosserial/issues/250>`_)
+* Contributors: Malte Splietker
+
+0.7.4 (2016-09-21)
+------------------
+* Use catkin_EXPORTED_TARGETS to avoid CMake warning (`#246 <https://github.com/ros-drivers/rosserial/issues/246>`_)
+* Fix AsyncReadBuffer for UDP socket case. (`#245 <https://github.com/ros-drivers/rosserial/issues/245>`_)
+* Contributors: Mike Purvis
+
+0.7.3 (2016-08-05)
+------------------
+* Avoid runaway async condition when port is bad. (`#236 <https://github.com/ros-drivers/rosserial/issues/236>`_)
+* Add missing install rule for udp_socket_node
+* Make the ~require param configurable from Session. (`#233 <https://github.com/ros-drivers/rosserial/issues/233>`_)
+* Contributors: Mike Purvis
+
+0.7.2 (2016-07-15)
+------------------
+* Implementation of native UDP rosserial server. (`#231 <https://github.com/ros-drivers/rosserial/issues/231>`_)
+* Explicit session lifecycle for the serial server. (`#228 <https://github.com/ros-drivers/rosserial/issues/228>`_)
+  This is a long overdue change which will resolve some crashes when
+  USB serial devices return error states in the face of noise or other
+  interruptions.
+* Support for VER1 protocol has been dropped.
+* Handle log messages in rosserial_server
+* Contributors: Mike Purvis, mkrauter
+
 0.7.1 (2015-07-06)
 ------------------
 

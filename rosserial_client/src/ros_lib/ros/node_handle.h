@@ -68,7 +68,7 @@
 
 #define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
-#include "msg.h"
+#include "ros/msg.h"
 
 namespace ros {
 
@@ -80,10 +80,10 @@ namespace ros {
     };
 }
 
-#include "publisher.h"
-#include "subscriber.h"
-#include "service_server.h"
-#include "service_client.h"
+#include "ros/publisher.h"
+#include "ros/subscriber.h"
+#include "ros/service_server.h"
+#include "ros/service_client.h"
 
 namespace ros {
 
@@ -348,11 +348,11 @@ namespace ros {
       }
 
       /* Register a new subscriber */
-      template<typename MsgT>
-      bool subscribe(Subscriber< MsgT> & s){
+      template<typename SubscriberT>
+      bool subscribe(SubscriberT& s){
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
-            subscribers[i] = (Subscriber_*) &s;
+            subscribers[i] = static_cast<Subscriber_*>(&s);
             s.id_ = i+100;
             return true;
           }
@@ -366,7 +366,7 @@ namespace ros {
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
-            subscribers[i] = (Subscriber_*) &srv;
+            subscribers[i] = static_cast<Subscriber_*>(&srv);
             srv.id_ = i+100;
             return v;
           }
@@ -380,7 +380,7 @@ namespace ros {
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
-            subscribers[i] = (Subscriber_*) &srv;
+            subscribers[i] = static_cast<Subscriber_*>(&srv);
             srv.id_ = i+100;
             return v;
           }

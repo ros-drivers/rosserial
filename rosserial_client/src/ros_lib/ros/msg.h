@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -36,6 +36,7 @@
 #define _ROS_MSG_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 namespace ros {
 
@@ -114,12 +115,29 @@ public:
     if (exp != 0)
     {
       *val |= ((exp) - 1023 + 127) << 23;
-    }  
+    }
 
     // Copy negative sign.
     *val |= ((uint32_t)(*(inbuffer++)) & 0x80) << 24;
 
     return 8;
+  }
+
+  // Copy data from variable into a byte array
+  template<typename A, typename V>
+  static void varToArr(A arr, const V var)
+  {
+    for(size_t i = 0; i < sizeof(V); i++)
+      arr[i] = (var >> (8 * i));
+  }
+
+  // Copy data from a byte array into variable
+  template<typename V, typename A>
+  static void arrToVar(V& var, const A arr)
+  {
+    var = 0;
+    for(size_t i = 0; i < sizeof(V); i++)
+      var |= (arr[i] << (8 * i));
   }
 
 };

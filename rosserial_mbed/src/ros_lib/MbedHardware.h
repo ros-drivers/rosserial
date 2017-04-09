@@ -10,7 +10,7 @@
 
 #include "mbed.h"
 
-#include "MODSERIAL.h"
+#include "BufferedSerial.h"
 
 class MbedHardware {
   public:
@@ -51,7 +51,7 @@ class MbedHardware {
     unsigned long time(){return t.read_ms();}
 
 protected:
-    MODSERIAL iostream;
+    BufferedSerial iostream;
     long baud_;
     Timer t;
 };

@@ -67,7 +67,7 @@ extern uint32_t _estack;
 // ensure that it ends up at physical address 0x0000.0000.
 //
 //*****************************************************************************
-#ifdef TARGET_IS_TM4C123_RA1
+#ifdef TM4C123GXL
 __attribute__ ((section(".isr_vector")))
 void (* const g_pfnVectors[])(void) =
 {
@@ -228,7 +228,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler                       // PWM 1 Fault
 };
 #endif
-#ifdef TARGET_IS_TM4C129_RA0
+#ifdef TM4C1294XL
 __attribute__ ((section(".isr_vector")))
 void (* const g_pfnVectors[])(void) =
 {

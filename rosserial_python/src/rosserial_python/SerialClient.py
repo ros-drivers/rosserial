@@ -35,7 +35,7 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import roslib;
+import roslib
 import rospy
 import imp
 
@@ -50,10 +50,12 @@ from rosserial_msgs.srv import *
 
 import diagnostic_msgs.msg
 
-import socket
-import time
-import struct
+import errno
 import signal
+import socket
+import struct
+import time
+
 
 def load_pkg_module(package, directory):
     #check if its in the python path
@@ -224,6 +226,7 @@ class RosSerialServer:
 
     def listen(self):
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
         self.serversocket.listen(1)
@@ -300,9 +303,6 @@ class RosSerialServer:
                 raise RuntimeError("RosSerialServer.read() socket connection broken")
             self.msg = self.msg + chunk
         return self.msg
-
-    def close(self):
-        self.port.close()
 
     def inWaiting(self):
         try: # the caller checks just for <1, so we'll peek at just one byte
@@ -400,12 +400,23 @@ class SerialClient:
 
     def tryRead(self, length):
         try:
-            bytes_read = self.port.read(length)
-            if len(bytes_read) < length:
+            read_start = time.time()
+            read_current = read_start
+            bytes_remaining = length
+            result = bytearray()
+            while bytes_remaining != 0 and read_current - read_start < self.timeout:
+                received = self.port.read(bytes_remaining)
+                if len(received) != 0:
+                    result.extend(received)
+                    bytes_remaining -= len(received)
+                read_current = time.time()
+
+            if bytes_remaining != 0:
                 rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
-                              % (length, len(bytes_read)))
+                              % (length, length - bytes_remaining))
                 raise IOError()
-            return bytes_read
+
+            return bytes(result)
         except Exception as e:
             rospy.logwarn("Serial Port read failure: %s", e)
             raise IOError()

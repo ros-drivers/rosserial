@@ -40,11 +40,9 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 import roslib
 import roslib.srvs
 import roslib.message
-import rospkg
-import rospy
 import traceback
 
-import os, sys, subprocess, re
+import os, sys, re
 
 # for copying files
 import shutil
@@ -84,7 +82,7 @@ class PrimitiveDataType:
         f.write('      %s(0)%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      %s %s;\n' % (self.type, self.name) )
+        f.write('      typedef %s _%s_type;\n      _%s_type %s;\n' % (self.type, self.name, self.name, self.name) )
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","").split(".")[-1]
@@ -139,7 +137,7 @@ class AVR_Float64DataType(PrimitiveDataType):
         f.write('      %s(0)%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      float %s;\n' % self.name )
+        f.write('      typedef float _%s_type;\n      _%s_type %s;\n' % (self.name, self.name, self.name) )
 
     def serialize(self, f):
         f.write('      offset += serializeAvrFloat64(outbuffer + offset, this->%s);\n' % self.name)
@@ -155,12 +153,12 @@ class StringDataType(PrimitiveDataType):
         f.write('      %s("")%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      const char* %s;\n' % self.name)
+        f.write('      typedef const char* _%s_type;\n      _%s_type %s;\n' % (self.name, self.name, self.name) )
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
-        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)
+        f.write('      varToArr(outbuffer + offset, length_%s);\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
         f.write('      offset += length_%s;\n' % cn)
@@ -168,7 +166,7 @@ class StringDataType(PrimitiveDataType):
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s;\n' % cn)
-        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(uint32_t));\n' % cn)
+        f.write('      arrToVar(length_%s, (inbuffer + offset));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
@@ -190,7 +188,7 @@ class TimeDataType(PrimitiveDataType):
         f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        f.write('      %s %s;\n' % (self.type, self.name))
+        f.write('      typedef %s _%s_type;\n      _%s_type %s;\n' % (self.type, self.name, self.name, self.name) )
 
     def serialize(self, f):
         self.sec.serialize(f)
@@ -217,11 +215,11 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      %s()%s\n' % (self.name, trailer))
 
     def make_declaration(self, f):
-        c = self.cls("*"+self.name, self.type, self.bytes)
         if self.size == None:
-            f.write('      uint8_t %s_length;\n' % self.name)
-            f.write('      %s st_%s;\n' % (self.type, self.name)) # static instance for copy
-            f.write('      %s * %s;\n' % (self.type, self.name))
+            f.write('      uint32_t %s_length;\n' % self.name)
+            f.write('      typedef %s _%s_type;\n' % (self.type, self.name))
+            f.write('      _%s_type st_%s;\n' % (self.name, self.name)) # static instance for copy
+            f.write('      _%s_type * %s;\n' % (self.name, self.name))
         else:
             f.write('      %s %s[%d];\n' % (self.type, self.name, self.size))
 
@@ -229,15 +227,16 @@ class ArrayDataType(PrimitiveDataType):
         c = self.cls(self.name+"[i]", self.type, self.bytes)
         if self.size == None:
             # serialize length
-            f.write('      *(outbuffer + offset++) = %s_length;\n' % self.name)
-            f.write('      *(outbuffer + offset++) = 0;\n')
-            f.write('      *(outbuffer + offset++) = 0;\n')
-            f.write('      *(outbuffer + offset++) = 0;\n')
-            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % self.name)
+            f.write('      *(outbuffer + offset + 0) = (this->%s_length >> (8 * 0)) & 0xFF;\n' % self.name)
+            f.write('      *(outbuffer + offset + 1) = (this->%s_length >> (8 * 1)) & 0xFF;\n' % self.name)
+            f.write('      *(outbuffer + offset + 2) = (this->%s_length >> (8 * 2)) & 0xFF;\n' % self.name)
+            f.write('      *(outbuffer + offset + 3) = (this->%s_length >> (8 * 3)) & 0xFF;\n' % self.name)
+            f.write('      offset += sizeof(this->%s_length);\n' % self.name)
+            f.write('      for( uint32_t i = 0; i < %s_length; i++){\n' % self.name)
             c.serialize(f)
             f.write('      }\n')
         else:
-            f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      for( uint32_t i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)
             f.write('      }\n')
 
@@ -245,19 +244,22 @@ class ArrayDataType(PrimitiveDataType):
         if self.size == None:
             c = self.cls("st_"+self.name, self.type, self.bytes)
             # deserialize length
-            f.write('      uint8_t %s_lengthT = *(inbuffer + offset++);\n' % self.name)
+            f.write('      uint32_t %s_lengthT = ((uint32_t) (*(inbuffer + offset))); \n' % self.name)
+            f.write('      %s_lengthT |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1); \n' % self.name)
+            f.write('      %s_lengthT |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2); \n' % self.name)
+            f.write('      %s_lengthT |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3); \n' % self.name)
+            f.write('      offset += sizeof(this->%s_length);\n' % self.name)
             f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
             f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
-            f.write('      offset += 3;\n')
             f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
             # copy to array
-            f.write('      for( uint8_t i = 0; i < %s_length; i++){\n' % (self.name) )
+            f.write('      for( uint32_t i = 0; i < %s_length; i++){\n' % (self.name) )
             c.deserialize(f)
             f.write('        memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
+            f.write('      for( uint32_t i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)
             f.write('      }\n')
 
@@ -499,15 +501,19 @@ def MakeLibrary(package, output_path, rospack):
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/msg"):
             if f.endswith(".msg"):
-                file = pkg_dir + "/msg/" + f
+                msg_file = pkg_dir + "/msg/" + f
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
-                definition = open(file).readlines()
-                md5sum = roslib.message.get_message_class(package+'/'+f[0:-4])._md5sum
-                messages.append( Message(f[0:-4], package, definition, md5sum) )
+                definition = open(msg_file).readlines()
+                msg_class = roslib.message.get_message_class(package+'/'+f[0:-4])
+                if msg_class:
+                    md5sum = msg_class._md5sum
+                    messages.append( Message(f[0:-4], package, definition, md5sum) )
+                else:
+                    err_msg = "Unable to build message: %s/%s\n" % (package, f[0:-4])
+                    sys.stderr.write(err_msg)
 
     # find the services in this package
-    services = list()
     if (os.path.exists(pkg_dir+"/srv/")):
         if messages == list():
             print('Exporting %s\n'%package)
@@ -517,14 +523,19 @@ def MakeLibrary(package, output_path, rospack):
         sys.stdout.write('\n    ')
         for f in os.listdir(pkg_dir+"/srv"):
             if f.endswith(".srv"):
-                file = pkg_dir + "/srv/" + f
+                srv_file = pkg_dir + "/srv/" + f
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
-                definition, service = roslib.srvs.load_from_file(file)
-                definition = open(file).readlines()
-                md5req = roslib.message.get_service_class(package+'/'+f[0:-4])._request_class._md5sum
-                md5res = roslib.message.get_service_class(package+'/'+f[0:-4])._response_class._md5sum
-                messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+                definition, service = roslib.srvs.load_from_file(srv_file)
+                definition = open(srv_file).readlines()
+                srv_class = roslib.message.get_service_class(package+'/'+f[0:-4])
+                if srv_class:
+                    md5req = srv_class._request_class._md5sum
+                    md5res = srv_class._response_class._md5sum
+                    messages.append( Service(f[0:-4], package, definition, md5req, md5res ) )
+                else:
+                    err_msg = "Unable to build service: %s/%s\n" % (package, f[0:-4])
+                    sys.stderr.write(err_msg)
         print('\n')
     elif messages != list():
         print('\n')
@@ -538,38 +549,14 @@ def MakeLibrary(package, output_path, rospack):
         msg.make_header(header)
         header.close()
 
-def get_dependency_sorted_package_list(rospack):
-    ''' Returns a list of package names, sorted by dependencies. '''
-    pkgs = rospack.list()
-    dependency_list = list()
-    failed = list()
-    for p in pkgs:
-        try:
-            depends = rospack.get_depends(p)
-            dependent = False
-            for i in range(len(dependency_list)):
-                if dependency_list[i] in depends:
-                    dependency_list.insert(i, p)
-                    dependent = True
-                    break
-            if not dependent:
-                dependency_list.append(p)
-        except rospkg.common.ResourceNotFound as e:
-            failed.append(p + " (missing dependency: " + e.message + ")")
-            print('[%s]: Unable to find dependency: %s. Messages cannot be built.\n'% (p, str(e)))
-    dependency_list.reverse()
-    return [dependency_list, failed]
-
 def rosserial_generate(rospack, path, mapping):
     # horrible hack -- make this die
     global ROS_TO_EMBEDDED_TYPES
     ROS_TO_EMBEDDED_TYPES = mapping
 
-    # find and sort all packages
-    pkgs, failed = get_dependency_sorted_package_list(rospack)
-
     # gimme messages
-    for p in pkgs:
+    failed = []
+    for p in sorted(rospack.list()):
         try:
             MakeLibrary(p, path, rospack)
         except Exception as e:

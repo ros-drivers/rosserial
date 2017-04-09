@@ -93,7 +93,7 @@ typedef boost::shared_ptr<Publisher> PublisherPtr;
 class Subscriber {
 public:
   Subscriber(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer)> write_fn)
+      boost::function<void(std::vector<uint8_t>& buffer)> write_fn)
     : write_fn_(write_fn) {
     ros::SubscribeOptions opts;
     opts.init<topic_tools::ShapeShifter>(
@@ -119,7 +119,7 @@ private:
   }
 
   ros::Subscriber subscriber_;
-  boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
+  boost::function<void(std::vector<uint8_t>& buffer)> write_fn_;
 };
 
 typedef boost::shared_ptr<Subscriber> SubscriberPtr;
@@ -127,7 +127,7 @@ typedef boost::shared_ptr<Subscriber> SubscriberPtr;
 class ServiceClient {
 public:
   ServiceClient(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn)
+      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
     : write_fn_(write_fn) {
     topic_id_ = -1;
     if (!service_info_service_.isValid()) {
@@ -185,7 +185,7 @@ private:
   topic_tools::ShapeShifter response_message_;
   ros::ServiceClient service_client_;
   static ros::ServiceClient service_info_service_;
-  boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
+  boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
   std::string service_md5_;
   std::string request_message_md5_;
   std::string response_message_md5_;

@@ -49,49 +49,48 @@ class SerialSession : public Session<boost::asio::serial_port>
 {
 public:
   SerialSession(boost::asio::io_service& io_service, std::string port, int baud)
-    : Session(io_service), port_(port), baud_(baud), // io_service_(io_service),
-      timer_(io_service), interval_(boost::posix_time::milliseconds(1000))
+    : Session(io_service), port_(port), baud_(baud), timer_(io_service)
   {
-    connect_with_reconnection();
+    ROS_INFO_STREAM("rosserial_server session configured for " << port_ << " at " << baud << "bps.");
+
+    failed_connection_attempts_ = 0;
+    check_connection();
   }
 
 private:
-  ~SerialSession()
+  void check_connection()
   {
-    ROS_WARN("Serial session shutting down. Waiting 1 second for system state to settle.");
+    if (!is_active())
+    {
+      attempt_connection();
+    }
 
-    boost::shared_ptr<boost::asio::deadline_timer> timer
-          (new boost::asio::deadline_timer(
-              socket().get_io_service(),
-              boost::posix_time::seconds(1)));
-
-    // The timer instance is only passed to the callback in order to keep it alive for the
-    // required lifetime. When the callback completes, it goes out of scope and is destructed.
-    timer->async_wait(
-       boost::bind(&SerialSession::restart_session,
-                   boost::ref(socket().get_io_service()), port_, baud_, timer));
-  }
-
-  static void restart_session(boost::asio::io_service& io_service, std::string port, int baud,
-                              boost::shared_ptr<boost::asio::deadline_timer>& timer)
-  {
-    if (ros::ok()) {
-      ROS_INFO("Recreating serial session.");
-      new SerialSession(io_service, port, baud);
-    } else {
-      ROS_INFO("In shutdown, avoiding recreating serial session.");
+    // Every second, check again if the connection should be reinitialized,
+    // if the ROS node is still up.
+    if (ros::ok())
+    {
+      timer_.expires_from_now(boost::posix_time::milliseconds(2000));
+      timer_.async_wait(boost::bind(&SerialSession::check_connection, this));
     }
   }
 
-  bool attempt_connection(bool log_errors = true)
+  void attempt_connection()
   {
-    if (log_errors) ROS_INFO("Opening serial port.");
+    ROS_DEBUG("Opening serial port.");
+
     boost::system::error_code ec;
     socket().open(port_, ec);
     if (ec) {
-      if (log_errors) ROS_ERROR_STREAM("Unable to open port " << port_);
-      return false;
+      failed_connection_attempts_++;
+      if (failed_connection_attempts_ == 1) {
+        ROS_ERROR_STREAM("Unable to open port " << port_ << ": " << ec);
+      } else {
+        ROS_DEBUG_STREAM("Unable to open port " << port_ << " (" << failed_connection_attempts_ << "): " << ec);
+      }
+      return;
     }
+    ROS_INFO_STREAM("Opened " << port_);
+    failed_connection_attempts_ = 0;
 
     typedef boost::asio::serial_port_base serial;
     socket().set_option(serial::baud_rate(baud_));
@@ -102,24 +101,12 @@ private:
 
     // Kick off the session.
     start();
-    return true;
-  }
-
-  void connect_with_reconnection(bool log_errors = true) {
-    if (!attempt_connection(log_errors)) {
-      if (log_errors) {
-        ROS_INFO_STREAM("Attempting reconnection every " << interval_.total_milliseconds() << " ms.");
-      }
-      timer_.expires_from_now(interval_);
-      timer_.async_wait(boost::bind(&SerialSession::connect_with_reconnection, this, false));
-    } else {
-    }
   }
 
   std::string port_;
   int baud_;
-  boost::posix_time::time_duration interval_;
   boost::asio::deadline_timer timer_;
+  int failed_connection_attempts_;
 };
 
 }  // namespace
