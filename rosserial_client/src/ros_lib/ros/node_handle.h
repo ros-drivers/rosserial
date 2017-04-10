@@ -514,7 +514,7 @@ namespace ros {
               param[i] = req_param_resp.ints[i];
             return true;
           } else {
-            logwarn("Failed to get param: length missmatch");
+            logwarn("Failed to get param: length mismatch");
           }
         }
         return false;
@@ -527,7 +527,7 @@ namespace ros {
               param[i] = req_param_resp.floats[i];
             return true;
           } else {
-            logwarn("Failed to get param: length missmatch");
+            logwarn("Failed to get param: length mismatch");
           }
         }
         return false;
@@ -540,7 +540,7 @@ namespace ros {
               strcpy(param[i],req_param_resp.strings[i]);
             return true;
           } else {
-            logwarn("Failed to get param: length missmatch");
+            logwarn("Failed to get param: length mismatch");
           }
         }
         return false;
