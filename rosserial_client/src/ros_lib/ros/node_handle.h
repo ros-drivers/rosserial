@@ -361,8 +361,8 @@ namespace ros {
       }
 
       /* Register a new Service Server */
-      template<typename MReq, typename MRes>
-      bool advertiseService(ServiceServer<MReq,MRes>& srv){
+      template<typename MReq, typename MRes, typename ObjT>
+      bool advertiseService(ServiceServer<MReq,MRes,ObjT>& srv){
         bool v = advertise(srv.pub);
         for(int i = 0; i < MAX_SUBSCRIBERS; i++){
           if(subscribers[i] == 0){ // empty slot
