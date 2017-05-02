@@ -42,32 +42,6 @@
 #include "rosserial_msgs/Log.h"
 #include "rosserial_msgs/RequestParam.h"
 
-#define SYNC_SECONDS        5
-
-#define MODE_FIRST_FF       0
-/*
- * The second sync byte is a protocol version. It's value is 0xff for the first
- * version of the rosserial protocol (used up to hydro), 0xfe for the second version
- * (introduced in hydro), 0xfd for the next, and so on. Its purpose is to enable
- * detection of mismatched protocol versions (e.g. hydro rosserial_python with groovy
- * rosserial_arduino. It must be changed in both this file and in
- * rosserial_python/src/rosserial_python/SerialClient.py
- */
-#define MODE_PROTOCOL_VER   1
-#define PROTOCOL_VER1		0xff // through groovy
-#define PROTOCOL_VER2		0xfe // in hydro
-#define PROTOCOL_VER 		PROTOCOL_VER2
-#define MODE_SIZE_L         2
-#define MODE_SIZE_H         3
-#define MODE_SIZE_CHECKSUM  4   // checksum for msg size received from size L and H
-#define MODE_TOPIC_L        5   // waiting for topic id
-#define MODE_TOPIC_H        6
-#define MODE_MESSAGE        7
-#define MODE_MSG_CHECKSUM   8   // checksum for msg and topic id
-
-
-#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
-
 #include "ros/msg.h"
 
 namespace ros {
@@ -86,6 +60,31 @@ namespace ros {
 #include "ros/service_client.h"
 
 namespace ros {
+
+  const uint8_t SYNC_SECONDS  = 5;
+  const uint8_t MODE_FIRST_FF = 0;
+  /*
+   * The second sync byte is a protocol version. It's value is 0xff for the first
+   * version of the rosserial protocol (used up to hydro), 0xfe for the second version
+   * (introduced in hydro), 0xfd for the next, and so on. Its purpose is to enable
+   * detection of mismatched protocol versions (e.g. hydro rosserial_python with groovy
+   * rosserial_arduino. It must be changed in both this file and in
+   * rosserial_python/src/rosserial_python/SerialClient.py
+   */
+  const uint8_t MODE_PROTOCOL_VER   = 1;
+  const uint8_t PROTOCOL_VER1       = 0xff; // through groovy
+  const uint8_t PROTOCOL_VER2       = 0xfe; // in hydro
+  const uint8_t PROTOCOL_VER        = PROTOCOL_VER2;
+  const uint8_t MODE_SIZE_L         = 2;
+  const uint8_t MODE_SIZE_H         = 3;
+  const uint8_t MODE_SIZE_CHECKSUM  = 4;    // checksum for msg size received from size L and H
+  const uint8_t MODE_TOPIC_L        = 5;    // waiting for topic id
+  const uint8_t MODE_TOPIC_H        = 6;
+  const uint8_t MODE_MESSAGE        = 7;
+  const uint8_t MODE_MSG_CHECKSUM   = 8;    // checksum for msg and topic id
+
+
+  const uint8_t SERIAL_MSG_TIMEOUT  = 20;   // 20 milliseconds to recieve all of message data
 
   using rosserial_msgs::TopicInfo;
 
@@ -211,7 +210,7 @@ namespace ros {
           }else if( mode_ == MODE_FIRST_FF ){
             if(data == 0xff){
               mode_++;
-              last_msg_timeout_time = c_time + MSG_TIMEOUT;
+              last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT;
             }
             else if( hardware_.time() - c_time > (SYNC_SECONDS)){
               /* We have been stuck in spinOnce too long, return error */
