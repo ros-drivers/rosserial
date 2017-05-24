@@ -37,7 +37,9 @@
 
 #include "ros/node_handle.h"
 #include "ArduinoHardware.h"
-#include "Esp8266Hardware.h"
+#if defined(ESP8266)
+  #include "Esp8266Hardware.h"
+#endif
 
 namespace ros
 {
