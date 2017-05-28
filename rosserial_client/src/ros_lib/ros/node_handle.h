@@ -160,6 +160,26 @@ namespace ros {
         topic_ = 0;
       };
 
+      /* Start with a certain baudrate */
+      void initNode(long baudrate){
+        hardware_.setBaud(baudrate);
+        hardware_.init();
+        mode_ = 0;
+        bytes_ = 0;
+        index_ = 0;
+        topic_ = 0;
+      };
+
+      /* Start a named port and a certain baudrate*/
+      void initNode(char *portName, long baudrate){
+        hardware_.setBaud(baudrate);
+        hardware_.init(portName);
+        mode_ = 0;
+        bytes_ = 0;
+        index_ = 0;
+        topic_ = 0;
+      };
+
     protected:
       //State machine variables for spinOnce
       int mode_;
