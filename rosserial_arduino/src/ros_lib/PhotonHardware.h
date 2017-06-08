@@ -32,42 +32,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_H_
-#define _ROS_H_
+#ifndef ROS_PHOTON_HARDWARE_H_
+#define ROS_PHOTON_HARDWARE_H_
 
-#include "ros/node_handle.h"
+#include "Particle.h"
 
-#if defined(SPARK)
-    #include "PhotonHardware.h"
-#else
-    #include "ArduinoHardware.h"
-    #if defined(ESP8266)
-        #include "Esp8266Hardware.h"
-    #endif
-#endif
-
-namespace ros
-{
-#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega168__)
-  /* downsize our buffers */
-  typedef NodeHandle_<ArduinoHardware, 6, 6, 150, 150> NodeHandle;
-
-#elif defined(__AVR_ATmega328P__)
-
-  typedef NodeHandle_<ArduinoHardware, 25, 25, 280, 280> NodeHandle;
-
-#elif defined(ESP8266)
-
-  typedef NodeHandle_<Esp8266Hardware> NodeHandle;
+class PhotonHardware {
+  public:
+    PhotonHardware(USBSerial* io , long baud= 57600){
+      iostream = io;
+      baud_ = baud;
+    }
+    PhotonHardware()
+    {
+      iostream = &Serial;
+      baud_ = 57600;
+    }
+    PhotonHardware(PhotonHardware& h){
+      this->iostream = iostream;
+      this->baud_ = h.baud_;
+    }
   
-#elif defined(SPARK)
-  typedef NodeHandle_<PhotonHardware, 10, 10, 2048, 2048> NodeHandle;
+    void setBaud(long baud){
+      this->baud_= baud;
+    }
+  
+    int getBaud(){return baud_;}
 
-#else
+    void init(){
+      iostream->begin(baud_);
+    }
 
-  typedef NodeHandle_<ArduinoHardware> NodeHandle;
+    int read(){return iostream->read();};
+    void write(uint8_t* data, int length){
+      for(int i=0; i<length; i++)
+        iostream->write(data[i]);
+    }
 
-#endif   
-}
+    unsigned long time(){return millis();}
+
+  protected:
+    USBSerial* iostream;
+    long baud_;
+};
 
 #endif
