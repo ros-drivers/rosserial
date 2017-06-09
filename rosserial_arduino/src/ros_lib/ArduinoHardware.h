@@ -54,7 +54,7 @@
 #elif defined(USE_USBCON)
   // Arduino Leonardo USB Serial Port
   #define SERIAL_CLASS Serial_
-#elif defined(__STM32F1__) and !(defined(USE_STM32_HW_SERIAL))
+#elif (defined(__STM32F1__) and !(defined(USE_STM32_HW_SERIAL))) or defined(SPARK) 
   // Stm32duino Maple mini USB Serial Port
   #define SERIAL_CLASS USBSerial
 #else 
