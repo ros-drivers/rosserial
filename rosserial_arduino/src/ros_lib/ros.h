@@ -36,14 +36,9 @@
 #define _ROS_H_
 
 #include "ros/node_handle.h"
-
-#if defined(SPARK)
-    #include "PhotonHardware.h"
-#else
-    #include "ArduinoHardware.h"
-    #if defined(ESP8266)
-        #include "Esp8266Hardware.h"
-    #endif
+#include "ArduinoHardware.h"
+#if defined(ESP8266)
+  #include "Esp8266Hardware.h"
 #endif
 
 namespace ros
@@ -61,7 +56,7 @@ namespace ros
   typedef NodeHandle_<Esp8266Hardware> NodeHandle;
   
 #elif defined(SPARK)
-  typedef NodeHandle_<PhotonHardware, 10, 10, 2048, 2048> NodeHandle;
+  typedef NodeHandle_<ArduinoHardware, 10, 10, 2048, 2048> NodeHandle;
 
 #else
 
