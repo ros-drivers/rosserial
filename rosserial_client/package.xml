@@ -19,5 +19,6 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>tf</exec_depend>
   
+  <test_depend>rosunit</test_depend>
   <test_depend>rosserial_msgs</test_depend>
 </package>

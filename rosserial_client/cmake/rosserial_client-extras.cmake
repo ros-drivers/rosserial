@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 2.8.3)
 # @public
 #
 function(rosserial_generate_ros_lib)
-  cmake_parse_arguments(make_libraries "" "PACKAGE;SCRIPT" "" ${ARGN}) 
+  cmake_parse_arguments(make_libraries "" "PACKAGE;SCRIPT" "" ${ARGN})
   if(NOT make_libraries_PACKAGE)
     set(make_libraries_PACKAGE rosserial_client)
   endif()

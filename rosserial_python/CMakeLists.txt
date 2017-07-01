@@ -6,6 +6,7 @@ catkin_package()
 
 catkin_python_setup()
 
-install(PROGRAMS nodes/serial_node.py nodes/message_info_service.py
+catkin_install_python(
+  PROGRAMS nodes/message_info_service.py nodes/serial_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

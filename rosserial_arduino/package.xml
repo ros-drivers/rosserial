@@ -2,7 +2,7 @@
   <name>rosserial_arduino</name>
   <version>0.7.6</version>
   <description>
-    Libraries and examples for ROSserial usage on Arduino/AVR Platforms.
+    rosserial for Arduino/AVR platforms.
   </description>
   <author>Michael Ferguson</author>
   <author>Adam Stambler</author>
