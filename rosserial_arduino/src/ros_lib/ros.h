@@ -37,6 +37,7 @@
 
 #include "ros/node_handle.h"
 #include "ArduinoHardware.h"
+#include <avr/pgmspace.h>
 #if defined(ESP8266)
   #include "Esp8266Hardware.h"
 #endif
@@ -56,7 +57,7 @@ namespace ros
     
     const char* readFromFlash( const __FlashStringHelper * what )
     {
-      const prog_char *lp_p = (const prog_char *) what ;
+      PGM_P lp_p = (PGM_P) what ;
       
       int offset = buffer_index_;
       
