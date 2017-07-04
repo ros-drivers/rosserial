@@ -36,6 +36,8 @@
 #define ROS_SUBSCRIBER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
+#include "msg.h"
+
 
 namespace ros {
 
@@ -52,6 +54,7 @@ namespace ros {
       virtual const char * getMsgType()=0;
       virtual const char * getMsgMD5()=0;
       const char * topic_;
+      bool has_flash_topic_;
   };
 
   /* Bound function subscriber. */
@@ -99,6 +102,15 @@ namespace ros {
         endpoint_(endpoint)
       {
         topic_ = topic_name;
+        has_flash_topic_ = false;
+      };
+      
+      Subscriber(const __FlashStringHelper * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+        cb_(cb),
+        endpoint_(endpoint)
+      {
+        topic_ = reinterpret_cast<const char *>( topic_name );
+        has_flash_topic_ = true;
       };
 
       virtual void callback(unsigned char* data)
