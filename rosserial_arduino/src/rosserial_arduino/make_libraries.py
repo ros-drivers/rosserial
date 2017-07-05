@@ -49,28 +49,7 @@ from rosserial_client.make_library import *
 # for copying files
 import shutil
 
-
-# need correct inputs
-if (len(sys.argv) < 2):
-    print __usage__
-    exit()
-    
-# get output path
-path = sys.argv[1]
-if path[-1] == "/":
-    path = path[0:-1]
-print "\nExporting to %s" % path
-
-rospack = rospkg.RosPack()
-
-# copy ros_lib stuff in
-rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
-shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
-
-rosserial_client_copy_files(rospack, path+"/ros_lib/" )
-
-class ArduinoMessage( Message ) :
-  ros_to_embedded_types_ = {
+ROS_TO_EMBEDDED_TYPES = {
     'bool'    :   ('bool',              1, PrimitiveDataType, []),
     'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
     'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
@@ -88,7 +67,10 @@ class ArduinoMessage( Message ) :
     'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
     'string'  :   ('char*',             0, StringDataType, []),
     'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
-  }
+}
+
+class ArduinoMessage( Message ) :
+  ros_to_embedded_types_ = ROS_TO_EMBEDDED_TYPES
   
   def _write_std_includes(self, f):
       f.write('#include <stdint.h>\n')
@@ -108,6 +90,22 @@ class ArduinoService( Service ):
     def write_type_decl(self, f):
         f.write('static const char %s[] PROGMEM = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
 
+# Enforce correct inputs
+if (len(sys.argv) < 2):
+    print(__usage__)
+    exit(1)
 
-# generate messages
+# Sanitize output path
+path = sys.argv[1]
+if path[-1] == "/":
+    path = path[0:-1]
+print "\nExporting to %s" % path
+
+rospack = rospkg.RosPack()
+
+# copy ros_lib stuff in
+rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
+shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
+
+rosserial_client_copy_files(rospack, path+"/ros_lib/")
 rosserial_generate(rospack, path+"/ros_lib", ArduinoMessage, ArduinoService )
