@@ -33,6 +33,8 @@ ROS_TO_EMBEDDED_TYPES = {
     'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
 }
 
+class SerialMessage( Message ) :
+    ros_to_embedded_types_ = ROS_TO_EMBEDDED_TYPES
 # need correct inputs
 if (len(sys.argv) < 2):
     print __usage__
@@ -44,7 +46,7 @@ print "\nExporting to %s" % path
 
 rospack = rospkg.RosPack()
 rosserial_client_copy_files(rospack, path + sep)
-rosserial_generate(rospack, path, ROS_TO_EMBEDDED_TYPES)
+rosserial_generate(rospack, path, SerialMessage)
 
 # Rewrite includes to find headers in a subdirectory. This is important in the context of
 # test nodes as we must distinguish the rosserial client headers from roscpp headers of
