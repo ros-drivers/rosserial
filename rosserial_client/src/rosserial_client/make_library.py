@@ -494,16 +494,17 @@ class Service:
 
 def MakeLibrary(package, output_path, rospack, target_specific_message_class, target_specific_service_class ):
     pkg_dir = rospack.get_path(package)
-    if target_specific_message_class is dict:
-        # Seems like we've got a dictionary with platform-specific type definitions
-        # Wrap it here into local message class
-        class LocalMessage:
+    if isinstance(target_specific_message_class, dict):
+        '''
+        Seems like we've got a dictionary with platform-specific type definitions
+        Wrap it here into local message class
+        We doing it to preserve original rosserial_generate API and ability to
+        customize message generation for specific platforms. 
+        '''
+        class LocalMessage(Message):
             ros_to_embedded_types_ = target_specific_message_class
 
-            def __init__(self):
-                pass
-
-        target_specific_message_class = LocalMessage()
+        target_specific_message_class = LocalMessage
 
 
     # find the messages in this package
