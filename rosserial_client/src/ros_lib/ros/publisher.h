@@ -37,7 +37,6 @@
 
 #include "rosserial_msgs/TopicInfo.h"
 #include "ros/node_handle.h"
-#include "ros/msg.h"
 
 
 namespace ros {

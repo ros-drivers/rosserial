@@ -36,7 +36,6 @@
 #define ROS_SUBSCRIBER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
-#include "ros/msg.h"
 
 
 namespace ros {
