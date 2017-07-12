@@ -49,6 +49,26 @@ from rosserial_client.make_library import *
 # for copying files
 import shutil
 
+ROS_TO_EMBEDDED_TYPES = {
+    'bool'    :   ('bool',              1, PrimitiveDataType, []),
+    'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
+    'char'    :   ('uint8_t',           1, PrimitiveDataType, []),
+    'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
+    'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
+    'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
+    'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
+    'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
+    'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
+    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
+    'float32' :   ('float',             4, PrimitiveDataType, []),
+    'float64' :   ('double',            8, PrimitiveDataType, []),
+    'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
+    'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
+    'string'  :   ('char*',             0, StringDataType, []),
+    'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
+}
+
 # need correct inputs
 if (len(sys.argv) < 2):
     print __usage__
@@ -68,28 +88,6 @@ shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
 shutil.copytree(rosserial_arduino_dir+"/src/examples", path+"/examples")
 
-
-class EmbeddedLinuxMessage( Message ) :
-  ros_to_embedded_types_ = {
-    'bool'    :   ('bool',              1, PrimitiveDataType, []),
-    'byte'    :   ('int8_t',            1, PrimitiveDataType, []),
-    'int8'    :   ('int8_t',            1, PrimitiveDataType, []),
-    'char'    :   ('uint8_t',           1, PrimitiveDataType, []),
-    'uint8'   :   ('uint8_t',           1, PrimitiveDataType, []),
-    'int16'   :   ('int16_t',           2, PrimitiveDataType, []),
-    'uint16'  :   ('uint16_t',          2, PrimitiveDataType, []),
-    'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
-    'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
-    'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
-    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
-    'float32' :   ('float',             4, PrimitiveDataType, []),
-    'float64' :   ('float',             4, AVR_Float64DataType, []),
-    'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
-    'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
-    'string'  :   ('char*',             0, StringDataType, []),
-    'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
-  }
-  
 # generate messages
-rosserial_generate(rospack, path+"/ros_lib", EmbeddedLinuxMessage )
+rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
 
