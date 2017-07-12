@@ -38,6 +38,7 @@
 #include "rosserial_msgs/TopicInfo.h"
 #include "ros/node_handle.h"
 
+
 namespace ros {
 
   /* Generic Publisher */
@@ -46,13 +47,23 @@ namespace ros {
     public:
       Publisher( const char * topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
         topic_(topic_name), 
+        has_flash_topic_( false ),
         msg_(msg),
-        endpoint_(endpoint) {};
-
+        endpoint_(endpoint) 
+      {};
+	
+      Publisher( const __FlashStringHelper * topic_name, Msg * msg, int endpoint=rosserial_msgs::TopicInfo::ID_PUBLISHER) :
+        topic_( reinterpret_cast<const char *>( topic_name ) ), 
+        has_flash_topic_( true ),
+        msg_(msg),
+        endpoint_(endpoint)
+      {};
+      
       int publish( const Msg * msg ) { return nh_->publish(id_, msg); };
       int getEndpointType(){ return endpoint_; }
 
       const char * topic_;
+      bool has_flash_topic_;
       Msg *msg_;
       // id_ and no_ are set by NodeHandle when we advertise 
       int id_;
