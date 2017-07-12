@@ -41,7 +41,6 @@ import roslib
 import roslib.srvs
 import roslib.message
 import traceback
-import rospkg
 import os, sys, re
 
 # for copying files
