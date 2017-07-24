@@ -456,32 +456,37 @@ namespace ros {
       {
         rosserial_msgs::TopicInfo ti;
         int i;
+	static bool flash_read_warned = false;
 	
         for(i = 0; i < MAX_PUBLISHERS; i++)
         {
           if(publishers[i] != 0) // non-empty slot
           {
-	    ReadBuffer buffer;
-	    
-	    ti.topic_id = publishers[i]->id_;
-	    ti.topic_name = (char *) buffer.readTopicName( publishers[i] );
-	    ti.message_type = (char *) buffer.readMsgInfo( publishers[i]->msg_->getType() );
-	    ti.md5sum = (char *) buffer.readMsgInfo( publishers[i]->msg_->getMD5() );
-	    ti.buffer_size = OUTPUT_SIZE;
-	    publish( publishers[i]->getEndpointType(), &ti );
-	    
-	    DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
-	    
-	    // clean up buffer here before eventually going into log
-	    
-	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
-	    {
-	      logerror( "Flash read not impl" );
-	    }
-	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
-	    {
-	      logerror( "Buffer overflow pub" );
-	    }
+            ReadBuffer buffer;
+
+            ti.topic_id = publishers[i]->id_;
+            ti.topic_name = (char *) buffer.readTopicName( publishers[i] );
+            ti.message_type = (char *) buffer.readMsgInfo( publishers[i]->msg_->getType() );
+            ti.md5sum = (char *) buffer.readMsgInfo( publishers[i]->msg_->getMD5() );
+            ti.buffer_size = OUTPUT_SIZE;
+            publish( publishers[i]->getEndpointType(), &ti );
+
+            DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
+
+            // clean up buffer here before eventually going into log
+
+            if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
+            {
+              if (!flash_read_warned)
+              {
+                logerror( "Flash read not impl" );
+                flash_read_warned = true;
+              }
+            }
+            else if ( DefaultReadOutBuffer_::BufferOverflow == error )
+            {
+              logerror( "Buffer overflow pub" );
+            }
           }
         }
         
@@ -489,26 +494,30 @@ namespace ros {
         {
           if(subscribers[i] != 0) // non-empty slot
           {
-	    ReadBuffer buffer;
-	    
-	    ti.topic_id = subscribers[i]->id_;
-	    ti.topic_name = (char *) buffer.readTopicName( subscribers[i] );
-	    ti.message_type = (char *) buffer.readMsgInfo( subscribers[i]->getMsgType() );
-	    ti.md5sum = (char *) buffer.readMsgInfo( subscribers[i]->getMsgMD5() );
-	    ti.buffer_size = INPUT_SIZE;
-	    publish( subscribers[i]->getEndpointType(), &ti );
-	    
-	    DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
-	    
-	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
-	    {
-	      logerror( "Flash read not impl" );
-	    }
-	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
-	    {
-	      logerror( "Buffer overflow pub" );
-	    }
-	  }
+            ReadBuffer buffer;
+
+            ti.topic_id = subscribers[i]->id_;
+            ti.topic_name = (char *) buffer.readTopicName( subscribers[i] );
+            ti.message_type = (char *) buffer.readMsgInfo( subscribers[i]->getMsgType() );
+            ti.md5sum = (char *) buffer.readMsgInfo( subscribers[i]->getMsgMD5() );
+            ti.buffer_size = INPUT_SIZE;
+            publish( subscribers[i]->getEndpointType(), &ti );
+
+            DefaultReadOutBuffer_::ReadoutError error = buffer.getError();
+
+            if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
+            {
+              if (!flash_read_warned)
+              {
+                logerror( "Flash read not impl" );
+                flash_read_warned = true;
+              }
+            }
+            else if ( DefaultReadOutBuffer_::BufferOverflow == error )
+            {
+              logerror( "Buffer overflow pub" );
+            }
+          }
         }
         
         configured_ = true;
