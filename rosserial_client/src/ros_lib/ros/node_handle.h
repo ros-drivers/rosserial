@@ -456,6 +456,7 @@ namespace ros {
       {
         rosserial_msgs::TopicInfo ti;
         int i;
+	static bool flash_read_warned = false;
 	
         for(i = 0; i < MAX_PUBLISHERS; i++)
         {
@@ -476,7 +477,11 @@ namespace ros {
 	    
 	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
 	    {
-	      logerror( "Flash read not impl" );
+	      if (!flash_read_warned)
+	      {
+	        logerror( "Flash read not impl" );
+		flash_read_warned = true;
+              }
 	    }
 	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
 	    {
@@ -502,7 +507,11 @@ namespace ros {
 	    
 	    if ( DefaultReadOutBuffer_::ReadoutFromFlashAttemptedButNotImplemented == error )
 	    {
-	      logerror( "Flash read not impl" );
+	      if (!flash_read_warned)
+	      {
+	        logerror( "Flash read not impl" );
+		flash_read_warned = true;
+              }
 	    }
 	    else if ( DefaultReadOutBuffer_::BufferOverflow == error )
 	    {
