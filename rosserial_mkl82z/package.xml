@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>rosserial_mkl82z</name>
+  <version>0.0.0</version>
+  <description>Library for ROSserial usage on NXP MKL82Z</description>
+
+  <author>Sindre Hansen</author>
+  <maintainer email="sindrehansen92@gmail.com">Sindre Hansen</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://wiki.ros.org/rosserial_mkl82z</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
