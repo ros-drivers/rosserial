@@ -1,4 +1,3 @@
-#include "ros_lib/ros/msg.h"
 #include "ros_lib/ros/subscriber.h"
 #include <gtest/gtest.h>
 

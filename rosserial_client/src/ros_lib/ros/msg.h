@@ -38,11 +38,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-class __FlashStringHelper; // unresolved forward declare
-  
-
 namespace ros {
-  
 
 /* Base Message Type */
 class Msg

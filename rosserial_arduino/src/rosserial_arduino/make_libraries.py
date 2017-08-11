@@ -69,33 +69,12 @@ ROS_TO_EMBEDDED_TYPES = {
     'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
 }
 
-class ArduinoMessage( Message ) :
-  ros_to_embedded_types_ = ROS_TO_EMBEDDED_TYPES
-  
-  def _write_std_includes(self, f):
-      f.write('#include <stdint.h>\n')
-      f.write('#include <string.h>\n')
-      f.write('#include <stdlib.h>\n')
-      f.write('#include "ros/msg.h"\n')
-      f.write('#include "ArduinoIncludes.h"\n')
-        
-  def _write_getType(self, f):
-      f.write('    const char * getType(){ return PSTR( "%s/%s" ); };\n'%(self.package, self.name))
-
-  def _write_getMD5(self, f):
-      f.write('    const char * getMD5(){ return PSTR( "%s" ); };\n'%self.md5)
-
-class ArduinoService( Service ):
-
-    def write_type_decl(self, f):
-        f.write('static const char %s[] PROGMEM = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
-
-# Enforce correct inputs
+# need correct inputs
 if (len(sys.argv) < 2):
-    print(__usage__)
-    exit(1)
-
-# Sanitize output path
+    print __usage__
+    exit()
+    
+# get output path
 path = sys.argv[1]
 if path[-1] == "/":
     path = path[0:-1]
@@ -106,6 +85,8 @@ rospack = rospkg.RosPack()
 # copy ros_lib stuff in
 rosserial_arduino_dir = rospack.get_path(THIS_PACKAGE)
 shutil.copytree(rosserial_arduino_dir+"/src/ros_lib", path+"/ros_lib")
-
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
-rosserial_generate(rospack, path+"/ros_lib", ArduinoMessage, ArduinoService )
+
+# generate messages
+rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
+
