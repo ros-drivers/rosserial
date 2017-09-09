@@ -1,5 +1,7 @@
 <launch>
-  <node pkg="rosserial_python" type="serial_node.py" name="rosserial_python_node" args="/tmp/rosserial_pty2" output="screen" />
+  <node pkg="rosserial_python" type="serial_node.py" name="rosserial_python_node" args="/tmp/rosserial_pty2" output="screen">
+    <param name="fix_pyserial_for_test" value="True" />
+  </node>
 
   <test test-name="rosserial_python_serial_test_publish_subscribe" pkg="rosserial_test"
         type="rosserial_test_publish_subscribe" time-limit="10.0">

@@ -321,7 +321,7 @@ class SerialClient:
         ServiceServer responds to requests from the serial device.
     """
 
-    def __init__(self, port=None, baud=57600, timeout=5.0):
+    def __init__(self, port=None, baud=57600, timeout=5.0, fix_pyserial_for_test=False):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
         self.mutex = thread.allocate_lock()
 
@@ -329,6 +329,7 @@ class SerialClient:
         self.lastsync_lost = rospy.Time(0)
         self.timeout = timeout
         self.synced = False
+        self.fix_pyserial_for_test = fix_pyserial_for_test
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
@@ -341,7 +342,12 @@ class SerialClient:
         else:
             # open a specific port
             try:
-                self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                if self.fix_pyserial_for_test:
+                    # see https://github.com/pyserial/pyserial/issues/59
+                    self.port = Serial(port, baud, timeout=self.timeout*0.5, rtscts=True, dsrdtr=True)
+                else:
+                    self.port = Serial(port, baud, timeout=self.timeout*0.5)
+
             except SerialException as e:
                 rospy.logerr("Error opening serial: %s", e)
                 rospy.signal_shutdown("Error opening serial: %s" % e)
@@ -386,13 +392,18 @@ class SerialClient:
 
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
-        self.port.flushInput()
+        # TODO remove if possible
+        if not self.fix_pyserial_for_test:
+            self.port.flushInput()
+
         # request topic sync
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
     def txStopRequest(self, signal, frame):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
-        self.port.flushInput()
+        if not self.fix_pyserial_for_test:
+            self.port.flushInput()
+
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4")
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")

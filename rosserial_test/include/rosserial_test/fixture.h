@@ -76,7 +76,8 @@ class SingleClientFixture : public ::testing::Test {
 protected:
   static void SetModeFromParam() {
     std::string mode;
-    ros::param::get("~mode", mode);
+    // TODO should default be socket for testing purposes?
+    ros::param::param<std::string>("~mode", mode, "socket");
     ROS_INFO_STREAM("Using test mode [" << mode << "]");
     if (mode == "socket") {
       setup = new SocketSetup();
