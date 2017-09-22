@@ -38,6 +38,7 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 import roslib
 import rospy
 import imp
+import fcntl
 
 import thread
 import multiprocessing
@@ -342,9 +343,14 @@ class SerialClient:
             # open a specific port
             try:
                 self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                fcntl.flock(self.port.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             except SerialException as e:
                 rospy.logerr("Error opening serial: %s", e)
                 rospy.signal_shutdown("Error opening serial: %s" % e)
+                raise SystemExit
+            except IOError:
+                rospy.logerr("Serial port already in use: %s", e)
+                rospy.signal_shutdown("Serial port already in use: %s" % e)
                 raise SystemExit
 
         self.port.timeout = 0.01  # Edit the port timeout
