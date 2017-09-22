@@ -424,6 +424,7 @@ class SerialClient:
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
+        unrecognizedData=''
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if (self.synced == True):
@@ -446,7 +447,15 @@ class SerialClient:
                 flag = [0,0]
                 flag[0] = self.tryRead(1)
                 if (flag[0] != '\xff'):
+                    if flag[0] == '\n':
+                        rospy.loginfo("Raw data from serial port: " + unrecognizedData)
+                        unrecognizedData = ""
+                    else:
+                        unrecognizedData += flag[0]
                     continue
+                if unrecognizedData != "":
+                    rospy.loginfo("Raw data from serial port: " + unrecognizedData)
+                    unrecognizedData = ""
 
                 flag[1] = self.tryRead(1)
                 if ( flag[1] != self.protocol_ver):
