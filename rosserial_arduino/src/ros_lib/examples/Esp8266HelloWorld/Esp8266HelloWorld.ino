@@ -1,9 +1,9 @@
 /*
  * rosserial Publisher Example
  * Prints "hello world!"
- * This intend to connect to a Wifi Access Point 
+ * This intend to connect to a Wifi Access Point
  * and a rosserial socket server.
- * You can launch the rosserial socket server with 
+ * You can launch the rosserial socket server with
  * roslaunch rosserial_server socket.launch
  * The default port is 11411
  *
