@@ -29,12 +29,8 @@ function(rosserial_generate_ros_lib)
   )
   add_custom_target(${PROJECT_NAME}_ros_lib DEPENDS ${PROJECT_BINARY_DIR}/ros_lib)
 
-  if(NOT ${ROSSERIAL_MSGS_FOUND})
-    find_package(rosserial_msgs)
-  endif()
-  if(NOT ${STD_MSGS_FOUND})
-    find_package(std_msgs)
-  endif()
+  find_package(rosserial_msgs)
+  find_package(std_msgs)
   add_dependencies(${PROJECT_NAME}_ros_lib
     rosserial_msgs_generate_messages_py
     std_msgs_generate_messages_py
