@@ -38,6 +38,7 @@ __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 import roslib
 import rospy
 import imp
+import fcntl
 
 import thread
 import multiprocessing
@@ -342,9 +343,14 @@ class SerialClient:
             # open a specific port
             try:
                 self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                fcntl.flock(self.port.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             except SerialException as e:
                 rospy.logerr("Error opening serial: %s", e)
                 rospy.signal_shutdown("Error opening serial: %s" % e)
+                raise SystemExit
+            except IOError:
+                rospy.logerr("Serial port already in use: %s", e)
+                rospy.signal_shutdown("Serial port already in use: %s" % e)
                 raise SystemExit
 
         self.port.timeout = 0.01  # Edit the port timeout
@@ -424,6 +430,7 @@ class SerialClient:
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
+        unrecognizedData=''
         while not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if (self.synced == True):
@@ -446,7 +453,15 @@ class SerialClient:
                 flag = [0,0]
                 flag[0] = self.tryRead(1)
                 if (flag[0] != '\xff'):
+                    if flag[0] == '\n':
+                        rospy.loginfo("Raw data from serial port: " + unrecognizedData)
+                        unrecognizedData = ""
+                    else:
+                        unrecognizedData += flag[0]
                     continue
+                if unrecognizedData != "":
+                    rospy.loginfo("Raw data from serial port: " + unrecognizedData)
+                    unrecognizedData = ""
 
                 flag[1] = self.tryRead(1)
                 if ( flag[1] != self.protocol_ver):
