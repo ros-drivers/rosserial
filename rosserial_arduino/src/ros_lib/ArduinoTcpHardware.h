@@ -44,51 +44,61 @@
 #endif
 
 class ArduinoHardware {
-  public:
-    ArduinoHardware()
-    {
-    }
+public:
+  ArduinoHardware()
+  {
+  }
 
-    void setConnection(IPAddress &server, int port = 11411) {
-      server_ = server;
-      serverPort_ = port;
-    }
+  void setConnection(IPAddress &server, int port = 11411)
+  {
+    server_ = server;
+    serverPort_ = port;
+  }
 
-    IPAddress getLocalIP() {
+  IPAddress getLocalIP()
+  {
 #if defined(ESP8266)
-      return tcp_.localIP();
+    return tcp_.localIP();
 #else
-      return Ethernet.localIP();
+    return Ethernet.localIP();
 #endif
-    }
+  }
 
-    void init(){
+  void init()
+  {
+    tcp_.connect(server_, serverPort_);
+  }
+
+  int read(){
+    if (tcp_.connected())
+    {
+        return tcp_.read();
+    }
+    else
+    {
       tcp_.connect(server_, serverPort_);
     }
+    return -1;
+  }
 
-    int read(){
-      if(tcp_.connected()){
-          return tcp_.read();
-      }else{
-        tcp_.connect(server_, serverPort_);
-      }
-      return -1;
-    }
+  void write(const uint8_t* data, int length)
+  {
+    tcp_.write(data, length);
+  }
 
-    void write(const uint8_t* data, int length){
-      tcp_.write(data, length);
-    }
+  unsigned long time()
+  {
+    return millis();
+  }
 
-    unsigned long time(){return millis();}
-
-  protected:
+protected:
 #if defined(ESP8266)
-    WiFiClient tcp_;
+  WiFiClient tcp_;
 #else
-    EthernetClient tcp_;
+  EthernetClient tcp_;
 #endif
-    IPAddress server_;
-    uint16_t serverPort_ = 11411;
+  IPAddress server_;
+  uint16_t serverPort_ = 11411;
 };
 
 #endif
