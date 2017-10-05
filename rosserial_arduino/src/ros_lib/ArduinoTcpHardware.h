@@ -1,6 +1,8 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
+ * Copyright (c) 2011, Willow Garage, Inc.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,49 +32,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ESP8266HARDWARE_H
-#define ESP8266HARDWARE_H
+#ifndef ROS_ARDUINO_TCP_HARDWARE_H_
+#define ROS_ARDUINO_TCP_HARDWARE_H_
 
-#include <ESP8266WiFi.h>
+#include <Arduino.h>
+#if defined(ESP8266)
+  #include <ESP8266WiFi.h>
+#else
+  #include <SPI.h>
+  #include <Ethernet.h>
+#endif
 
-class Esp8266Hardware {
-  public:
-    Esp8266Hardware()
+class ArduinoHardware {
+public:
+  ArduinoHardware()
+  {
+  }
+
+  void setConnection(IPAddress &server, int port = 11411)
+  {
+    server_ = server;
+    serverPort_ = port;
+  }
+
+  IPAddress getLocalIP()
+  {
+#if defined(ESP8266)
+    return tcp_.localIP();
+#else
+    return Ethernet.localIP();
+#endif
+  }
+
+  void init()
+  {
+    tcp_.connect(server_, serverPort_);
+  }
+
+  int read(){
+    if (tcp_.connected())
     {
+        return tcp_.read();
     }
-    
-    void setConnection(IPAddress &server, int port) {
-      this->server = server;
-      this->serverPort = port;
+    else
+    {
+      tcp_.connect(server_, serverPort_);
     }
-    
-    IPAddress getLocalIP() {
-      return tcp.localIP();
-    }
+    return -1;
+  }
 
-    void init() { 
-      this->tcp.connect(this->server, this->serverPort);
-    }
+  void write(const uint8_t* data, int length)
+  {
+    tcp_.write(data, length);
+  }
 
-    int read() {
-      if (this->tcp.connected()) {
-        return tcp.read();
-      } else {
-        this->tcp.connect(this->server, this->serverPort);
-      }
-      return -1;
-    };
-    
-    void write(const uint8_t* data, size_t length) {
-      tcp.write(data, length);
-    }
+  unsigned long time()
+  {
+    return millis();
+  }
 
-    unsigned long time() {return millis();}
-
-  protected:
-    WiFiClient tcp;
-    IPAddress server; 
-    uint16_t serverPort = 11411;
+protected:
+#if defined(ESP8266)
+  WiFiClient tcp_;
+#else
+  EthernetClient tcp_;
+#endif
+  IPAddress server_;
+  uint16_t serverPort_ = 11411;
 };
 
-#endif  // ESP8266HARDWARE_H
+#endif
