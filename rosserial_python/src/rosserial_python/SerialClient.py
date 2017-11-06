@@ -455,8 +455,8 @@ class SerialClient:
                     continue
 
                 flag = [0,0]
-                flag[0] = self.tryRead(1)
-                if (flag[0] != '\xff'):
+                flag[0] = self.tryRead(3)
+                if (flag[0] != '\xff\xff\xff'):
                     continue
 
                 flag[1] = self.tryRead(1)
@@ -482,9 +482,13 @@ class SerialClient:
                     rospy.loginfo("chk is %d" % ord(msg_len_chk))
                     continue
 
+                msg_nul = self.tryRead(1)
+
                 # topic id (2 bytes)
                 topic_id_header = self.tryRead(2)
                 topic_id, = struct.unpack("<h", topic_id_header)
+
+                msg_nul = self.tryRead(1)
 
                 try:
                     msg = self.tryRead(msg_length)
@@ -493,6 +497,10 @@ class SerialClient:
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
                     rospy.loginfo("msg len is %d",len(msg))
                     raise
+
+                msg = self.decode_msg(msg)
+
+                msg_nul = self.tryRead(1)
 
                 # checksum for topic id and msg
                 chk = self.tryRead(1)
@@ -706,6 +714,29 @@ class SerialClient:
                 ffs = 0
 
             buf.write(c)
+        return buf.getvalue()
+
+    def decode_msg(self, msg):
+        buf = StringIO.StringIO()
+        ffs = 0
+        escaping = False
+
+        for c in msg:
+            if ffs == 2 and c == '\x00': # May be an escape sequence
+                escaping = True
+            elif escaping:
+                if c != '\x00' and c != '\xff': # That wasn't an escape sequence
+                    buf.write(0x00)             # Let's put back that null byte
+                buf.write(c)
+                escaping = False
+            else:
+                buf.write(c)
+
+            if c == '\xff':
+                ffs += 1
+            else:
+                ffs = 0
+
         return buf.getvalue()
 
     def send(self, topic, msg):

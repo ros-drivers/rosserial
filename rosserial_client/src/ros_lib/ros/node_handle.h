@@ -569,23 +569,29 @@ public:
     if (id >= 100 && !configured_)
       return 0;
 
-    /* serialize message */
-    int l = msg->serialize(message_out + 7);
+    /* serialize and encode message */
+    int l = msg->serializeAndEncode(message_out + 11);
 
     /* setup the header */
     message_out[0] = 0xff;
-    message_out[1] = PROTOCOL_VER;
-    message_out[2] = (uint8_t)((uint16_t)l & 255);
-    message_out[3] = (uint8_t)((uint16_t)l >> 8);
-    message_out[4] = 255 - ((message_out[2] + message_out[3]) % 256);
-    message_out[5] = (uint8_t)((int16_t)id & 255);
-    message_out[6] = (uint8_t)((int16_t)id >> 8);
+    message_out[1] = 0xff;
+    message_out[2] = 0xff;
+    message_out[3] = PROTOCOL_VER;
+    message_out[4] = (uint8_t) ((uint16_t)l&255);
+    message_out[5] = (uint8_t) ((uint16_t)l>>8);
+    message_out[6] = 255 - ((message_out[4] + message_out[5])%256);
+    message_out[7] = 0x00;
+    message_out[8] = (uint8_t) ((int16_t)id&255);
+    message_out[9] = (uint8_t) ((int16_t)id>>8);
+    message_out[10] = 0x00;
 
     /* calculate checksum */
     int chk = 0;
-    for (int i = 5; i < l + 7; i++)
+    for (int i = 8; i < l + 11; i++)
       chk += message_out[i];
-    l += 7;
+    l += 11;
+
+    message_out[l++] = 0x00;
     message_out[l++] = 255 - (chk % 256);
 
     if (l <= OUTPUT_SIZE)
