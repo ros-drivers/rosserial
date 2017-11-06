@@ -85,7 +85,8 @@ const uint8_t SYNC_SECONDS  = 5;
  */
 const uint8_t PROTOCOL_VER1       = 0xff; // through groovy
 const uint8_t PROTOCOL_VER2       = 0xfe; // in hydro
-const uint8_t PROTOCOL_VER        = PROTOCOL_VER2;
+const uint8_t PROTOCOL_VER3       = 0xfd; // in hydro
+const uint8_t PROTOCOL_VER        = PROTOCOL_VER3;
 
 const uint8_t MODE_SYNC           = 0;
 const uint8_t MODE_PROTOCOL_VER   = 1;

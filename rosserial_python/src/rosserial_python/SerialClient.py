@@ -361,7 +361,8 @@ class SerialClient:
         # The protocol version is sent as the 2nd sync byte emitted by each end
         self.protocol_ver1 = '\xff'
         self.protocol_ver2 = '\xfe'
-        self.protocol_ver = self.protocol_ver2
+        self.protocol_ver3 = '\xfd'
+        self.protocol_ver = self.protocol_ver3
 
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
@@ -463,7 +464,7 @@ class SerialClient:
                 if ( flag[1] != self.protocol_ver):
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                     rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Rev 2', '\xfc': 'Some future rosserial version'}
                     if (flag[1] in protocol_ver_msgs):
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
