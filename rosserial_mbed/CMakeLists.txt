@@ -1,34 +1,30 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rosserial_mbed)
 
-find_package(catkin REQUIRED COMPONENTS message_generation)
+find_package(catkin REQUIRED COMPONENTS
+  message_generation
+)
 
 add_message_files(FILES
-                  Adc.msg
-                 )
+  Adc.msg
+)
 
 add_service_files(FILES
-                  Test.srv
-                 )
+  Test.srv
+)
 
 generate_messages()
 
-catkin_package(
-  CATKIN_DEPENDS message_runtime
-#  CFG_EXTRAS rosserial_mbed-extras.cmake
+catkin_package(CATKIN_DEPENDS
+  message_runtime
 )
 
-install(DIRECTORY src/ros_lib
+install(
+  DIRECTORY src/ros_lib
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
-#install(DIRECTORY mbed-cmake
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
-
-#install(PROGRAMS src/rosserial_mbed/make_libraries.py
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
-
-
-
+catkin_install_python(
+  PROGRAMS src/${PROJECT_NAME}/make_libraries.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
