@@ -69,26 +69,36 @@ const int SPIN_ERR = -1;
 const int SPIN_TIMEOUT = -2;
 
 const uint8_t SYNC_SECONDS  = 5;
-const uint8_t MODE_FIRST_FF = 0;
+
 /*
- * The second sync byte is a protocol version. It's value is 0xff for the first
- * version of the rosserial protocol (used up to hydro), 0xfe for the second version
- * (introduced in hydro), 0xfd for the next, and so on. Its purpose is to enable
- * detection of mismatched protocol versions (e.g. hydro rosserial_python with groovy
- * rosserial_arduino. It must be changed in both this file and in
+ * A packet always starts with ff ff ff. This sequence cannot appear at any
+ * other point in the message: if it is seen, that means a new packet starts
+ * (and the previous one may have been truncated).
+ *
+ * Right after the three ff's is the protocol version. Its value is 0xff for
+ * the first version of the rosserial protocol (used up to hydro), 0xfe for
+ * the second version (introduced in hydro), 0xfd for the next, and so on.
+ * Its purpose is to enable detection of mismatched protocol versions (e.g.
+ * hydro rosserial_python with groovy rosserial_arduino. It must be changed
+ * in both this file and in
  * rosserial_python/src/rosserial_python/SerialClient.py
  */
-const uint8_t MODE_PROTOCOL_VER   = 1;
 const uint8_t PROTOCOL_VER1       = 0xff; // through groovy
 const uint8_t PROTOCOL_VER2       = 0xfe; // in hydro
 const uint8_t PROTOCOL_VER        = PROTOCOL_VER2;
+
+const uint8_t MODE_SYNC           = 0;
+const uint8_t MODE_PROTOCOL_VER   = 1;
 const uint8_t MODE_SIZE_L         = 2;
 const uint8_t MODE_SIZE_H         = 3;
 const uint8_t MODE_SIZE_CHECKSUM  = 4;    // checksum for msg size received from size L and H
-const uint8_t MODE_TOPIC_L        = 5;    // waiting for topic id
-const uint8_t MODE_TOPIC_H        = 6;
-const uint8_t MODE_MESSAGE        = 7;
-const uint8_t MODE_MSG_CHECKSUM   = 8;    // checksum for msg and topic id
+const uint8_t MODE_NULL_1         = 5;
+const uint8_t MODE_TOPIC_L        = 6;    // waiting for topic id
+const uint8_t MODE_TOPIC_H        = 7;
+const uint8_t MODE_NULL_2         = 8;
+const uint8_t MODE_MESSAGE        = 9;
+const uint8_t MODE_NULL_3         = 10;
+const uint8_t MODE_MSG_CHECKSUM   = 11;    // checksum for msg and topic id
 
 
 const uint8_t SERIAL_MSG_TIMEOUT  = 20;   // 20 milliseconds to recieve all of message data
@@ -191,10 +201,12 @@ public:
 protected:
   //State machine variables for spinOnce
   int mode_;
+  int ffs_;
   int bytes_;
   int topic_;
   int index_;
   int checksum_;
+  bool escaping_;
 
   bool configured_;
 
@@ -219,11 +231,11 @@ public:
     }
 
     /* reset if message has timed out */
-    if (mode_ != MODE_FIRST_FF)
+    if (mode_ != MODE_SYNC)
     {
       if (c_time > last_msg_timeout_time)
       {
-        mode_ = MODE_FIRST_FF;
+        mode_ = MODE_SYNC;
       }
     }
 
@@ -246,22 +258,42 @@ public:
       int data = hardware_.read();
       if (data < 0)
         break;
+
       checksum_ += data;
-      if (mode_ == MODE_MESSAGE)          /* message data being recieved */
+
+      if (ffs_ == 2 && data == 0xff)
       {
-        message_in[index_++] = data;
-        bytes_--;
-        if (bytes_ == 0)                 /* is message complete? if so, checksum */
-          mode_ = MODE_MSG_CHECKSUM;
+        // MODE_SYNC + handles truncated messages
+        ffs_ = 0;
+        last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT;
+        mode_ = MODE_PROTOCOL_VER;
       }
-      else if (mode_ == MODE_FIRST_FF)
+      else if (mode_ == MODE_MESSAGE)        /* message data being recieved */
       {
-        if (data == 0xff)
+        if (ffs_ == 2 && data == 0x00)        // May be an escape sequence
         {
-          mode_++;
-          last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT;
+          escaping_ = true;
         }
-        else if (hardware_.time() - c_time > (SYNC_SECONDS * 1000))
+        else if (escaping_)
+        {
+          if (data != 0xff && data != 0x00)   // That wasn't an escape sequence
+            message_in[index_++] = 0x00;      // Let's put back that null byte
+          message_in[index_++] = data;
+          escaping_ = false;
+        }
+        else
+        {
+          message_in[index_++] = data;
+        }
+
+        bytes_--;
+        if(bytes_ == 0)
+          mode_ = MODE_NULL_3;
+      }
+      else if( mode_ == MODE_SYNC )
+      {
+        // Handling of the sync sequence is done above
+        if( hardware_.time() - c_time > (SYNC_SECONDS*1000))
         {
           /* We have been stuck in spinOnce too long, return error */
           configured_ = false;
@@ -274,9 +306,9 @@ public:
         {
           mode_++;
         }
-        else
+        else if (data != 0xff)
         {
-          mode_ = MODE_FIRST_FF;
+          mode_ = MODE_SYNC;
           if (configured_ == false)
             requestSyncTime();  /* send a msg back showing our protocol version */
         }
@@ -298,7 +330,28 @@ public:
         if ((checksum_ % 256) == 255)
           mode_++;
         else
-          mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
+          mode_ = MODE_SYNC;          /* Abandon the frame if the msg len is wrong */
+      }
+      else if (mode_ == MODE_NULL_1 || mode_ == MODE_NULL_3)
+      {
+        if (data == 0x00)
+          mode_++;
+        else
+          mode_ = MODE_SYNC;
+      }
+      else if (mode_ == MODE_NULL_2)
+      {
+        if (data == 0x00)
+        {
+          if (bytes_ == 0)
+            mode_ = MODE_NULL_3;
+          else
+            mode_ = MODE_MESSAGE;
+        }
+        else
+        {
+          mode_ = MODE_SYNC;
+        }
       }
       else if (mode_ == MODE_TOPIC_L)     /* bottom half of topic id */
       {
@@ -309,13 +362,11 @@ public:
       else if (mode_ == MODE_TOPIC_H)     /* top half of topic id */
       {
         topic_ += data << 8;
-        mode_ = MODE_MESSAGE;
-        if (bytes_ == 0)
-          mode_ = MODE_MSG_CHECKSUM;
+        mode_++;
       }
       else if (mode_ == MODE_MSG_CHECKSUM)    /* do checksum */
       {
-        mode_ = MODE_FIRST_FF;
+        mode_ = MODE_SYNC;
         if ((checksum_ % 256) == 255)
         {
           if (topic_ == TopicInfo::ID_PUBLISHER)
@@ -346,6 +397,11 @@ public:
           }
         }
       }
+
+      if (data == 0xff)
+        ffs_++;
+      else
+        ffs_ = 0;
     }
 
     /* occasionally sync time */
