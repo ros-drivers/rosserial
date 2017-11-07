@@ -171,6 +171,10 @@ public:
         ffs = 0;
     }
 
+    // Return immediately if no escaping is needed
+    if (overhead == 0)
+	    return length;
+
     // Shift message to the right
     for (int i = length-1 ; i >= 0 ; --i)
       outbuffer[i+overhead] = outbuffer[i];
