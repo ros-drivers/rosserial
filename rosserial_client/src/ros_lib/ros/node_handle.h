@@ -102,8 +102,6 @@ const uint8_t MODE_NULL_3         = 10;
 const uint8_t MODE_MSG_CHECKSUM   = 11;    // checksum for msg and topic id
 
 
-const uint8_t SERIAL_MSG_TIMEOUT  = 20;   // 20 milliseconds to recieve all of message data
-
 using rosserial_msgs::TopicInfo;
 
 /* Node Handle */
@@ -214,7 +212,6 @@ protected:
   /* used for syncing the time */
   uint32_t last_sync_time;
   uint32_t last_sync_receive_time;
-  uint32_t last_msg_timeout_time;
 
 public:
   /* This function goes in your loop() function, it handles
@@ -229,15 +226,6 @@ public:
     if ((c_time - last_sync_receive_time) > (SYNC_SECONDS * 2200))
     {
       configured_ = false;
-    }
-
-    /* reset if message has timed out */
-    if (mode_ != MODE_SYNC)
-    {
-      if (c_time > last_msg_timeout_time)
-      {
-        mode_ = MODE_SYNC;
-      }
     }
 
     /* while available buffer, read data */
@@ -266,7 +254,6 @@ public:
       {
         // MODE_SYNC + handles truncated messages
         ffs_ = 0;
-        last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT;
         mode_ = MODE_PROTOCOL_VER;
       }
       else if (mode_ == MODE_MESSAGE)        /* message data being recieved */
