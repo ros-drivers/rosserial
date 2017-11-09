@@ -8,10 +8,22 @@ unsigned char buffer[1];
 class DummyMsg
 {
 public:
-  int serialize(unsigned char *outbuffer) const { return 0; }
-  int deserialize(unsigned char *inbuffer) { return 0; }
-  const char * getType() { return ""; }
-  const char * getMD5() { return ""; }
+  int serialize(unsigned char *outbuffer) const
+  {
+    return 0;
+  }
+  int deserialize(unsigned char *inbuffer)
+  {
+    return 0;
+  }
+  const char * getType()
+  {
+    return "";
+  }
+  const char * getMD5()
+  {
+    return "";
+  }
 };
 
 class DummyClass
