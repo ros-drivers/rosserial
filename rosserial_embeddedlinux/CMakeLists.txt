@@ -9,6 +9,7 @@ catkin_package(CATKIN_DEPENDS)
 
 install(
   DIRECTORY src/ros_lib
+            src/examples
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
