@@ -64,6 +64,10 @@ public:
 namespace ros
 {
 
+const int SPIN_OK = 0;
+const int SPIN_ERR = -1;
+const int SPIN_TIMEOUT = -2;
+
 const uint8_t SYNC_SECONDS  = 5;
 const uint8_t MODE_FIRST_FF = 0;
 /*
@@ -108,6 +112,9 @@ protected:
   /* used for computing current time */
   uint32_t sec_offset, nsec_offset;
 
+  /* Spinonce maximum work timeout */
+  uint32_t spin_timeout_;
+
   uint8_t message_in[INPUT_SIZE];
   uint8_t message_out[OUTPUT_SIZE];
 
@@ -139,6 +146,8 @@ public:
     req_param_resp.floats = NULL;
     req_param_resp.ints_length = 0;
     req_param_resp.ints = NULL;
+
+    spin_timeout_ = 0;
   }
 
   Hardware* getHardware()
@@ -166,6 +175,19 @@ public:
     topic_ = 0;
   };
 
+  /**
+   * @brief Sets the maximum time in millisconds that spinOnce() can work.
+   * This will not effect the processing of the buffer, as spinOnce processes
+   * one byte at a time. It simply sets the maximum time that one call can
+   * process for. You can choose to clear the buffer if that is beneficial if
+   * SPIN_TIMEOUT is returned from spinOnce().
+   * @param timeout The timeout in milliseconds that spinOnce will function.
+   */
+  void setSpinTimeout(const uint32_t& timeout)
+  {
+     spin_timeout_ = timeout;
+  }
+
 protected:
   //State machine variables for spinOnce
   int mode_;
@@ -189,7 +211,6 @@ public:
 
   virtual int spinOnce()
   {
-
     /* restart if timed out */
     uint32_t c_time = hardware_.time();
     if ((c_time - last_sync_receive_time) > (SYNC_SECONDS * 2200))
@@ -209,6 +230,19 @@ public:
     /* while available buffer, read data */
     while (true)
     {
+      // If a timeout has been specified, check how long spinOnce has been running.
+      if (spin_timeout_ > 0)
+      {
+        // If the maximum processing timeout has been exceeded, exit with error.
+        // The next spinOnce can continue where it left off, or optionally
+        // based on the application in use, the hardware buffer could be flushed
+        // and start fresh.
+        if ((hardware_.time() - c_time) > spin_timeout_)
+        {
+          // Exit the spin, processing timeout exceeded.
+          return SPIN_TIMEOUT;
+        }
+      }
       int data = hardware_.read();
       if (data < 0)
         break;
@@ -231,7 +265,7 @@ public:
         {
           /* We have been stuck in spinOnce too long, return error */
           configured_ = false;
-          return -2;
+          return SPIN_TIMEOUT;
         }
       }
       else if (mode_ == MODE_PROTOCOL_VER)
@@ -290,7 +324,7 @@ public:
             negotiateTopics();
             last_sync_time = c_time;
             last_sync_receive_time = c_time;
-            return -1;
+            return SPIN_ERR;
           }
           else if (topic_ == TopicInfo::ID_TIME)
           {
@@ -321,7 +355,7 @@ public:
       last_sync_time = c_time;
     }
 
-    return 0;
+    return SPIN_OK;
   }
 
 
