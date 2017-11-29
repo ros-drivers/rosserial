@@ -2,8 +2,8 @@
 Changelog for package rosserial_embeddedlinux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.7 (2017-11-29)
+------------------
 * Copy src/examples to install dir so make_libraries.py doesn't fail (`#336 <https://github.com/ros-drivers/rosserial/issues/336>`_)
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
 * Contributors: Bei Chen Liu, Jonny Dark

@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.7 (2017-11-29)
+------------------
 * Add overall spin timeout to rosserial read. (`#334 <https://github.com/ros-drivers/rosserial/issues/334>`_)
 * Fixing formatting on files. (`#333 <https://github.com/ros-drivers/rosserial/issues/333>`_)
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)

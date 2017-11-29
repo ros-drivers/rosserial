@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.7 (2017-11-29)
+------------------
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
 * Add ArduinoTcpHardware to use Arduino Ethernet shield. (`#324 <https://github.com/ros-drivers/rosserial/issues/324>`_)
 * Add an example to use Subscriber and ServiceServer as class members. (`#321 <https://github.com/ros-drivers/rosserial/issues/321>`_)
