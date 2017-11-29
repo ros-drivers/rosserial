@@ -2,6 +2,11 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
+* Contributors: Bei Chen Liu
+
 0.7.6 (2017-03-01)
 ------------------
 
