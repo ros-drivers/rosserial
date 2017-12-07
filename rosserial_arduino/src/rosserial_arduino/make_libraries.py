@@ -60,7 +60,7 @@ ROS_TO_EMBEDDED_TYPES = {
     'int32'   :   ('int32_t',           4, PrimitiveDataType, []),
     'uint32'  :   ('uint32_t',          4, PrimitiveDataType, []),
     'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
-    'uint64'  :   ('uint64_t',          4, PrimitiveDataType, []),
+    'uint64'  :   ('uint64_t',          8, PrimitiveDataType, []),
     'float32' :   ('float',             4, PrimitiveDataType, []),
     'float64' :   ('float',             4, AVR_Float64DataType, []),
     'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
