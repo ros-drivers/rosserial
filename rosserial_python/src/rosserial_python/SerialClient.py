@@ -341,17 +341,17 @@ class SerialClient:
             self.port=port
         else:
             # open a specific port
-            try:
-                if self.fix_pyserial_for_test:
-                    # see https://github.com/pyserial/pyserial/issues/59
-                    self.port = Serial(port, baud, timeout=self.timeout*0.5, rtscts=True, dsrdtr=True)
-                else:
-                    self.port = Serial(port, baud, timeout=self.timeout*0.5)
-
-            except SerialException as e:
-                rospy.logerr("Error opening serial: %s", e)
-                rospy.signal_shutdown("Error opening serial: %s" % e)
-                raise SystemExit
+            while True:
+                try:
+                    if self.fix_pyserial_for_test:
+                        # see https://github.com/pyserial/pyserial/issues/59
+                        self.port = Serial(port, baud, timeout=self.timeout*0.5, rtscts=True, dsrdtr=True)
+                    else:
+                        self.port = Serial(port, baud, timeout=self.timeout*0.5)
+                    break
+                except SerialException as e:
+                    rospy.logerr("Error opening serial: %s", e)
+                    time.sleep(3)
 
         self.port.timeout = 0.01  # Edit the port timeout
 
