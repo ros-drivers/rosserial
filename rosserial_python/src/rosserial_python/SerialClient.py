@@ -341,7 +341,7 @@ class SerialClient:
             self.port=port
         else:
             # open a specific port
-            while True:
+            while not rospy.is_shutdown():
                 try:
                     if self.fix_pyserial_for_test:
                         # see https://github.com/pyserial/pyserial/issues/59
@@ -352,6 +352,9 @@ class SerialClient:
                 except SerialException as e:
                     rospy.logerr("Error opening serial: %s", e)
                     time.sleep(3)
+
+        if rospy.is_shutdown():
+            return
 
         self.port.timeout = 0.01  # Edit the port timeout
 
