@@ -494,7 +494,7 @@ class SerialClient:
                 except IOError:
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed : Failed to read msg data")
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
-                    rospy.loginfo("msg len is %d",len(msg))
+                    rospy.loginfo("expected msg length is %d", msg_length)
                     raise
 
                 # checksum for topic id and msg
