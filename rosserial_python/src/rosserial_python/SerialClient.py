@@ -45,6 +45,7 @@ from serial import *
 import StringIO
 
 from std_msgs.msg import Time
+from std_srvs.srv import Empty, EmptyResponse
 from rosserial_msgs.msg import *
 from rosserial_msgs.srv import *
 
@@ -241,7 +242,7 @@ class RosSerialServer:
             self.socket = clientsocket
             self.isConnected = True
 
-            if (self.fork_server == True):	# if configured to launch server in a separate process
+            if (self.fork_server == True): # if configured to launch server in a separate process
                 rospy.loginfo("Forking a socket server process")
                 process = multiprocessing.Process(target=self.startSocketServer, args=(address))
                 process.daemon = True
@@ -333,6 +334,8 @@ class SerialClient:
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
+        rospy.Service('~hard_reset', Empty, self.hard_reset)
+
         if port== None:
             # no port specified, listen for any new port?
             pass
@@ -413,27 +416,28 @@ class SerialClient:
         sys.exit(0)
 
     def tryRead(self, length):
-        try:
-            read_start = time.time()
-            read_current = read_start
-            bytes_remaining = length
-            result = bytearray()
-            while bytes_remaining != 0 and read_current - read_start < self.timeout:
-                received = self.port.read(bytes_remaining)
-                if len(received) != 0:
-                    result.extend(received)
-                    bytes_remaining -= len(received)
-                read_current = time.time()
+        with self.mutex:
+            try:
+                read_start = time.time()
+                read_current = read_start
+                bytes_remaining = length
+                result = bytearray()
+                while bytes_remaining != 0 and read_current - read_start < self.timeout:
+                    received = self.port.read(bytes_remaining)
+                    if len(received) != 0:
+                        result.extend(received)
+                        bytes_remaining -= len(received)
+                    read_current = time.time()
 
-            if bytes_remaining != 0:
-                rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
-                              % (length, length - bytes_remaining))
+                if bytes_remaining != 0:
+                    rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
+                                  % (length, length - bytes_remaining))
+                    raise IOError()
+
+                return bytes(result)
+            except Exception as e:
+                rospy.logwarn("Serial Port read failure: %s", e)
                 raise IOError()
-
-            return bytes(result)
-        except Exception as e:
-            rospy.logwarn("Serial Port read failure: %s", e)
-            raise IOError()
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
@@ -453,9 +457,10 @@ class SerialClient:
             # an IOError if there's a serial problem or timeout. In that scenario, a single handler at the
             # bottom attempts to reconfigure the topics.
             try:
-                if self.port.inWaiting() < 1:
-                    time.sleep(0.001)
-                    continue
+                with self.mutex:
+                    if self.port.inWaiting() < 1:
+                        time.sleep(0.001)
+                        continue
 
                 flag = [0,0]
                 flag[0] = self.tryRead(1)
@@ -578,6 +583,7 @@ class SerialClient:
                 raise Exception('Checksum does not match: ' + srv.mres._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service server failed: %s", e)
+
     def setupServiceServerSubscriber(self, data):
         """ Register a new service server. """
         try:
@@ -642,7 +648,6 @@ class SerialClient:
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
-
 
     def handleParameterRequest(self, data):
         """ Send parameters to device. Supports only simple datatypes and arrays of such. """
@@ -735,3 +740,22 @@ class SerialClient:
         status.values[1].value=time.ctime(self.lastsync_lost.to_sec())
 
         self.pub_diagnostics.publish(msg)
+
+    def hard_reset(self, *args, **kwargs):
+        """
+        Forces the Arduino to perform a hard reset, as though the reset button was pressed.
+        """
+        with self.mutex:
+            rospy.loginfo('Begining hard reset. Closing serial port...')
+            self.port.close()
+            rospy.loginfo('Resetting Arduino on port %s...' % self.port.portstr)
+            with Serial(self.port.portstr) as arduino:
+                arduino.setDTR(False)
+                time.sleep(3)
+                arduino.flushInput()
+                arduino.setDTR(True)
+                time.sleep(5)
+            rospy.loginfo('Reopening serial port...')
+            self.port.open()
+            rospy.loginfo('Hard reset complete.')
+        return EmptyResponse()
