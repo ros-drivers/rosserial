@@ -334,7 +334,7 @@ class SerialClient:
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
-        rospy.Service('~hard_reset', Empty, self.hard_reset)
+        rospy.Service('~hard_reset_arduino', Empty, self.hard_reset_arduino)
 
         if port== None:
             # no port specified, listen for any new port?
@@ -621,6 +621,7 @@ class SerialClient:
                 raise Exception('Checksum does not match: ' + srv.mreq._md5sum + ',' + msg.md5sum)
         except Exception as e:
             rospy.logerr("Creation of service client failed: %s", e)
+
     def setupServiceClientSubscriber(self, data):
         """ Register a new service client. """
         try:
@@ -741,7 +742,7 @@ class SerialClient:
 
         self.pub_diagnostics.publish(msg)
 
-    def hard_reset(self, *args, **kwargs):
+    def hard_reset_arduino(self, *args, **kwargs):
         """
         Forces the Arduino to perform a hard reset, as though the reset button was pressed.
         """
