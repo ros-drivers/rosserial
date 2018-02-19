@@ -105,7 +105,7 @@ class ArduinoHardware {
         iostream->write(data[i]);
     }
 
-    unsigned long time(){return millis();}
+    unsigned long time(){return micros();}
 
   protected:
     SERIAL_CLASS* iostream;
