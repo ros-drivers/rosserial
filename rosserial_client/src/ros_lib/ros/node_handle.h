@@ -68,7 +68,7 @@ const int SPIN_OK = 0;
 const int SPIN_ERR = -1;
 const int SPIN_TIMEOUT = -2;
 
-const uint8_t SYNC_SECONDS  = 5;
+const uint8_t SYNC_SECONDS  = 1;
 const uint8_t MODE_FIRST_FF = 0;
 /*
  * The second sync byte is a protocol version. It's value is 0xff for the first
@@ -91,7 +91,7 @@ const uint8_t MODE_MESSAGE        = 7;
 const uint8_t MODE_MSG_CHECKSUM   = 8;    // checksum for msg and topic id
 
 
-const uint8_t SERIAL_MSG_TIMEOUT  = 20;   // 20 milliseconds to recieve all of message data
+const uint8_t SERIAL_MSG_TIMEOUT_SECONDS_SECONDS  = 0.02;   // 20 milliseconds to recieve all of message data
 
 using rosserial_msgs::TopicInfo;
 
@@ -107,13 +107,13 @@ protected:
   Hardware hardware_;
 
   /* time used for syncing */
-  uint32_t rt_time;
+  uint64_t rt_time;
 
   /* used for computing current time */
   uint32_t sec_offset, nsec_offset;
 
   /* Spinonce maximum work timeout */
-  uint32_t spin_timeout_;
+  uint32_t spin_timeout_microseconds_microseconds_;
 
   uint8_t message_in[INPUT_SIZE];
   uint8_t message_out[OUTPUT_SIZE];
@@ -147,7 +147,7 @@ public:
     req_param_resp.ints_length = 0;
     req_param_resp.ints = NULL;
 
-    spin_timeout_ = 0;
+    spin_timeout_microseconds_ = 0;
   }
 
   Hardware* getHardware()
@@ -181,11 +181,11 @@ public:
    * one byte at a time. It simply sets the maximum time that one call can
    * process for. You can choose to clear the buffer if that is beneficial if
    * SPIN_TIMEOUT is returned from spinOnce().
-   * @param timeout The timeout in milliseconds that spinOnce will function.
+   * @param timeout The timeout in microseconds that spinOnce will function.
    */
-  void setSpinTimeout(const uint32_t& timeout)
+  void setSpinTimeout(const uint32_t& timeout_milliseconds)
   {
-     spin_timeout_ = timeout;
+     spin_timeout_microseconds_ = timeout_milliseconds * 1000;
   }
 
 protected:
@@ -199,9 +199,9 @@ protected:
   bool configured_;
 
   /* used for syncing the time */
-  uint32_t last_sync_time;
-  uint32_t last_sync_receive_time;
-  uint32_t last_msg_timeout_time;
+  uint64_t last_sync_time;
+  uint64_t last_sync_receive_time;
+  uint64_t last_msg_timeout_time;
 
 public:
   /* This function goes in your loop() function, it handles
@@ -212,8 +212,8 @@ public:
   virtual int spinOnce()
   {
     /* restart if timed out */
-    uint32_t c_time = hardware_.time();
-    if ((c_time - last_sync_receive_time) > (SYNC_SECONDS * 2200))
+    uint64_t c_time = hardware_.time();
+    if ((c_time - last_sync_receive_time) > (SYNC_SECONDS * 1000 * 2200)) // TODO(floriantschopp): why 2200?
     {
       configured_ = false;
     }
@@ -231,13 +231,13 @@ public:
     while (true)
     {
       // If a timeout has been specified, check how long spinOnce has been running.
-      if (spin_timeout_ > 0)
+      if (spin_timeout_microseconds_ > 0)
       {
         // If the maximum processing timeout has been exceeded, exit with error.
         // The next spinOnce can continue where it left off, or optionally
         // based on the application in use, the hardware buffer could be flushed
         // and start fresh.
-        if ((hardware_.time() - c_time) > spin_timeout_)
+        if ((hardware_.time() - c_time) > spin_timeout_microseconds_)
         {
           // Exit the spin, processing timeout exceeded.
           return SPIN_TIMEOUT;
@@ -259,9 +259,9 @@ public:
         if (data == 0xff)
         {
           mode_++;
-          last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT;
+          last_msg_timeout_time = c_time + SERIAL_MSG_TIMEOUT_SECONDS * 1000000;
         }
-        else if (hardware_.time() - c_time > (SYNC_SECONDS * 1000))
+        else if (hardware_.time() - c_time > (SYNC_SECONDS * 1000 * 1000))
         {
           /* We have been stuck in spinOnce too long, return error */
           configured_ = false;
@@ -349,7 +349,7 @@ public:
     }
 
     /* occasionally sync time */
-    if (configured_ && ((c_time - last_sync_time) > (SYNC_SECONDS * 500)))
+    if (configured_ && ((c_time - last_sync_time) > (SYNC_SECONDS * 1000 * 500)))
     {
       requestSyncTime();
       last_sync_time = c_time;
@@ -379,7 +379,7 @@ public:
   void syncTime(uint8_t * data)
   {
     std_msgs::Time t;
-    uint32_t offset = hardware_.time() - rt_time;
+    uint64_t offset = hardware_.time() - rt_time;
 
     t.deserialize(data);
     t.data.sec += offset / 1000;
@@ -391,19 +391,19 @@ public:
 
   Time now()
   {
-    uint32_t ms = hardware_.time();
+    uint64_t mus = hardware_.time();
     Time current_time;
-    current_time.sec = ms / 1000 + sec_offset;
-    current_time.nsec = (ms % 1000) * 1000000UL + nsec_offset;
+    current_time.sec = mus / 1000000 + sec_offset;
+    current_time.nsec = (mus % 1000000) * 1000000UL + nsec_offset;
     normalizeSecNSec(current_time.sec, current_time.nsec);
     return current_time;
   }
 
   void setNow(Time & new_now)
   {
-    uint32_t ms = hardware_.time();
-    sec_offset = new_now.sec - ms / 1000 - 1;
-    nsec_offset = new_now.nsec - (ms % 1000) * 1000000UL + 1000000000UL;
+    uint32_t mus = hardware_.time();
+    sec_offset = new_now.sec - mus / 1000000 - 1;
+    nsec_offset = new_now.nsec - (mus % 1000000) * 1000000UL + 1000000000UL;
     normalizeSecNSec(sec_offset, nsec_offset);
   }
 
