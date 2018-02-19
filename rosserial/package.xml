@@ -15,6 +15,7 @@
   <run_depend>rosserial_msgs</run_depend>
   <run_depend>rosserial_client</run_depend>
   <run_depend>rosserial_python</run_depend>
+  <run_depend>rosserial_arduino</run_depend>
 
   <export>
    <metapackage/>
