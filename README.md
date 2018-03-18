@@ -30,7 +30,7 @@ $ tar -xvf arduino-1.6.7-linux64.tar.xz
 For teensyduino, the url is not static either and will change. At this time you get it with
 
 ```
-$ curl https://www.pjrc.com/teensy/td_127/teensyduino.64bit
+$ curl https://www.pjrc.com/teensy/td_127/teensyduino.64bit > teensyduino.64bit
 $ chmod +x teensyduino.64bit
 $ ./teensyduino.64bit
 ```
