@@ -40,7 +40,7 @@ from std_srvs.srv import Empty, EmptyResponse
 
 from serial import Serial
 
-from rosserial_python import SerialClient as _SerialClient, ERROR_NO_SYNC
+from rosserial_python import SerialClient as _SerialClient
 
 MINIMUM_RESET_TIME = 30
 
@@ -50,7 +50,7 @@ class SerialClient(_SerialClient):
         # The number of seconds to wait after a sync failure for a sync success before automatically performing a reset.
         # If 0, no reset is performed.
         self.auto_reset_timeout = kwargs.pop('auto_reset_timeout', 0)
-        self.lastsync_reset = rospy.Time(0)
+        self.lastsync_reset = rospy.Time.now()
         rospy.Service('~reset_arduino', Empty, self.resetArduino)
         super(SerialClient, self).__init__(*args, **kwargs)
 
@@ -76,11 +76,10 @@ class SerialClient(_SerialClient):
 
     def sendDiagnostics(self, level, msg_text):
         super(SerialClient, self).sendDiagnostics(level, msg_text)
-        # When we send a sync error diagnostic message, check if we need to also perform a reset due to a perpetual sync failure.
-        if self.auto_reset_timeout and msg_text == ERROR_NO_SYNC:
-            if (self.lastsync_lost - self.lastsync_success).secs >= self.auto_reset_timeout:
-                if (rospy.Time.now() - self.lastsync_reset).secs < MINIMUM_RESET_TIME:
-                    rospy.loginfo('Sync has failed, but waiting for last reset.')
-                else:
-                    rospy.loginfo('Sync has failed for over %s seconds. Initiating automatic reset.' % self.auto_reset_timeout)
-                    self.resetArduino()
+        # Reset when we haven't received any data from the Arduino in over N seconds.
+        if self.auto_reset_timeout and (rospy.Time.now() - self.last_read).secs >= self.auto_reset_timeout:
+            if (rospy.Time.now() - self.lastsync_reset).secs < MINIMUM_RESET_TIME:
+                rospy.loginfo('Sync has failed, but waiting for last reset to complete.')
+            else:
+                rospy.loginfo('Sync has failed for over %s seconds. Initiating automatic reset.' % self.auto_reset_timeout)
+                self.resetArduino()
