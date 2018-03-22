@@ -4,7 +4,7 @@ language: generic
 
 env:
   - CI_ROS_DISTRO=indigo CC=gcc CXX=g++ PATH=/usr/sbin:/usr/bin:/sbin:/bin
-  - CI_ROS_DISTRO=indigo CC=clang CXX=clang++ PATH=/usr/local/clang-3.9.0/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  - CI_ROS_DISTRO=indigo CC=clang CXX=clang++ PATH=/usr/local/clang-5.0.0/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 before_install:
   - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
