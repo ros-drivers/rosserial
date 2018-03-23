@@ -20,6 +20,8 @@ catkin_package(
   CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
+catkin_python_setup()
+
 install(
   DIRECTORY src/ros_lib
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
@@ -31,6 +33,6 @@ install(
 )
 
 catkin_install_python(
-  PROGRAMS src/${PROJECT_NAME}/make_libraries.py
+  PROGRAMS src/${PROJECT_NAME}/make_libraries.py nodes/serial_node.py
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

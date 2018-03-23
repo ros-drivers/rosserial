@@ -20,6 +20,5 @@
   <run_depend>rosserial_msgs</run_depend>
   <run_depend>rosserial_client</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>rosserial_python</run_depend>
 </package>
-
-
