@@ -79,7 +79,7 @@ public:
     // If you get an error on the following line it means that your handler does
     // not meet the documented type requirements for a WriteHandler.
     BOOST_ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
-#if !defined(BOOST_ASIO_ENABLE_OLD_SERVICES)
+#if (BOOST_VERSION >= 106600)
     boost::asio::async_completion<WriteHandler,
       void (boost::system::error_code, std::size_t)> init(handler);
 
@@ -104,7 +104,7 @@ public:
     // If you get an error on the following line it means that your handler does
     // not meet the documented type requirements for a ReadHandler.
     BOOST_ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
-#if !defined(BOOST_ASIO_ENABLE_OLD_SERVICES)
+#if (BOOST_VERSION >= 106600)
     boost::asio::async_completion<ReadHandler,
       void (boost::system::error_code, std::size_t)> init(handler);
 
