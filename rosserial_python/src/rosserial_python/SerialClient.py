@@ -710,10 +710,10 @@ class SerialClient(object):
             if t!= type(p):
                 rospy.logerr('All Paramers in the list %s must be of the same type'%req.name)
                 return
-        if t == int:
-            resp.ints= param
+        if t == int or t == bool:
+            resp.ints = param
         if t == float:
-            resp.floats=param
+            resp.floats =param
         if t == str:
             resp.strings = param
         data_buffer = StringIO.StringIO()

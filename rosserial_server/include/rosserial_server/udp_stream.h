@@ -79,10 +79,21 @@ public:
     // If you get an error on the following line it means that your handler does
     // not meet the documented type requirements for a WriteHandler.
     BOOST_ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+#if (BOOST_VERSION >= 106600)
+    // See: http://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/net_ts.html
+    boost::asio::async_completion<WriteHandler,
+      void (boost::system::error_code, std::size_t)> init(handler);
 
+    this->get_service().async_send_to(
+        this->get_implementation(), buffers, client_endpoint_, 0,
+        init.completion_handler);
+
+    return init.result.get();
+#else
     return this->get_service().async_send_to(
         this->get_implementation(), buffers, client_endpoint_, 0,
         BOOST_ASIO_MOVE_CAST(WriteHandler)(handler));
+#endif
   }
 
   template <typename MutableBufferSequence, typename ReadHandler>
@@ -94,10 +105,20 @@ public:
     // If you get an error on the following line it means that your handler does
     // not meet the documented type requirements for a ReadHandler.
     BOOST_ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
+#if (BOOST_VERSION >= 106600)
+    // See: http://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/net_ts.html
+    boost::asio::async_completion<ReadHandler,
+      void (boost::system::error_code, std::size_t)> init(handler);
 
+    this->get_service().async_receive(this->get_implementation(),
+        buffers, 0, init.completion_handler);
+
+    return init.result.get();
+#else
     return this->get_service().async_receive_from(
         this->get_implementation(), buffers, client_endpoint_, 0,
         BOOST_ASIO_MOVE_CAST(ReadHandler)(handler));
+#endif
   }
 
 private:
