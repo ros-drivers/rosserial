@@ -60,7 +60,7 @@ class MessageInfoService(object):
 
   def _message_info_cb(self, req):
     package_message = tuple(req.type.split("/"))
-    if not self.message_cache.has_key(package_message):
+    if package_message not in self.message_cache:
       rospy.loginfo("Loading module to return info on %s/%s." % package_message)
       msg = load_message(*package_message)
       self.message_cache[package_message] = (msg._md5sum, msg._full_text)
@@ -71,7 +71,7 @@ class MessageInfoService(object):
   def _service_info_cb(self, req):
     rospy.logdebug("req.service is %s" % req.service)
     package_service = tuple(req.service.split("/"))
-    if not self.service_cache.has_key(package_service):
+    if package_service not in self.service_cache:
       rospy.loginfo("Loading module to return info on service %s/%s." % package_service)
       srv,mreq,mres = load_service(*package_service)
       self.service_cache[package_service] = (srv._md5sum,mreq._md5sum,mres._md5sum)

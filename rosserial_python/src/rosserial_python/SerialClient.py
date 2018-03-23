@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 #####################################################################
 # Software License Agreement (BSD License)
@@ -39,10 +40,18 @@ import roslib
 import rospy
 import imp
 
-import thread
+try:
+    import thread
+except ImportError as e:
+    import _thread as thread
+
 import multiprocessing
 from serial import *
-import StringIO
+
+try:
+    import StringIO
+except ImportError as e:
+    import io as StringIO
 
 from std_msgs.msg import Time
 from rosserial_msgs.msg import *
@@ -56,6 +65,15 @@ import socket
 import struct
 import time
 
+import sys
+if sys.version_info[0] >= 3:
+    def chr(a):
+        return bytes([a])
+    def ord(a):
+        if isinstance(a, int):
+            return a
+        else:
+            return int.from_bytes(a, 'little')
 
 def load_pkg_module(package, directory):
     #check if its in the python path
@@ -220,7 +238,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print "Fork_server is: ", fork_server
+        print("Fork_server is: ", fork_server)
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -233,7 +251,7 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print "waiting for socket connection"
+            print("waiting for socket connection")
             (clientsocket, address) = self.serversocket.accept()
 
             #now do something with the clientsocket
@@ -310,7 +328,7 @@ class RosSerialServer:
             if chunk == '':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] == errno.EWOULDBLOCK:
                 return 0
             raise
@@ -362,8 +380,8 @@ class SerialClient:
 
         # hydro introduces protocol ver2 which must match node_handle.h
         # The protocol version is sent as the 2nd sync byte emitted by each end
-        self.protocol_ver1 = '\xff'
-        self.protocol_ver2 = '\xfe'
+        self.protocol_ver1 = b'\xff'
+        self.protocol_ver2 = b'\xfe'
         self.protocol_ver = self.protocol_ver2
 
         self.publishers = dict()  # id:Publishers
@@ -400,14 +418,14 @@ class SerialClient:
             self.port.flushInput()
 
         # request topic sync
-        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
+        self.port.write(b"\xff" + self.protocol_ver + b"\x00\x00\xff\x00\x00\xff")
 
     def txStopRequest(self, signal, frame):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
         if not self.fix_pyserial_for_test:
             self.port.flushInput()
 
-        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4")
+        self.port.write(b"\xff" + self.protocol_ver + b"\x00\x00\xff\x0b\x00\xf4")
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")
         sys.exit(0)
@@ -459,14 +477,14 @@ class SerialClient:
 
                 flag = [0,0]
                 flag[0] = self.tryRead(1)
-                if (flag[0] != '\xff'):
+                if (flag[0] != b'\xff'):
                     continue
 
                 flag[1] = self.tryRead(1)
                 if ( flag[1] != self.protocol_ver):
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                     rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                    protocol_ver_msgs = {b'\xff': 'Rev 0 (rosserial 0.4 and earlier)', b'\xfe': 'Rev 1 (rosserial 0.5+)', b'\xfd': 'Some future rosserial version'}
                     if (flag[1] in protocol_ver_msgs):
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
@@ -478,7 +496,7 @@ class SerialClient:
                 msg_length, = struct.unpack("<h", msg_len_bytes)
 
                 msg_len_chk = self.tryRead(1)
-                msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
+                msg_len_checksum = sum([ord(x) for x in msg_len_bytes]) + ord(msg_len_chk)
 
                 if msg_len_checksum % 256 != 255:
                     rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
@@ -638,7 +656,10 @@ class SerialClient:
         """ Respond to device with system time. """
         t = Time()
         t.data = rospy.Time.now()
-        data_buffer = StringIO.StringIO()
+        if sys.version_info[0] >= 3:
+            data_buffer = StringIO.BytesIO()
+        else:
+            data_buffer = StringIO.StringIO()
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
@@ -701,14 +722,14 @@ class SerialClient:
             length = len(msg)
             if self.buffer_in > 0 and length > self.buffer_in:
                 rospy.logerr("Message from ROS network dropped: message larger than buffer.")
-                print msg
+                print(msg)
                 return -1
             else:
                     #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
                     # second byte of header is protocol version
                     msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
                     msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
-                    data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
+                    data = b"\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
                     data = data + msg + chr(msg_checksum)
                     self.port.write(data)
                     return length
