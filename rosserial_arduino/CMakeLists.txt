@@ -13,14 +13,14 @@ add_service_files(FILES
   Test.srv
 )
 
-generate_messages()
-
 catkin_package(
   CATKIN_DEPENDS message_runtime
   CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
 catkin_python_setup()
+
+generate_messages()
 
 install(
   DIRECTORY src/ros_lib
