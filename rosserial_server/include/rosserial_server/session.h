@@ -50,6 +50,8 @@
 #include "rosserial_server/async_read_buffer.h"
 #include "rosserial_server/topic_handlers.h"
 
+#define PROTOCOL_VERSION 0xfd
+
 namespace rosserial_server
 {
 
@@ -172,13 +174,13 @@ private:
   // TODO: Total message timeout, implement primarily in ReadBuffer.
 
   void read_sync_header() {
-    async_read_buffer_.read(1, boost::bind(&Session::read_sync_first, this, _1));
+    async_read_buffer_.read(3, boost::bind(&Session::read_sync_first, this, _1));
   }
 
   void read_sync_first(ros::serialization::IStream& stream) {
-    uint8_t sync;
-    stream >> sync;
-    if (sync == 0xff) {
+    uint8_t sync[3];
+    stream >> sync[0] >> sync[1] >> sync[2];
+    if (sync[0] == 0xff && sync[1] == 0xff && sync[2] == 0xff) {
       async_read_buffer_.read(1, boost::bind(&Session::read_sync_second, this, _1));
     } else {
       read_sync_header();
@@ -188,8 +190,8 @@ private:
   void read_sync_second(ros::serialization::IStream& stream) {
     uint8_t sync;
     stream >> sync;
-    if (sync == 0xfe) {
-      async_read_buffer_.read(5, boost::bind(&Session::read_id_length, this, _1));
+    if (sync == PROTOCOL_VERSION) {
+      async_read_buffer_.read(7, boost::bind(&Session::read_id_length, this, _1));
     } else {
       read_sync_header();
     }
@@ -198,6 +200,7 @@ private:
   void read_id_length(ros::serialization::IStream& stream) {
     uint16_t topic_id, length;
     uint8_t length_checksum;
+    uint8_t nul;
 
     // Check header checksum byte for length field.
     stream >> length >> length_checksum;
@@ -207,13 +210,13 @@ private:
       read_sync_header();
       return;
     } else {
-      stream >> topic_id;
+      stream >> nul >> topic_id >> nul;
     }
     ROS_DEBUG("Received message header with length %d and topic_id=%d", length, topic_id);
 
-    // Read message length + checksum byte.
-    async_read_buffer_.read(length + 1, boost::bind(&Session::read_body, this,
-                                                    _1, topic_id));
+    // Read and decode message length + nul + checksum byte.
+    async_read_buffer_.read(length + 2, boost::bind(&Session::read_body, this,
+                                                    _1, topic_id), true);
   }
 
   void read_body(ros::serialization::IStream& stream, uint16_t topic_id) {
@@ -261,21 +264,64 @@ private:
 
   //// SENDING MESSAGES ////
 
+  size_t encoded_size(Buffer& message) {
+    size_t len = message.size();
+    size_t overhead = 0;
+    unsigned int ffs = 0;
+
+    for (int i = 0 ; i < len ; ++i) {
+      if (ffs == 2 && (message[i] == 0x00 || message[i] == 0xff)) {
+        overhead++;
+        ffs = 0;
+      }
+
+      if (message[i] == 0xff)
+        ffs++;
+      else
+        ffs = 0;
+    }
+
+    return len + overhead;
+  }
+
+  void encode(ros::serialization::OStream& stream, Buffer& message) {
+    size_t len = message.size();
+    unsigned int ffs = 0;
+
+    for (int i = 0 ; i < len ; ++i) {
+      if (ffs == 2 && (message[i] == 0x00 || message[i] == 0xff)) {
+        stream << (uint8_t)0x00;
+        ffs = 0;
+      }
+
+      if (message[i] == 0xff)
+        ffs++;
+      else
+        ffs = 0;
+
+      stream << message[i];
+    }
+  }
+
   void write_message(Buffer& message, const uint16_t topic_id) {
-    uint8_t overhead_bytes = 8;
-    uint16_t length = overhead_bytes + message.size();
+    uint8_t overhead_bytes = 13;
+    uint16_t msg_len = encoded_size(message);
+    uint16_t length = overhead_bytes + msg_len;
     BufferPtr buffer_ptr(new Buffer(length));
 
     uint8_t msg_checksum;
     ros::serialization::IStream checksum_stream(message.size() > 0 ? &message[0] : NULL, message.size());
 
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size());
-    uint8_t msg_len_checksum = 255 - checksum(message.size());
-    stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
+    uint8_t msg_len_checksum = 255 - checksum(msg_len);
+    stream << (uint8_t)0xff << (uint8_t)0xff << (uint8_t)0xff
+	    << (uint8_t)PROTOCOL_VERSION
+	    << msg_len << msg_len_checksum << (uint8_t)0x00
+	    << topic_id << (uint8_t)0x00;
     msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
 
-    memcpy(stream.advance(message.size()), &message[0], message.size());
-    stream << msg_checksum;
+    encode(stream, message);
+    stream << (uint8_t)0x00 << msg_checksum;
 
     ROS_DEBUG_NAMED("async_write", "Sending buffer of %d bytes to client.", length);
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),

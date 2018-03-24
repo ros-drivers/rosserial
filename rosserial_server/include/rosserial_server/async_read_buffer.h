@@ -59,7 +59,10 @@ public:
    * @brief Commands a fixed number of bytes from the buffer. This may be fulfilled from existing
    *        buffer content, or following a hardware read if required.
    */
-  void read(size_t requested_bytes, boost::function<void(ros::serialization::IStream&)> callback) {
+  void read(size_t requested_bytes,
+            boost::function<void(ros::serialization::IStream&)> callback,
+            bool decode = false)
+  {
     ROS_DEBUG_STREAM_NAMED("async_read", "Buffer read of " << requested_bytes << " bytes, " <<
                            "wi: " << write_index_ << ", ri: " << read_index_);
 
@@ -67,6 +70,7 @@ public:
     ROS_ASSERT_MSG(callback, "Bad read success callback function.");
     read_success_callback_ = callback;
     read_requested_bytes_ = requested_bytes;
+    read_needs_decoding_ = decode;
 
     if (read_requested_bytes_ > mem_.size())
     {
@@ -161,6 +165,11 @@ private:
     ROS_DEBUG_STREAM_NAMED("async_read", "Invoking success callback with buffer of requested size " <<
                            read_requested_bytes_ << " byte(s).");
 
+    if (read_needs_decoding_) {
+            read_requested_bytes_ = decode(read_requested_bytes_);
+            read_needs_decoding_ = false;
+    }
+
     ros::serialization::IStream stream(&mem_[read_index_], read_requested_bytes_);
     read_index_ += read_requested_bytes_;
 
@@ -179,6 +188,49 @@ private:
     }
   }
 
+  /**
+   * @brief Decodes len bytes of data, updates the buffer and indexes, and
+   * returns the new length (which will be inferior or equal to the original
+   * length).
+   */
+  size_t decode(size_t len)
+  {
+    size_t read = read_index_,
+           write = read_index_;
+
+    unsigned int ffs = 0;
+    bool escaping = false;
+
+    for (size_t i = 0 ; i < len ; ++i, ++read) {
+      if (ffs == 2 && mem_[read] == 0x00) { // May be an escape sequence
+        escaping = true;
+      } else if (escaping) {
+        if (mem_[read] != 0x00 && mem_[read] != 0xff) // We weren't escaping
+          mem_[write++] = 0x00;
+        mem_[write++] = mem_[read];
+        escaping = false;
+      } else {
+        mem_[write++] = mem_[read];
+      }
+
+      if (mem_[read] == 0xff)
+        ffs++;
+      else
+        ffs = 0;
+    }
+
+    size_t decoded_len = write - read_index_;
+
+    // Shift the remaining data
+    if (write < read) {
+      for ( ; read < write_index_ ; ++read)
+        mem_[write++] = mem_[read];
+      write_index_ = write;
+    }
+
+    return decoded_len;
+  }
+
   AsyncReadStream& stream_;
   std::vector<uint8_t> mem_;
 
@@ -188,6 +240,7 @@ private:
 
   boost::function<void(ros::serialization::IStream&)> read_success_callback_;
   size_t read_requested_bytes_;
+  bool read_needs_decoding_;
 };
 
 }  // namespace

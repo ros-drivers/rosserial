@@ -364,7 +364,8 @@ class SerialClient:
         # The protocol version is sent as the 2nd sync byte emitted by each end
         self.protocol_ver1 = '\xff'
         self.protocol_ver2 = '\xfe'
-        self.protocol_ver = self.protocol_ver2
+        self.protocol_ver3 = '\xfd'
+        self.protocol_ver = self.protocol_ver3
 
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
@@ -400,14 +401,14 @@ class SerialClient:
             self.port.flushInput()
 
         # request topic sync
-        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
+        self.port.write("\xff\xff\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\x00\x00\x00\xff")
 
     def txStopRequest(self, signal, frame):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
         if not self.fix_pyserial_for_test:
             self.port.flushInput()
 
-        self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4")
+        self.port.write("\xff\xff\xff" + self.protocol_ver + "\x00\x00\xff\x00\x0b\x00\x00\x00\xf4")
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")
         sys.exit(0)
@@ -458,15 +459,15 @@ class SerialClient:
                     continue
 
                 flag = [0,0]
-                flag[0] = self.tryRead(1)
-                if (flag[0] != '\xff'):
+                flag[0] = self.tryRead(3)
+                if (flag[0] != '\xff\xff\xff'):
                     continue
 
                 flag[1] = self.tryRead(1)
                 if ( flag[1] != self.protocol_ver):
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                     rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
-                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Some future rosserial version'}
+                    protocol_ver_msgs = {'\xff': 'Rev 0 (rosserial 0.4 and earlier)', '\xfe': 'Rev 1 (rosserial 0.5+)', '\xfd': 'Rev 2', '\xfc': 'Some future rosserial version'}
                     if (flag[1] in protocol_ver_msgs):
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
@@ -485,9 +486,13 @@ class SerialClient:
                     rospy.loginfo("chk is %d" % ord(msg_len_chk))
                     continue
 
+                msg_nul = self.tryRead(1)
+
                 # topic id (2 bytes)
                 topic_id_header = self.tryRead(2)
                 topic_id, = struct.unpack("<h", topic_id_header)
+
+                msg_nul = self.tryRead(1)
 
                 try:
                     msg = self.tryRead(msg_length)
@@ -496,6 +501,10 @@ class SerialClient:
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
                     rospy.loginfo("expected msg length is %d", msg_length)
                     raise
+
+                msg = self.decode_msg(msg)
+
+                msg_nul = self.tryRead(1)
 
                 # checksum for topic id and msg
                 chk = self.tryRead(1)
@@ -695,21 +704,66 @@ class SerialClient:
         elif(msg.level==Log.FATAL):
             rospy.logfatal(msg.msg)
 
+    def encode_msg(self, msg):
+        buf = StringIO.StringIO()
+        ffs = 0
+        for c in msg:
+            if ffs == 2 and (c == '\xff' or c == '\x00'):
+                buf.write('\x00')
+                ffs = 0
+
+            if c == '\xff':
+                ffs += 1
+            else:
+                ffs = 0
+
+            buf.write(c)
+        return buf.getvalue()
+
+    def decode_msg(self, msg):
+        buf = StringIO.StringIO()
+        ffs = 0
+        escaping = False
+
+        for c in msg:
+            if ffs == 2 and c == '\x00': # May be an escape sequence
+                escaping = True
+            elif escaping:
+                if c != '\x00' and c != '\xff': # That wasn't an escape sequence
+                    buf.write(0x00)             # Let's put back that null byte
+                buf.write(c)
+                escaping = False
+            else:
+                buf.write(c)
+
+            if c == '\xff':
+                ffs += 1
+            else:
+                ffs = 0
+
+        return buf.getvalue()
+
     def send(self, topic, msg):
         """ Send a message on a particular topic to the device. """
         with self.mutex:
+            msg = self.encode_msg(msg)
             length = len(msg)
             if self.buffer_in > 0 and length > self.buffer_in:
                 rospy.logerr("Message from ROS network dropped: message larger than buffer.")
                 print msg
                 return -1
             else:
-                    #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-                    # second byte of header is protocol version
+                    #modified frame : header(4 bytes) + msg_len(2 bytes) +
+                    # msg_len_chk(1 byte) + nul + topic_id(2 bytes) + nul +
+                    # msg(x bytes) + nul + msg_topic_id_chk(1 byte)
+                    # fourth byte of header is protocol version
                     msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
                     msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
-                    data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
-                    data = data + msg + chr(msg_checksum)
+                    data = "\xff\xff\xff" + self.protocol_ver
+                    data = data + chr(length&255) + chr(length>>8)
+                    data = data + chr(msg_len_checksum) + "\x00"
+                    data = data + chr(topic&255) + chr(topic>>8) + "\x00"
+                    data = data + msg + "\x00" + chr(msg_checksum)
                     self.port.write(data)
                     return length
 

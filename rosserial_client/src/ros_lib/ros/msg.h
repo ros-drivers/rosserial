@@ -141,6 +141,65 @@ public:
       var |= (arr[i] << (8 * i));
   }
 
+
+  /*
+   * @brief Serializes the message, then encodes it to eliminate sequences of
+   * three ff's.
+   *
+   * This function does its best to avoid allocating memory on the stack, at
+   * the expense of longer execution time. It does so by performing three
+   * passes. First, it computes how many more bytes will be needed. Then it
+   * shifts the message in the buffer that many bytes to the right. Finally it
+   * writes the message one last time inserting the escaping bytes.
+   */
+  int serializeAndEncode(unsigned char *outbuffer) const
+  {
+    int length = serialize(outbuffer);
+    int overhead = 0;
+    int ffs = 0;
+
+    // Compute overhead
+    for (int i = 0 ; i < length ; ++i) {
+      if (ffs == 2 && (outbuffer[i] == 0xff || outbuffer[i] == 0x00)) {
+        ffs = 0;
+        overhead++;
+      }
+
+      if (outbuffer[i] == 0xff)
+        ffs++;
+      else
+        ffs = 0;
+    }
+
+    // Return immediately if no escaping is needed
+    if (overhead == 0)
+	    return length;
+
+    // Shift message to the right
+    for (int i = length-1 ; i >= 0 ; --i)
+      outbuffer[i+overhead] = outbuffer[i];
+
+    // Write escaped message
+    ffs = 0;
+    unsigned char *w = outbuffer,
+                  *r = outbuffer + overhead;
+    for (int i = 0 ; i < length ; ++i, ++r) {
+      if (ffs == 2 && (*r == 0xff || *r == 0x00)) {
+        ffs = 0;
+        *w++ = 0x00;
+      }
+
+      if (*r == 0xff)
+        ffs++;
+      else
+        ffs = 0;
+
+      *w++ = *r;
+    }
+
+    return length + overhead;
+  }
+
 };
 
 }  // namespace ros
