@@ -13,6 +13,8 @@ add_service_files(FILES
   Test.srv
 )
 
+catkin_python_setup()
+
 generate_messages()
 
 catkin_package(
@@ -31,6 +33,6 @@ install(
 )
 
 catkin_install_python(
-  PROGRAMS src/${PROJECT_NAME}/make_libraries.py
+  PROGRAMS src/${PROJECT_NAME}/make_libraries.py nodes/serial_node.py
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
