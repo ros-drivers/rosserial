@@ -2,7 +2,11 @@
 <package>
   <name>ros_teensy</name>
   <version>0.1.0</version>
-  <description>The ros_teensy package. Package to build rosserial scripts for teensy micro-controller. This package uses the libraries built by the rosserial-arduino package and compiles the code for an ARM micro-controller.</description>
+  <description>
+    Builds rosserial scripts for Teensy micro-controllers.
+    This package uses the libraries built by the rosserial-arduino package and
+    compiles the code for an ARM micro-controller.
+   </description>
 
   <maintainer email="david.lavoie-boutin@mail.mcgill.ca">David Lavoie-Boutin</maintainer>
   <author email="david.lavoie-boutin@mail.mcgill.ca">David Lavoie-Boutin</author>
