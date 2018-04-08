@@ -73,7 +73,7 @@ commands in your different CMakeLists.txt.
 
 At the package level:
 
-```
+```cmake
 cmake_minimum_required(VERSION 2.8)
 project(<package_name>)
 
@@ -105,7 +105,7 @@ rosserial_add_client_target(architecture2 target2_Firmware ALL)
 Then inside each architecture folder, the CMakeLists.txt should contain the
 following:
 
-```
+```cmake
 include_directories(${ROS_LIB_DIR})
 
 FILE(GLOB_RECURSE ros_src
@@ -127,7 +127,7 @@ Additionnally, if your MCU code uses some of the Arduino/Teensy external
 libraries such as `Servo`, `SPI`, `PID`, etc. You will need to add them to the
 compilation process by adding this line before you create the executable.
 
-```
+```cmake
 include_directories(${ROS_LIB_DIR})
 
 import_arduino_library(Servo)
