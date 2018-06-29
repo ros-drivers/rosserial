@@ -19,7 +19,7 @@ generate_messages()
 
 catkin_package(
   CATKIN_DEPENDS message_runtime
-  CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
+  # CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
 install(
@@ -27,10 +27,10 @@ install(
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
-install(
-  DIRECTORY arduino-cmake
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+# install(
+  # DIRECTORY arduino-cmake
+  # DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 catkin_install_python(
   PROGRAMS src/${PROJECT_NAME}/make_libraries.py nodes/serial_node.py

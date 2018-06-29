@@ -157,7 +157,10 @@ class StringDataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
+        if (VEX_STRLEN == 1):
+            f.write('      uint32_t length_%s = vexstrlen(this->%s);\n' % (cn,self.name))
+        else:
+            f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
         f.write('      varToArr(outbuffer + offset, length_%s);\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
@@ -347,7 +350,7 @@ class Message:
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
-            d.serialize(f)
+            d.serialize(f, args)
         f.write('      return offset;\n');
         f.write('    }\n')
         f.write('\n')
@@ -411,6 +414,8 @@ class Message:
         f.write('#ifndef _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('#define _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('\n')
+        if (VEX_STRLEN == 1):
+            f.write('#include "vexstrlen.h"')
         self._write_std_includes(f)
         self._write_msg_includes(f)
 
@@ -418,7 +423,7 @@ class Message:
         f.write('namespace %s\n' % self.package)
         f.write('{\n')
         f.write('\n')
-        self._write_impl(f)
+        self._write_impl(f, args)
         f.write('\n')
         f.write('}\n')
 
@@ -450,7 +455,8 @@ class Service:
     def make_header(self, f):
         f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
         f.write('#define _ROS_SERVICE_%s_h\n' % self.name)
-
+        if (VEX_STRLEN == 1):
+            f.write('#include "vexstrlen.h"')
         self.req._write_std_includes(f)
         includes = self.req.includes
         includes.extend(self.resp.includes)
@@ -546,19 +552,29 @@ def MakeLibrary(package, output_path, rospack):
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         header = open(output_path + "/" + msg.name + ".h", "w")
-        msg.make_header(header)
+        msg.make_header(header, args)
         header.close()
 
-def rosserial_generate(rospack, path, mapping):
+def rosserial_generate(rospack, path, mapping, *args):
     # horrible hack -- make this die
     global ROS_TO_EMBEDDED_TYPES
     ROS_TO_EMBEDDED_TYPES = mapping
 
+    #  test
+    #  for arg in args:
+        #  print("another arg", arg)
     # gimme messages
+
+    # pros workaround to replace strlen calls
+    global VEX_STRLEN
+    VEX_STRLEN = 0
+    for arg in args:
+        if (arg == "pros"):
+            VEX_STRLEN = 1
     failed = []
     for p in sorted(rospack.list()):
         try:
-            MakeLibrary(p, path, rospack)
+            MakeLibrary(p, path, rospack, args)
         except Exception as e:
             failed.append(p + " ("+str(e)+")")
             print('[%s]: Unable to build messages: %s\n' % (p, str(e)))
