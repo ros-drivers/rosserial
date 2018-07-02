@@ -12,6 +12,7 @@ rosserial_cortex provides:
 1. Install [ROS](http://wiki.ros.org/melodic/Installation/Source). This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.
 2. setup a workspace:
   ```bash
+  source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
   mkdir -p <your-workspace-name>/src
   cd <your-workspace-name>/src
   git clone https://github.com/CanyonTurtle/rosserial.git
@@ -49,7 +50,7 @@ This will show you how to run the "hello world" example PROS project.
     rosrun rosserial_cortex make_libraries.py . # this will generate the rosserial header files for PROS to use.
     pros make clean
     pros make upload
-    rosrun rosserial_arduino serial_node.py _port:=/dev/ttyACM0 _baud:=/115200
+    rosrun rosserial_arduino serial_node.py _port:=/dev/ttyACM0 _baud:=115200
     ```
   - this will get the Cortex to send messages on the "chatter" topic. see `src/opcontrol.cpp` and look around so see how the PROS side works.
 
