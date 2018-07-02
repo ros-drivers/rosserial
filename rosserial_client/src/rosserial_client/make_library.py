@@ -9,8 +9,7 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-#
-#  * Redistributions of source code must retain the above copyright
+# * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 #  * Redistributions in binary form must reproduce the above
 #    copyright notice, this list of conditions and the following
@@ -157,7 +156,10 @@ class StringDataType(PrimitiveDataType):
 
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
+        if (VEX_STRLEN == 1):
+            f.write('      uint32_t length_%s = vexstrlen(this->%s);\n' % (cn,self.name))
+        else:
+            f.write('      uint32_t length_%s = strlen(this->%s);\n' % (cn,self.name))
         f.write('      varToArr(outbuffer + offset, length_%s);\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
@@ -411,6 +413,8 @@ class Message:
         f.write('#ifndef _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('#define _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('\n')
+        if (VEX_STRLEN == 1):
+            f.write('#include "vexstrlen.h"\n')
         self._write_std_includes(f)
         self._write_msg_includes(f)
 
@@ -450,7 +454,8 @@ class Service:
     def make_header(self, f):
         f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
         f.write('#define _ROS_SERVICE_%s_h\n' % self.name)
-
+        if (VEX_STRLEN == 1):
+            f.write('#include "vexstrlen.h"\n')
         self.req._write_std_includes(f)
         includes = self.req.includes
         includes.extend(self.resp.includes)
@@ -549,12 +554,23 @@ def MakeLibrary(package, output_path, rospack):
         msg.make_header(header)
         header.close()
 
-def rosserial_generate(rospack, path, mapping):
+def rosserial_generate(rospack, path, mapping, *args):
     # horrible hack -- make this die
     global ROS_TO_EMBEDDED_TYPES
     ROS_TO_EMBEDDED_TYPES = mapping
 
+    #  test
+    #  for arg in args:
+        #  print("another arg", arg)
     # gimme messages
+
+    # pros workaround to replace strlen calls
+    global VEX_STRLEN
+    VEX_STRLEN = 0
+    for arg in args:
+        if (arg == "pros"):
+            VEX_STRLEN = 1
+
     failed = []
     for p in sorted(rospack.list()):
         try:

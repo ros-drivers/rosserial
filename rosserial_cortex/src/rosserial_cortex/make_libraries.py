@@ -3,8 +3,7 @@
 #####################################################################
 # Software License Agreement (BSD License)
 #
-# Copyright (c) 2013, Willow Garage
-# Copyright (c) 2014, Mike Purvis
+# Copyright (c) 2013, Willow Garage, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -17,7 +16,9 @@
 #    copyright notice, this list of conditions and the following
 #    disclaimer in the documentation and/or other materials provided
 #    with the distribution.
-#  * Neither the name of Willow Garage, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#  * Neither the name of Willow Garage, Inc. nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -32,23 +33,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-THIS_PACKAGE = "rosserial_client"
+THIS_PACKAGE = "rosserial_cortex"
 
 __usage__ = """
-This generic make_libraries generates the non-platform specific part of a
-rosserial client library, including messages. It assumes the target platform
-has native float64 support, and is therefore unsuitable for use with AVR.
-To generate messages for AVR, use the make_libraries script in
-rosserial_arduino.
+make_libraries.py generates the VEX Cortex rosserial library files.  It requires the location of the include directory of a PROS kernel.
 
-This script also does not provide the ros.h file or other hardware
-abstraction. This will need to be supplied by the user.
-
-rosrun rosserial_client make_libraries <output_path>
+rosrun rosserial_cortex make_libraries.py <pros_include_dir>
 """
 
 import rospkg
-
 import rosserial_client
 from rosserial_client.make_library import *
 
@@ -68,24 +61,33 @@ ROS_TO_EMBEDDED_TYPES = {
     'int64'   :   ('int64_t',           8, PrimitiveDataType, []),
     'uint64'  :   ('uint64_t',          8, PrimitiveDataType, []),
     'float32' :   ('float',             4, PrimitiveDataType, []),
-    'float64' :   ('double',            8, PrimitiveDataType, []),
+    'float64' :   ('float',             4, AVR_Float64DataType, []),
     'time'    :   ('ros::Time',         8, TimeDataType, ['ros/time']),
     'duration':   ('ros::Duration',     8, TimeDataType, ['ros/duration']),
     'string'  :   ('char*',             0, StringDataType, []),
     'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
 }
 
-# Enforce correct inputs
+# need correct inputs
 if (len(sys.argv) < 2):
-    print(__usage__)
-    exit(1)
-
-# Sanitize output path
+    print __usage__
+    exit()
+    
+# get output path
 path = sys.argv[1]
 if path[-1] == "/":
     path = path[0:-1]
 print "\nExporting to %s" % path
 
 rospack = rospkg.RosPack()
+
+# copy ros_lib stuff in
+rosserial_cortex_dir = rospack.get_path(THIS_PACKAGE)
+shutil.copytree(rosserial_cortex_dir+"/src/ros_lib", path+"/ros_lib")
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
-rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
+
+# generate messages
+# I neec to extend this generation to enable the use of an alternate strlen function.
+# the "pros" argument is optional and it enables the alternate string length.
+rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES, "pros")
+
