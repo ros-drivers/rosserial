@@ -9,8 +9,7 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-#
-#  * Redistributions of source code must retain the above copyright
+# * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 #  * Redistributions in binary form must reproduce the above
 #    copyright notice, this list of conditions and the following
@@ -350,7 +349,7 @@ class Message:
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
-            d.serialize(f, args)
+            d.serialize(f)
         f.write('      return offset;\n');
         f.write('    }\n')
         f.write('\n')
@@ -415,7 +414,7 @@ class Message:
         f.write('#define _ROS_%s_%s_h\n'%(self.package, self.name))
         f.write('\n')
         if (VEX_STRLEN == 1):
-            f.write('#include "vexstrlen.h"')
+            f.write('#include "vexstrlen.h"\n')
         self._write_std_includes(f)
         self._write_msg_includes(f)
 
@@ -423,7 +422,7 @@ class Message:
         f.write('namespace %s\n' % self.package)
         f.write('{\n')
         f.write('\n')
-        self._write_impl(f, args)
+        self._write_impl(f)
         f.write('\n')
         f.write('}\n')
 
@@ -456,7 +455,7 @@ class Service:
         f.write('#ifndef _ROS_SERVICE_%s_h\n' % self.name)
         f.write('#define _ROS_SERVICE_%s_h\n' % self.name)
         if (VEX_STRLEN == 1):
-            f.write('#include "vexstrlen.h"')
+            f.write('#include "vexstrlen.h"\n')
         self.req._write_std_includes(f)
         includes = self.req.includes
         includes.extend(self.resp.includes)
@@ -552,7 +551,7 @@ def MakeLibrary(package, output_path, rospack):
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         header = open(output_path + "/" + msg.name + ".h", "w")
-        msg.make_header(header, args)
+        msg.make_header(header)
         header.close()
 
 def rosserial_generate(rospack, path, mapping, *args):
@@ -571,10 +570,11 @@ def rosserial_generate(rospack, path, mapping, *args):
     for arg in args:
         if (arg == "pros"):
             VEX_STRLEN = 1
+
     failed = []
     for p in sorted(rospack.list()):
         try:
-            MakeLibrary(p, path, rospack, args)
+            MakeLibrary(p, path, rospack)
         except Exception as e:
             failed.append(p + " ("+str(e)+")")
             print('[%s]: Unable to build messages: %s\n' % (p, str(e)))

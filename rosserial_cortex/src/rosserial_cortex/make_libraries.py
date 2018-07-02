@@ -88,5 +88,6 @@ rosserial_client_copy_files(rospack, path+"/ros_lib/")
 
 # generate messages
 # I neec to extend this generation to enable the use of an alternate strlen function.
+# the "pros" argument is optional and it enables the alternate string length.
 rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES, "pros")
 

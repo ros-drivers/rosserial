@@ -36,6 +36,7 @@
 #define ROS_Cortex_HARDWARE_H_
 
 #include "main.h"
+#include "logger.h"
 // #if ARDUINO>=100
 //   #include <Arduino.h>  // Arduino 1.0
 // #else
@@ -72,6 +73,8 @@ class CortexHardware {
 
     // any initialization code necessary to use the serial port
     void init() {
+      // for debugging, stdout is initialize automatically.
+      usartInit(uart2, 115200, SERIAL_8N1);
     }
 
     // read a byte from the serial port. -1 = failure
