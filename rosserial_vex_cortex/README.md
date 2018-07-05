@@ -1,12 +1,8 @@
 # rosserial for VEX Cortex
 
-This package contains everything needed allow you to do the following:
-1. Run rosserial on the [VEX Cortex](https://www.vexrobotics.com/276-2194.html): send messages to/from a host Linux machine.
-2. Generate custom messages: design exactly what messages you want, or use pre-defined standard ROS messages.
+This package contains everything needed allow you to run rosserial on the [VEX Cortex](https://www.vexrobotics.com/276-2194.html), on the [PROS Kernel](https://pros.cs.purdue.edu/cortex/index.html).
 
 rosserial_cortex provides:
-1. The script `make_libraries.py`, which will generate c++ files that can be inserted into a PROS project and used to send/recieve messages in a PROS project.
-2. An example PROS project, to get you started on using ROS with VEX.
 
 # Setup
 1. Install [ROS](http://wiki.ros.org/melodic/Installation/Source). This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.
@@ -36,10 +32,11 @@ This will show you how to run the "hello world" example PROS project.
   This step generates a PROS project with the necessary includes for ROS to talk to the VEX Cortex, and then downloads the "Hello World" program onto the Cortex.
   - open another terminal window and run:
     ```bash
+    source <your workspace name>/install/setup.bash
     cd /anywhere/on/your/computer
     # below runs the generate command to build the PROS project with the rosserial libraries installed.
-    /path/to/workspace/src/rosserial/rosserial_vex_cortex/src/rosserial_vex_cortex/generate.sh /path/to/workspace <project name>
-    cd <project name>
+    rosrun rosserial_vex_cortex genproject.sh <pros-project-name>
+    cd <pros-project-name>
     pros make upload # uploads the hello world demo onto the cortex.
     ```
   - the Cortex is now trying to send messages on the "chatter" topic, as long as it is plugged into the VEX Programming cable. see `src/opcontrol.cpp` and look around so see how the PROS side works.
