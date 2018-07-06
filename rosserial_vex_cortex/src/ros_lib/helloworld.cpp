@@ -1,18 +1,23 @@
 /*
  * rosserial Publisher Example for VEX Cortex
  * Prints "hello world!"
+ *
+ *
+ *
+ * Note: defining rosserial objects on the global scope will cause segmentation faults.
+ * put variables in functons.
  */
 
 #include <ros.h>
 #include <std_msgs/String.h>
 
-// run continuously by the setup function, publishes the time.
+// run continuously by the setup function, publishes the time at 50hz.
 inline void loop(ros::NodeHandle & nh, ros::Publisher & p, std_msgs::String & str_msg, char* msgdata)
 {
   str_msg.data = msgdata;
   p.publish( &str_msg );
   nh.spinOnce();
-  delay(250);
+  delay(20);
 }
 
 // is a setup function.
