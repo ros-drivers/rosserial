@@ -54,7 +54,7 @@ class CortexHardware {
     // read a byte from the serial port. -1 = failure
     int read() {
       if(fcount(stdin) != 0) {
-        int c = readey();
+        int c = vexrosreadchar();
         return c;
       }
       return -1;
@@ -63,7 +63,7 @@ class CortexHardware {
     // write data to the connection to ROS
     void write(uint8_t* data, int length) {
       for(int i = 0; i < length; i++) {
-        writeychar(data[i]);
+        vexroswritechar(data[i]);
       }
     }
 
