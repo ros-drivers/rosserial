@@ -11,7 +11,7 @@
 #include <ros.h>
 #include <std_msgs/String.h>
 
-// run continuously by the setup function, publishes the time at 50hz.
+// this loop is run in setup function, which publishes  at 50hz.
 inline void loop(ros::NodeHandle & nh, ros::Publisher & p, std_msgs::String & str_msg, char* msgdata)
 {
   str_msg.data = msgdata;
@@ -20,9 +20,10 @@ inline void loop(ros::NodeHandle & nh, ros::Publisher & p, std_msgs::String & st
   delay(20);
 }
 
-// is a setup function.
+// The setup function will start a publisher on the topic "chatter" and begin publishing there.
 inline void setup()
 {
+  // debug logging
   vexroslog("\n\n\n\n\r\t\tROSserial for VEX Cortex V2 - June 2018 - START\n\n\n\n\n\r");
 
   ros::NodeHandle  nh;

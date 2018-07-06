@@ -5,7 +5,7 @@ This package contains everything needed allow you to run rosserial on the [VEX C
 # Requirements
 1. Linux (Only tested on Ubuntu 18.04LTS)
 2. ROS (Only tested on ROS Melodic) - [installation guide](http://wiki.ros.org/melodic/Installation/Source).
-3. PROS - [installation guide](tps://github.com/purduesigbots/pros/releases/tag/2.12.1)
+3. PROS - [installation guide](https://pros.cs.purdue.edu/cortex/getting-started/index.html)
 
 # Setup
 Setup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
@@ -60,6 +60,28 @@ this will display any messages that come through on the "chatter" topic.
 
 If everyting is working properly, then the terminal from step 2 should show outputs of `"Hello World!"` This means the bridge between the cortex and ROS is established.
 You are now able to use ROS with the VEX Cortex!
+
+# Debugging on Cortex
+PROS does not provide a debugger, but it does provide printing.
+use vexroslog(char* out, ...) just like you would use fprintf from the PROS API:
+```bash
+vexroslog("hello, my favorite number is %d", 3);
+```
+remember to include this header in your code for logging!
+
+`include/logger.h`, you can change which serial output to use (stdin/stdout, uart1, or uart2) for debugging.
+
+to view serial output from UART2, (instead of running `pros terminal`, which only works for stdout), use screen:
+```bash
+# to install screen: sudo apt-get install screen
+screen /dev/ttyUSB0
+```
+note: this requires a [USB-serial adapter](https://www.adafruit.com/product/954) for your computer, and it needs to be plugged in correctly.
+To set up the wires with the cable linked above, use this layout:
+[layout](./uartdiagram.png)
+
+You would need male-male jumper wires to plug in this adapter.
+to view the UART 
 
 # Limitations
 Global scope causes segmentation faults. Do not try to use global scope. ROS-related objects in the global scope causes segmentation faults. The cause of this is still unknown, but it may have something to do with the implementation of the global memory segment.
