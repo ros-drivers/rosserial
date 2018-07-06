@@ -4,8 +4,8 @@ This package contains everything needed allow you to run rosserial on the [VEX C
 
 # Requirements
 1. Linux (Only tested on Ubuntu 18.04LTS)
-2. ROS (Only tested on ROS Melodic) - [installing ROS](http://wiki.ros.org/melodic/Installation/Source). This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.
-3. PROS - [install PROS toolchain](https://github.com/purduesigbots/pros/releases/tag/2.12.1)
+2. ROS (Only tested on ROS Melodic) - [installation guide](http://wiki.ros.org/melodic/Installation/Source).
+3. PROS - [installation guide](tps://github.com/purduesigbots/pros/releases/tag/2.12.1)
 
 # Setup
 Setup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
@@ -60,3 +60,7 @@ this will display any messages that come through on the "chatter" topic.
 
 If everyting is working properly, then the terminal from step 2 should show outputs of `"Hello World!"` This means the bridge between the cortex and ROS is established.
 You are now able to use ROS with the VEX Cortex!
+
+# Limitations
+Global scope causes segmentation faults. Do not try to use global scope. ROS-related objects in the global scope causes segmentation faults. The cause of this is still unknown, but it may have something to do with the implementation of the global memory segment.
+This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.

@@ -22,7 +22,7 @@
 // remember to include this header for logging in user code!
 #define vexroslog(fmtstr, ...) fprintf((VEXROS_DEBUG_OUTPUT_SERIAL ), "[%d]: " " " fmtstr " " "\r\n", millis() ,##__VA_ARGS__)
 
-// will print to stdout, used by the serial client.
+// will print to stdout, used by the serial client.;
 // note: stdin/stdout can both be replaced with uart1 or uart2, note that stdin/stdout being seperate is unique 
 // with uart1/uart2, they work as both reading and writing serial connections. 
 #define vexroswrite(...) fprintf((stdout), __VA_ARGS__)
