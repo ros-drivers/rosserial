@@ -1,5 +1,5 @@
-#ifndef __CANNON_LOGGER_H__
-#define __CANNON_LOGGER_H__
+#ifndef _ROSSERIAL_VEX_CORTEX_LOGGER_H_
+#define _ROSSERIAL_VEX_CORTEX_LOGGER_H_
 
 #include "API.h"
 

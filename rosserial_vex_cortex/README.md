@@ -8,7 +8,7 @@ This package contains everything needed allow you to run rosserial on the [VEX C
 3. PROS - [install PROS toolchain](https://github.com/purduesigbots/pros/releases/tag/2.12.1)
 
 # Setup
-Stup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
+Setup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
 ```bash
 source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
 mkdir -p <your-workspace-name>/src

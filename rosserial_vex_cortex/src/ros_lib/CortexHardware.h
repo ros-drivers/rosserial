@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROS_Cortex_HARDWARE_H_
-#define ROS_Cortex_HARDWARE_H_
+#ifndef _ROSSERIAL_VEX_CORTEX_CORTEX_HARDWARE_H_
+#define _ROSSERIAL_VEX_CORTEX_CORTEX_HARDWARE_H_
 
 #include "main.h"
 #include "logger.h"

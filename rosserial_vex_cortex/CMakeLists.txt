@@ -5,12 +5,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-# put the names of message files here
+# put the names of custom message files here
 # add_message_files(FILES
-# 
+#
 # )
 
-# put the names of service files here
+# put the names of custom service files here
 # add_service_files(FILES
 # 
 # )
@@ -22,7 +22,6 @@ catkin_python_setup()
 
 catkin_package(
   CATKIN_DEPENDS message_runtime
-  # CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
 install(
@@ -34,11 +33,6 @@ install(
   PROGRAMS scripts/genproject.sh
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-# install(
-  # DIRECTORY arduino-cmake
-  # DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
 
 catkin_install_python(
   PROGRAMS src/${PROJECT_NAME}/make_libraries.py
