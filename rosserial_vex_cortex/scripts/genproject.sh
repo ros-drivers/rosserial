@@ -11,6 +11,7 @@ grep -lrnw '.' -e 'strlen' | xargs sed -i '1 s@^@#include "vexstrlen.h"\n@g; s@s
 
 # move the cpp files into the src directory.
 mv ros_lib/*.cpp ../src
+mv ros_lib/examples/*.cpp ../src
 cd ..
 
 # delete the incorrect files in src
