@@ -26,13 +26,16 @@ inline void setup()
   // debug logging
   vexroslog("\n\n\n\n\r\t\tROSserial for VEX Cortex V2 - June 2018 - START\n\n\n\n\n\r");
 
+  // make a node handle object, string message, and publisher for that message.
   ros::NodeHandle  nh;
   std_msgs::String str_msg;
   ros::Publisher chatter("chatter\0", &str_msg);
 
+  // set up rosserial, and prepare to publish the chatter message 
   nh.initNode();
   nh.advertise(chatter);
 
+  // message data variable.
   char* msg = (char*) malloc(20 * sizeof(char));
   while (1) {
 

@@ -21,7 +21,8 @@
  * configure a UART port (usartOpen()) but cannot set up an LCD (lcdInit()).
  */
 void initializeIO() {
-  usartInit(uart2, 115200, SERIAL_8N1);
+  // this is needed to configure the debug serial connection for rosserial.
+  usartInit(uart2, 57600, SERIAL_8N1);
 }
 
 /*

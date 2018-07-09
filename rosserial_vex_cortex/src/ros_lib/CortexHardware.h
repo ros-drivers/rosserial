@@ -42,14 +42,12 @@
 
 class CortexHardware {
   public:
-    CortexHardware() {
-    }
+    CortexHardware() {}
 
     // any initialization code necessary to use the serial port
-    void init() {
-      // uart2 is for debugging, while stdout is initialized automatically.
-      usartInit(uart2, 115200, SERIAL_8N1);
-    }
+    // note: the serial port initialization for rosserial for VEX Cortex must be implemented in `src/init.cpp` 
+    // see that file for more information. 
+    void init() {}
 
     // read a byte from the serial port. -1 = failure
     int read() {

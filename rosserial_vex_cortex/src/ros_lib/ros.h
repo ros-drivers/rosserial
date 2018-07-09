@@ -40,7 +40,7 @@
 #include "CortexHardware.h"
 
 namespace ros {
-  typedef NodeHandle_<CortexHardware, 2, 2, 128, 128> NodeHandle;
+  typedef NodeHandle_<CortexHardware> NodeHandle;
 }
 
 #endif
