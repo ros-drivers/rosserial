@@ -1,4 +1,4 @@
-/** @file auto.c
+/** @file auto.cpp
  * @brief File for autonomous code
  *
  * This file should contain the user autonomous() function and any functions related to it.
@@ -11,6 +11,19 @@
  */
 
 #include "main.h"
+
+/* 
+ *
+ *
+ * NO GLOBAL OBJECT DEFINITIONS!
+ *
+ * DO NOT globally define either structs or objects.
+ * See issue: https://github.com/purduesigbots/pros/issues/48
+ * 
+ * Instead, put all objects/structs inside functions.
+ *
+ *
+ */
 
 /*
  * Runs the user autonomous code. This function will be started in its own task with the default

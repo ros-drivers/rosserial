@@ -114,11 +114,27 @@ because there are many useful built-in message types that are used commonly acro
 See documentation and source of sister packages, such as `rosserial_arduino`, for more information about generating custom messages.
 
 # Limitations
-Global scope variables causes segmentation faults. Unlike in the other rosserial examples, avoid ROS objects in the global scope.
 
+### Global Scope
+Global scope variables causes segmentation faults. Unlike in the other rosserial examples, avoid putting objects/structs in the global scope. Read the comments inside the templates for clarification on where `global scope` is referring to.
+
+To workaround not having global variables:
+1. If possible, keep variables inside functions.
+2. If an object/struct must be accessed across concurrently running tasks, use a global shared pointer or semaphore (see API.h for semaphore functions).
+
+The second strategy should be used as a last-resort, because the better option is simply to use locally-scoped variables inside functions (e.g. declare variables in the body of `void opcontrol()`, and pass them to functions that need to use the variables).
+
+This issue is most likely a side-effect of mixing C++ source, compiled with g++, and C source, compiled with C99. the initialization procedure for C++ static constructors is skipped for some reason (see [this issue](https://github.com/purduesigbots/pros/issues/48), although the fix provided does not work here).
+
+### Platforms
 This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.
 
 # Speed
 Over the VEX Programming cable/VexNet wireless connection, the simplest messages can stream at upwards of 200Hz. More complex messages, such as sensor_msgs::JointState, can be published at 50hz. The baud rate degrades as the distance from the cortex and the Joystick increases, however.
 
 A wired UART1 or UART2 connection should have higher stability and frequency with arbitrarily-sized messages, with no degradation in baud rate as distance increases.
+
+# Troubleshooting
+If your program crashes, it may be difficult to debug effectively without a second USB-serial connection for debugging messages, since the crash message will only print to stdout. run `pros terminal` to view whether or not the program is crashing (this only works if you can switch rosserial to use a UART connection - see Physical Serial Connections). Make sure to test the individual pieces of your program seperately to ensure they work properly, before integrating them with the program as a whole. Make sure to power cycle the Cortex if it crashes.
+
+

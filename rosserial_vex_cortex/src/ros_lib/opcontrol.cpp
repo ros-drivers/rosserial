@@ -1,4 +1,4 @@
-/** @file opcontrol.c
+/** @file opcontrol.cpp
  * @brief File for operator control code
  *
  * This file should contain the user operatorControl() function and any functions related to it.
@@ -11,10 +11,20 @@
  */
 
 #include "main.h"
-
-// EXAMPLES 
-
 #include "helloworld.cpp"
+
+/* 
+ *
+ *
+ * NO GLOBAL OBJECT DEFINITIONS!
+ *
+ * DO NOT globally define either structs or objects.
+ * See issue: https://github.com/purduesigbots/pros/issues/48
+ * 
+ * Instead, put all objects/structs inside functions.
+ *
+ *
+ */
 
 // entry point of user control period.
 void operatorControl() {

@@ -1,4 +1,4 @@
-/** @file init.c
+/** @file init.cpp
  * @brief File for initialization code
  *
  * This file should contain the user initialize() function and any functions related to it.
@@ -11,6 +11,19 @@
  */
 
 #include "main.h"
+
+/* 
+ *
+ *
+ * NO GLOBAL OBJECT DEFINITIONS!
+ *
+ * DO NOT globally define either structs or objects.
+ * See issue: https://github.com/purduesigbots/pros/issues/48
+ * 
+ * Instead, put all objects/structs inside functions.
+ *
+ *
+ */
 
 /*
  * Runs pre-initialization code. This function will be started in kernel mode one time while the
