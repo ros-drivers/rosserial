@@ -12,6 +12,17 @@ Hardware:
 2. VEX Programming Cable
 3. (recommended, for debugging) a [USB-serial adapter](https://www.adafruit.com/product/954) 
 4. Three Male-Male jumper wires for USB-serial adapter
+ 
+# Table Of Contents
+- [Setup](#setup)
+- [Hello World Example](#hello-world-example)
+- [Keyboard Driving Example](#keyboard-driving-example)
+- [Alternative Joystick Example](#alternative-joystick-example)
+- [Physical Serial Connections](#physical-serial-connections)
+- [Generating Custom Messages](#generating-custom-messages)
+- [Limitations](#limitations)
+- [Speed](#speed)
+- [Troubleshooting](#troubleshooting)
 
 # Setup
 Setup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
@@ -25,16 +36,16 @@ catkin_make
 catkin_make install # this will generate folders in the workspace that contain executable scripts. 
 ```
 
-# Usage Example (Linux)
-This will show you how to run the "hello world" example PROS project. Plug in the VEX Programming cable to the computer and the joystick, plug the VexNet keys into the Cortex and the joystick. Power cycle the Joystick and Cortex between cortex downloads for optimal usage.
+# Hello World Example
+This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VexNet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
 
-### Step 1 : Run the ROS instance
+### Step 1: Run the ROS instance
 open a terminal window and run:
 ```bash
 source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
 roscore 
 ```
-this will start ROS on the host linux machine.
+this will start ROS on the host Linux machine.
 
 ### Step 2: get the VEX Cortex to talk
 This step generates a PROS project with the necessary includes for ROS to talk to the VEX Cortex, and then downloads the "Hello World" program onto the Cortex.
@@ -68,6 +79,10 @@ this will display any messages that come through on the "chatter" topic.
 If everyting is working properly, then the terminal from step 2 should show outputs of `"Hello World!"` This means the bridge between the cortex and ROS is established.
 You are now able to use ROS with the VEX Cortex!
 
+# Keyboard Driving Example
+Modify `src/opcontrol.cpp` in your generated PROS project from [step 2](#step-2-get-the-vex-cortex-to-talk) to include the `twistdrive.cpp` file instead of the `helloworld.cpp` file.
+Run roscore and the serial node from [steps 1 and 3](#step-1-run-the-ros-instance) respectively of the hello world example.
+# Alternative Joystick Example
 
 # Physical Serial Connections
 The optimal setup for this project is with two physical serial connections, one for rosserial to function, and one for debugging. The default connection for rosserial is the VEX Programming Cable, and the default debugging serial connection is UART2.
@@ -77,9 +92,9 @@ Since the The VEX programming cable provides the default rosserial connection, t
 ```bash
 rosserial_arduino serial_node _port:=/dev/ttyACM0 _baud:=115200
 ```
-This overrides the default (57600) Hz.To switch the rosserial/debug serial connections, see `logger.h` in your generated PROS project. If you do end up using UART1 or UART2 for rosserial instead of debugging, update the USB device argument: `_port:=/dev/ttyUSB0` instead, and update the baud rate argument, or simply remove it for the default 57600 Hz.
+This overrides the default (57600) Hz.To switch the rosserial/debug serial connections, see `include/ros_lib/logger.h` in your generated PROS project. If you do end up using UART1 or UART2 for rosserial instead of debugging, update the USB device argument: `_port:=/dev/ttyUSB0` instead, and update the baud rate argument, or simply remove it for the default 57600 Hz.
 
-Also, the USB device path for the VEX Programming cable on linux may either be `/dev/ttyACM0` or `/dev/ttyACM1`. To figure out which to use as an argument, use `pros lsusb`, or unplug/replug the cable from/into the computer and run `dmesg` and look at the last lines.
+Also, the USB device path for the VEX Programming cable on Linux may either be `/dev/ttyACM0` or `/dev/ttyACM1`. To figure out which to use as an argument, use `pros lsusb`, or unplug/replug the cable from/into the computer and run `dmesg` and look at the last lines.
 
 Viewing the UART debug stream requires a [USB-serial adapter](https://www.adafruit.com/product/954) for your computer, and it needs to be plugged in correctly.
 To set up the wires with the cable linked above, use this layout:
