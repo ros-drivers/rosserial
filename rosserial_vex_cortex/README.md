@@ -39,49 +39,41 @@ catkin_make install # this will generate folders in the workspace that contain e
 # Hello World Example
 This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VexNet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
 
-### Step 1: Run the ROS instance
-open a terminal window and run:
 ```bash
-source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
-roscore 
-```
-this will start ROS on the host Linux machine.
+cd your-workspace-name
+source install/setup.bash
+cd anywhere/on/your/computer
+# create a PROS project with rosserial configured 
+rosrun rosserial_vex_cortex genscript.sh prosproject
+# upload the Cortex program
+cd prosproject
+pros make upload
+# start ROS and start serial communication/logging on "chatter", see "launch/rosserial_vex_cortex.launch" for details
+roslaunch rosserial_vex_cortex rosserial_vex_cortex.launch
 
-### Step 2: get the VEX Cortex to talk
-This step generates a PROS project with the necessary includes for ROS to talk to the VEX Cortex, and then downloads the "Hello World" program onto the Cortex.
-Open another terminal window and run:
-```bash
-source <your workspace name>/install/setup.bash
-cd /anywhere/on/your/computer
-# below runs the generate command to build the PROS project with the rosserial libraries installed.
-rosrun rosserial_vex_cortex genproject.sh <pros-project-name>
-cd <pros-project-name>
-pros make upload # uploads the hello world demo onto the cortex.
-```
-The Cortex is now trying to send messages on the "chatter" topic, as long as it is plugged into the VEX Programming cable. see `src/opcontrol.cpp` and look around so see how the PROS side works.
+If everything is working properly, you should see "hello world" messages in the terminal!
 
-### Step 3: Begin the serial node!
-This is how rosserial clients are able to communicate with the ROS system.
-```bash
-source <your-workspace-name>/install/setup.bash
-rosrun rosserial_arduino serial_node.py _port:=/dev/ttyACM0 _baud:=115200
-```
-see the `Serial Connections` section below, for more information about how the serial ports are used.
-
-### Step 4: Display a topic in a terminal (technically optional)
-open another terminal window and run:
-```bash
-source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
-rostopic echo chatter
-```
-this will display any messages that come through on the "chatter" topic.
-
-If everyting is working properly, then the terminal from step 2 should show outputs of `"Hello World!"` This means the bridge between the cortex and ROS is established.
-You are now able to use ROS with the VEX Cortex!
 
 # Keyboard Driving Example
-Modify `src/opcontrol.cpp` in your generated PROS project from [step 2](#step-2-get-the-vex-cortex-to-talk) to include the `twistdrive.cpp` file instead of the `helloworld.cpp` file.
-Run roscore and the serial node from [steps 1 and 3](#step-1-run-the-ros-instance) respectively of the hello world example.
+This example showcases an integrated demo with a VEX EDR Robot, such as the [clawbot](https://www.vexrobotics.com/276-2600.html). 
+Open up "src/twistdrive.cpp" and modify the motor control code, to specify how you want to control your robot's drive .
+Modify `src/opcontrol.cpp` in your generated PROS project to include the `twistdrive.cpp` file instead of the `helloworld.cpp` file. Then, open a terminal and run the following:
+```bash
+cd your-workspace-name
+source install/setup.bash
+# the pros project below was created in the hello world example
+cd prosproject
+pros make clean; pros make upload
+roslaunch rosserial_vex_cortex rosserial_vex_cortex.launch
+```
+
+For keyboard input, install the keyboard twist publisher: http://wiki.ros.org/teleop_twist_keyboard
+```bash
+source /opt/ros/melodic/setup.bash
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+```
+Now, you can use the keys listed in the command to drive the robot!
+
 # Alternative Joystick Example
 
 # Physical Serial Connections
