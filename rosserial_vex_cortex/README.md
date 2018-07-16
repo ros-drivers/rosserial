@@ -20,9 +20,9 @@ This package contains everything needed to run rosserial on the [VEX Cortex](htt
 # Table Of Contents
 - [Setup](#setup)
 - [Examples](#examples)
-  - [Hello World Example](##hello-world-example)
-  - [Keyboard Driving Example](##keyboard-driving-example)
-  - [Alternative Joystick Example](##alternative-joystick-example)
+  - [Hello World Example](#hello-world-example)
+  - [Keyboard Driving Example](#keyboard-driving-example)
+  - [Alternative Joystick Example](#alternative-joystick-example)
 - [Physical Serial Connections](#physical-serial-connections)
 - [Generating Custom Messages](#generating-custom-messages)
 - [Limitations](#limitations)
@@ -30,13 +30,21 @@ This package contains everything needed to run rosserial on the [VEX Cortex](htt
 - [Troubleshooting](#troubleshooting)
 
 # Setup
-Note: it is possible to follow along with this guide without understanding ROS constructs
-(workspaces, projects, rosrun, roslaunch, catkin_make) but in order to make your own projects 
-with ROS, you will need to learn about the ROS framework itself.
-[ROS documentation, getting-started, and tutorials pages](http://wiki.ros.org/)
+This setup requires knowledge of entering commands into a Linux terminal.
+
+Note: it is possible to follow along with this guide without understanding basic ROS constructs
+(such as workspaces, projects, rosrun, roslaunch, and catkin_make). However, in order to work
+with ROS beyond the examples in this project, you will need to learn about the ROS framework itself. See the
+[ROS documentation, getting-started, and tutorials pages](http://wiki.ros.org/) for more information.
 
 ### ROS Workspace
-The workspace is used to run the serial commands, and to generate the PROS project using the PROS CLI. Open up a terminal, and enter:
+This workspace is used to generate a PROS project, and then help the Cortex interact with ROS using that generated project.
+
+Notice the first `source` command below. This includes ROS commands into the terminal (such as catkin_make), so it will come first in
+most of the terminal commands in this setup process.
+
+Open up a terminal, and enter:
+
 ```bash
 source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
 mkdir -p ~/<your-workspace-name>/src
@@ -62,7 +70,11 @@ To understand what is going on with the example code, look at the tutorials for 
 There are some differences between the two projects (namely, in the PROS c++ code, [global scope is not allowed](#limitations)).
 
 ## Hello World Example
-This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VEXnet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
+This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in 
+the VEX Programming cable to the computer and the joystick, and then pluging the VEXnet keys into the Cortex and the joystick.
+This connection serves as BOTH the downloading channel AND the serial connection, so leave the 
+programming cable plugged in! (to alter the connection to use something else, see [physical serial connections](#physical-serial-connections)).
+Between downloads, power-cycle the Joystick and Cortex for optimal usage.
 
 ```bash
 cd /path/to/prosproject
@@ -93,6 +105,8 @@ Now, you can use the keys listed in the command to drive the robot!
 
 ## Alternative Joystick Example
 This is for using an alternative joystick, such as a Logitech Wireless Gamepad F710 or a PS3 controller.
+This controlling example is extensibile: anything publishing a [sensor_msgs/Joy message](http://wiki.ros.org/sensor_msgs) can control your VEX robot, 
+so feel free to program your own controller!
 Open up `src/joydrive.cpp` and make modifications to make this demo work on your robot.
 Modify `src/opcontrol.cpp` in your generated PROS project to include the `joydrive.cpp` file instead of the `helloworld.cpp` file. Then, open a terminal and run the following:
 
