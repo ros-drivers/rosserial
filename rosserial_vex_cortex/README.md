@@ -4,20 +4,25 @@ This package contains everything needed to run rosserial on the [VEX Cortex](htt
 
 # Requirements
 Software:
-1. Linux (Only tested on Ubuntu 18.04LTS) (possible, but not tested, on windows + virtual machines with USB support)
+1. Linux (Only tested on Ubuntu 18.04LTS) (possible on windows with a Linux virtual machine, provided there is USB support)
 2. ROS installed on Linux (Only tested on ROS Melodic) - [installation guide](http://wiki.ros.org/melodic/Installation/Source).
 3. PROS installed on Linux - [installation guide](https://pros.cs.purdue.edu/cortex/getting-started/index.html)
 Hardware:
-1. VEX essentials: VEX Cortex, Joystick, VexNet keys, battery
-2. VEX Programming Cable
-3. (recommended, for debugging) a [USB-serial adapter](https://www.adafruit.com/product/954) 
-4. Three Male-Male jumper wires for USB-serial adapter
+1. VEX essentials:
+  - VEX Cortex
+  - VEX Joystick
+  - VEXnet keys
+  - VEX Competition battery
+  - VEX Programming Cable
+3. (optional, for debugging) a [USB-serial adapter](https://www.adafruit.com/product/954) 
+4. (optional, for debugging) Three Male-Male jumper wires for USB-serial adapter
  
 # Table Of Contents
 - [Setup](#setup)
-- [Hello World Example](#hello-world-example)
-- [Keyboard Driving Example](#keyboard-driving-example)
-- [Alternative Joystick Example](#alternative-joystick-example)
+- [Examples](#examples)
+  - [Hello World Example](##hello-world-example)
+  - [Keyboard Driving Example](##keyboard-driving-example)
+  - [Alternative Joystick Example](##alternative-joystick-example)
 - [Physical Serial Connections](#physical-serial-connections)
 - [Generating Custom Messages](#generating-custom-messages)
 - [Limitations](#limitations)
@@ -25,10 +30,16 @@ Hardware:
 - [Troubleshooting](#troubleshooting)
 
 # Setup
-Setup a ROS workspace and build rosserial packages (including rosserial_vex_cortex) from source:
+Note: it is possible to follow along with this guide without understanding ROS constructs
+(workspaces, projects, rosrun, roslaunch, catkin_make) but in order to make your own projects 
+with ROS, you will need to learn about the ROS framework itself.
+[ROS documentation, getting-started, and tutorials pages](http://wiki.ros.org/)
+
+### ROS Workspace
+The workspace is used to run the serial commands, and to generate the PROS project using the PROS CLI. Open up a terminal, and enter:
 ```bash
 source /opt/ros/melodic/setup.bash # or replace melodic with your corresponding ROS version name
-mkdir -p <your-workspace-name>/src
+mkdir -p ~/<your-workspace-name>/src
 cd <your-workspace-name>/src
 git clone https://github.com/ros-drivers/rosserial.git
 cd ..
@@ -36,25 +47,31 @@ catkin_make
 catkin_make install # this will generate folders in the workspace that contain executable scripts. 
 ```
 
-# Hello World Example
-This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VexNet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
+Next, generate a PROS project, which has the code that runs on the Cortex.
 
 ```bash
-cd your-workspace-name
-source install/setup.bash
-cd anywhere/on/your/computer
+source ~/your-workspace-name/install/setup.bash
+cd /anywhere/on/your/computer
 # create a PROS project with rosserial configured 
 rosrun rosserial_vex_cortex genscript.sh prosproject
-# upload the Cortex program
+```
+# Examples
+
+To understand what is going on with the example code, look at the tutorials for the sister project, [Rosserial Arduino](http://wiki.ros.org/rosserial_arduino/Tutorials).
+There are some differences between the two projects (namely, in the PROS c++ code, [global scope is not allowed](#limitations)).
+
+## Hello World Example
+This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VEXnet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
+
+```bash
 cd prosproject
 pros make upload
-# start ROS and start serial communication/logging on "chatter", see "launch/rosserial_vex_cortex.launch" for details
-roslaunch rosserial_vex_cortex rosserial_vex_cortex.launch
+roslaunch rosserial_vex_cortex hello_world.launch
+```
 
 If everything is working properly, you should see "hello world" messages in the terminal!
 
-
-# Keyboard Driving Example
+## Keyboard Driving Example
 This example showcases an integrated demo with a VEX EDR Robot, such as the [clawbot](https://www.vexrobotics.com/276-2600.html). 
 Open up "src/twistdrive.cpp" and modify the motor control code, to specify how you want to control your robot's drive .
 Modify `src/opcontrol.cpp` in your generated PROS project to include the `twistdrive.cpp` file instead of the `helloworld.cpp` file. Then, open a terminal and run the following:
@@ -74,7 +91,7 @@ rosrun teleop_twist_keyboard teleop_twist_keyboard.py
 ```
 Now, you can use the keys listed in the command to drive the robot!
 
-# Alternative Joystick Example
+## Alternative Joystick Example
 
 # Physical Serial Connections
 The optimal setup for this project is with two physical serial connections, one for rosserial to function, and one for debugging. The default connection for rosserial is the VEX Programming Cable, and the default debugging serial connection is UART2.
@@ -137,7 +154,7 @@ This issue is most likely a side-effect of mixing C++ source, compiled with g++,
 This has been developed and tested on ROS melodic, but it should work on many earier/later versions as well.
 
 # Speed
-Over the VEX Programming cable/VexNet wireless connection, the simplest messages can stream at upwards of 200Hz. More complex messages, such as sensor_msgs::JointState, can be published at 50hz. The baud rate degrades as the distance from the cortex and the Joystick increases, however.
+Over the VEX Programming cable/VEXNet wireless connection, the simplest messages can stream at upwards of 200Hz. More complex messages, such as sensor_msgs::JointState, can be published at 50hz. The baud rate degrades as the distance from the cortex and the Joystick increases, however.
 
 A wired UART1 or UART2 connection should have higher stability and frequency with arbitrarily-sized messages, with no degradation in baud rate as distance increases.
 

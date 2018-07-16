@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find rosserial_vex_cortex)/launch/minimal_robot.launch" pass_all_args="true"/>
+
+  <!-- the degug port, using screen to interface with -->
+  <arg name="topicstolog" value="chatter" />
+  <node pkg="rostopic" type="rostopic" name="logresults" args="echo $(arg topicstolog)" output="screen" />
+</launch>
