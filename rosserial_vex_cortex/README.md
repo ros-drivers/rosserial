@@ -3,19 +3,19 @@
 This package contains everything needed to run rosserial on the [VEX Cortex](https://www.vexrobotics.com/276-2194.html), on the [PROS Kernel](https://pros.cs.purdue.edu/cortex/index.html).
 
 # Requirements
-Software:
-1. Linux (Only tested on Ubuntu 18.04LTS) (possible on windows with a Linux virtual machine, provided there is USB support)
-2. ROS installed on Linux (Only tested on ROS Melodic) - [installation guide](http://wiki.ros.org/melodic/Installation/Source).
-3. PROS installed on Linux - [installation guide](https://pros.cs.purdue.edu/cortex/getting-started/index.html)
-Hardware:
-1. VEX essentials:
-  - VEX Cortex
-  - VEX Joystick
-  - VEXnet keys
-  - VEX Competition battery
-  - VEX Programming Cable
-3. (optional, for debugging) a [USB-serial adapter](https://www.adafruit.com/product/954) 
-4. (optional, for debugging) Three Male-Male jumper wires for USB-serial adapter
+- Software:
+  1. Linux (Only tested on Ubuntu 18.04LTS) (possible on windows with a Linux virtual machine, provided there is USB support)
+  2. ROS installed on Linux (Only tested on ROS Melodic) - [installation guide](http://wiki.ros.org/melodic/Installation/Source).
+  3. PROS installed on Linux - [installation guide](https://pros.cs.purdue.edu/cortex/getting-started/index.html)
+- Hardware:
+  1. VEX essentials:
+    - VEX Cortex
+    - VEX Joystick
+    - VEXnet keys
+    - VEX Competition battery
+    - VEX Programming Cable
+  2. (optional, for debugging) a [USB-serial adapter](https://www.adafruit.com/product/954) 
+  3. (optional, for debugging) Three Male-Male jumper wires for USB-serial adapter
  
 # Table Of Contents
 - [Setup](#setup)
@@ -52,9 +52,10 @@ Next, generate a PROS project, which has the code that runs on the Cortex.
 ```bash
 source ~/your-workspace-name/install/setup.bash
 cd /anywhere/on/your/computer
-# create a PROS project with rosserial configured 
-rosrun rosserial_vex_cortex genscript.sh prosproject
+# create a PROS project with rosserial configured. Do it anywhere, just let 'prosproject' be the last part of the path!
+rosrun rosserial_vex_cortex genscript.sh /path/to/prosproject
 ```
+
 # Examples
 
 To understand what is going on with the example code, look at the tutorials for the sister project, [Rosserial Arduino](http://wiki.ros.org/rosserial_arduino/Tutorials).
@@ -64,7 +65,7 @@ There are some differences between the two projects (namely, in the PROS c++ cod
 This will show you the process for connecting the VEX Cortex with ROS. Set up the physical download connection by plugging in the VEX Programming cable to the computer and the joystick, and then pluging the VEXnet keys into the Cortex and the joystick. Between downloads, power cycle the Joystick and Cortex for optimal usage.
 
 ```bash
-cd prosproject
+cd /path/to/prosproject
 pros make upload
 roslaunch rosserial_vex_cortex hello_world.launch
 ```
@@ -72,19 +73,18 @@ roslaunch rosserial_vex_cortex hello_world.launch
 If everything is working properly, you should see "hello world" messages in the terminal!
 
 ## Keyboard Driving Example
-This example showcases an integrated demo with a VEX EDR Robot, such as the [clawbot](https://www.vexrobotics.com/276-2600.html). 
+This example showcases an integrated demo with a VEX EDR Robot, such as the [clawbot](https://www.vexrobotics.com/276-2600.html), and an alternative method of control: a keyboard!
 Open up "src/twistdrive.cpp" and modify the motor control code, to specify how you want to control your robot's drive .
 Modify `src/opcontrol.cpp` in your generated PROS project to include the `twistdrive.cpp` file instead of the `helloworld.cpp` file. Then, open a terminal and run the following:
 ```bash
-cd your-workspace-name
-source install/setup.bash
-# the pros project below was created in the hello world example
-cd prosproject
+source ~/your-workspace-name/install/setup.bash
+cd /path/to/prosproject
 pros make clean; pros make upload
-roslaunch rosserial_vex_cortex rosserial_vex_cortex.launch
+roslaunch rosserial_vex_cortex minimal_robot.launch
 ```
 
 For keyboard input, install the keyboard twist publisher: http://wiki.ros.org/teleop_twist_keyboard
+Run the following in another terminal:
 ```bash
 source /opt/ros/melodic/setup.bash
 rosrun teleop_twist_keyboard teleop_twist_keyboard.py
@@ -92,6 +92,17 @@ rosrun teleop_twist_keyboard teleop_twist_keyboard.py
 Now, you can use the keys listed in the command to drive the robot!
 
 ## Alternative Joystick Example
+This is for using an alternative joystick, such as a Logitech Wireless Gamepad F710 or a PS3 controller.
+Open up `src/joydrive.cpp` and make modifications to make this demo work on your robot.
+Modify `src/opcontrol.cpp` in your generated PROS project to include the `joydrive.cpp` file instead of the `helloworld.cpp` file. Then, open a terminal and run the following:
+
+```bash
+cd /path/to/prosproject
+pros make upload
+roslaunch rosserial_vex_cortex joystick.launch
+```
+
+Now, you can use the alternative joystick to control the robot!
 
 # Physical Serial Connections
 The optimal setup for this project is with two physical serial connections, one for rosserial to function, and one for debugging. The default connection for rosserial is the VEX Programming Cable, and the default debugging serial connection is UART2.
@@ -161,4 +172,5 @@ A wired UART1 or UART2 connection should have higher stability and frequency wit
 # Troubleshooting
 If your program crashes, it may be difficult to debug effectively without a second USB-serial connection for debugging messages, since the crash message will only print to stdout. run `pros terminal` to view whether or not the program is crashing (this only works if you can switch rosserial to use a UART connection - see Physical Serial Connections). Make sure to test the individual pieces of your program seperately to ensure they work properly, before integrating them with the program as a whole. Make sure to power cycle the Cortex if it crashes.
 
+This project is similar to [Rosserial Arduino](http://wiki.ros.org/rosserial_arduino/Tutorials) in usage, so refer to these tutorials for even more information.
 
