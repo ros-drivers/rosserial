@@ -57,7 +57,7 @@ Next, generate a PROS project, which has the code that runs on the Cortex.
 The project can exist anywhere (it does NOT need to be inside the ROS workspace).
 
 ```bash
-source ~/your-workspace-name/install/setup.bash
+source ~/ros-vex-workspace/install/setup.bash
 rosrun rosserial_vex_v5 genscript.sh ~/path/to/prosproject
 ```
 
