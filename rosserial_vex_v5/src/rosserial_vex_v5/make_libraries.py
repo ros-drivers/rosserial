@@ -38,7 +38,7 @@ THIS_PACKAGE = "rosserial_vex_v5"
 __usage__ = """
 make_libraries.py generates the VEX Robot Brain rosserial library files. It requires the location of the include directory of a PROS kernel.
 
-rosrun rosserial_cortex make_libraries.py <pros_include_dir>
+rosrun rosserial_vex_v5 make_libraries.py <pros_include_dir>
 """
 
 import rospkg
@@ -82,8 +82,8 @@ print "\nExporting to %s" % path
 rospack = rospkg.RosPack()
 
 # copy ros_lib stuff in
-rosserial_cortex_dir = rospack.get_path(THIS_PACKAGE)
-shutil.copytree(rosserial_cortex_dir+"/src/ros_lib", path+"/ros_lib")
+rosserial_vex_v5_dir = rospack.get_path(THIS_PACKAGE)
+shutil.copytree(rosserial_vex_v5_dir+"/src/ros_lib", path+"/ros_lib")
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
 
 # generate messages

@@ -35,7 +35,7 @@ you will need to learn about the ROS framework itself. See the
 [ROS documentation, getting-started, and tutorials pages](http://wiki.ros.org/) for more information.
 
 ### ROS Workspace
-This workspace is used to generate a PROS project, and then help the Cortex
+This workspace is used to generate a PROS project, and then help the Robot Brain
 interact with ROS using that generated project.
 
 Notice the first `source` command below. This includes ROS commands into the terminal
@@ -53,7 +53,7 @@ git clone https://github.com/ros-drivers/rosserial.git
 cd ..; catkin_make; catkin_make install
 ```
 
-Next, generate a PROS project, which has the code that runs on the Cortex.
+Next, generate a PROS project, which has the code that runs on the Robot Brain.
 The project can exist anywhere (it does NOT need to be inside the ROS workspace).
 
 ```bash
@@ -64,7 +64,7 @@ rosrun rosserial_vex_v5 genscript.sh ~/path/to/prosproject
 # Examples
 
 These examples are made to run out-of-the-box, and they made to be proof-of-concepts of
-what ROS can provide. ROS allows standardized messages to be sent to and from the Cortex and an outside computer, 
+what ROS can provide. ROS allows standardized messages to be sent to and from the Brain and an outside computer, 
 which allows for all kinds of ideas and projects to be organized with messages!
 
 To understand what is going on with the example code, look at the tutorials for the sister project, [Rosserial Arduino](http://wiki.ros.org/rosserial_arduino/Tutorials).
