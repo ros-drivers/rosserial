@@ -422,7 +422,7 @@ class Message:
         f.write('\n')
         f.write('}\n')
 
-        f.write('#endif')
+        f.write('#endif\n')
 
 class Service:
     def __init__(self, name, package, definition, md5req, md5res):
