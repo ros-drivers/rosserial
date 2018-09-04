@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package>
   <name>rosserial_server</name>
-  <version>0.7.6</version>
+  <version>0.7.7</version>
   <description>
-    The rosserial_server package provides a C++ implementation of the rosserial server side,
-    serving as a more performance- and stability-oriented alternative to rosserial_python.
+    A more performance- and stability-oriented server alternative implemented
+    in C++ to rosserial_python.
   </description>
 
   <maintainer email="mpurvis@clearpathrobotics.com">Mike Purvis</maintainer>

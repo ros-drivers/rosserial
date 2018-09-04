@@ -1,8 +1,8 @@
 <package>
   <name>rosserial_mbed</name>
-  <version>0.7.6</version>
+  <version>0.7.7</version>
   <description>
-    Libraries and examples for ROSserial usage on Mbed Platforms.
+    rosserial for mbed platforms.
   </description>
   <author>Gary Servin</author>
   <maintainer email="garyservin@gmail.com">Gary Servin</maintainer>

@@ -2,6 +2,18 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.7 (2017-11-29)
+------------------
+* Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
+* Add ArduinoTcpHardware to use Arduino Ethernet shield. (`#324 <https://github.com/ros-drivers/rosserial/issues/324>`_)
+* Add an example to use Subscriber and ServiceServer as class members. (`#321 <https://github.com/ros-drivers/rosserial/issues/321>`_)
+* Added support for the Particle Photon (`#292 <https://github.com/ros-drivers/rosserial/issues/292>`_)
+* Fix POLICY CMP0054 unknown (`#291 <https://github.com/ros-drivers/rosserial/issues/291>`_)
+* Use ESP8266 header only if defined. (`#288 <https://github.com/ros-drivers/rosserial/issues/288>`_)
+* Add Esp8266 support and an example (`#279 <https://github.com/ros-drivers/rosserial/issues/279>`_)
+* Add support for STM32F1 with stm32duino. (`#281 <https://github.com/ros-drivers/rosserial/issues/281>`_)
+* Contributors: Bei Chen Liu, David Portugal, Dmitry Kargin, Mike Purvis, Romain Reignier, Valentin VERGEZ, khancyr
+
 0.7.6 (2017-03-01)
 ------------------
 * Fixed issue with CMake CMP0054 (`#273 <https://github.com/ros-drivers/rosserial/issues/273>`_)

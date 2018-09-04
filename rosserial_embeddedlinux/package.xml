@@ -1,8 +1,8 @@
 <package>
   <name>rosserial_embeddedlinux</name>
-  <version>0.7.6</version>
+  <version>0.7.7</version>
   <description>
-    Libraries and examples for ROSserial usage on Embedded Linux Enviroments
+    rosserial for embedded Linux enviroments
   </description>
   <author>Paul Bouchier</author>
   <maintainer email="paul.bouchier@gmail.com">Paul Bouchier</maintainer>
@@ -12,10 +12,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>std_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
   <build_depend>rosserial_client</build_depend>
 
   <run_depend>rospy</run_depend>

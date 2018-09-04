@@ -2,6 +2,20 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.7 (2017-11-29)
+------------------
+* Add overall spin timeout to rosserial read. (`#334 <https://github.com/ros-drivers/rosserial/issues/334>`_)
+* Fixing formatting on files. (`#333 <https://github.com/ros-drivers/rosserial/issues/333>`_)
+* Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
+* fix spinOnce timeout : 5ms -> 5s (`#326 <https://github.com/ros-drivers/rosserial/issues/326>`_)
+* [Client] Fix a warning in comparison. (`#323 <https://github.com/ros-drivers/rosserial/issues/323>`_)
+* Use const in ros namespace instead of #define for constants. Fix `#283 <https://github.com/ros-drivers/rosserial/issues/283>`_ (`#318 <https://github.com/ros-drivers/rosserial/issues/318>`_)
+* Fix CMP0046 warnings in catkin-built firmwares (`#320 <https://github.com/ros-drivers/rosserial/issues/320>`_)
+* Prevent time variable overflow leading to parameter timeout error (`#293 <https://github.com/ros-drivers/rosserial/issues/293>`_)
+* Add class member method callback support for Service Server. (`#282 <https://github.com/ros-drivers/rosserial/issues/282>`_)
+* Added capability to specify timeout in getParam methods (`#278 <https://github.com/ros-drivers/rosserial/issues/278>`_)
+* Contributors: 1r0b1n0, Alessandro Francescon, Bei Chen Liu, David Portugal, Dmitry Kargin, Mike O'Driscoll, Mike Purvis, Romain Reignier
+
 0.7.6 (2017-03-01)
 ------------------
 * Fixing message has no attribute _md5sum (`#257 <https://github.com/ros-drivers/rosserial/issues/257>`_)

@@ -4,7 +4,7 @@ project(rosserial_tivac)
 find_package(catkin REQUIRED)
 
 catkin_package(
-  CFG_EXTRAS rosserial_tivac-extras.cmake
+  CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
 install(
@@ -20,8 +20,8 @@ install(
 )
 
 install(
-  PROGRAMS 
-    src/rosserial_tivac/make_libraries_tiva
-    src/rosserial_tivac/make_libraries_energia
+  PROGRAMS
+    src/${PROJECT_NAME}/make_libraries_energia
+    src/${PROJECT_NAME}/make_libraries_tiva
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

@@ -1,8 +1,8 @@
 <package>
   <name>rosserial_windows</name>
-  <version>0.7.6</version>
+  <version>0.7.7</version>
   <description>
-    Libraries and examples for ROSserial usage on Windows Platforms.
+    rosserial for Windows platforms.
   </description>
   <author>Kareem Shehata</author>
   <maintainer email="kshehata@clearpathrobotics.com">Kareem Shehata</maintainer>
@@ -16,7 +16,6 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>rosserial_client</build_depend>
-  <build_depend>message_generation</build_depend>
 
   <run_depend>rospy</run_depend>
   <run_depend>rosserial_msgs</run_depend>
