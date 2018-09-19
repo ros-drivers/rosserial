@@ -42,7 +42,7 @@
   #include <WiFi.h> // Using Espressif's WiFi.h
 #elif defined(W5500)
   #include <SPI.h>
-  #include <Ethernet.h>
+  #include <Ethernet2.h>
 #else
   #include <SPI.h>
   #include <Ethernet.h>
