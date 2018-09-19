@@ -68,6 +68,10 @@ public:
 
   void init()
   {
+    if(tcp_.connected())
+    {
+      tcp_.stop();
+    }
     tcp_.connect(server_, serverPort_);
   }
 
@@ -78,6 +82,7 @@ public:
     }
     else
     {
+      tcp_.stop();
       tcp_.connect(server_, serverPort_);
     }
     return -1;
@@ -91,6 +96,11 @@ public:
   unsigned long time()
   {
     return millis();
+  }
+
+  bool connected()
+  {
+    return tcp_.connected();
   }
 
 protected:
