@@ -49,14 +49,15 @@
     #define SERIAL_CLASS usb_serial_class
   #endif
 #elif defined(_SAM3XA_)
-  #include <UARTClass.h>  // Arduino Due
-  #define SERIAL_CLASS UARTClass
+  #if defined(USE_SERIALUSB)
+    #define SERIAL_CLASS Serial_
+  #else
+    #include <UARTClass.h>  // Arduino Due
+    #define SERIAL_CLASS UARTClass
+  #endif
 #elif defined(USE_USBCON)
   // Arduino Leonardo USB Serial Port
   #define SERIAL_CLASS Serial_
-#elif (defined(__STM32F1__) and !(defined(USE_STM32_HW_SERIAL))) or defined(SPARK) 
-  // Stm32duino Maple mini USB Serial Port
-  #define SERIAL_CLASS USBSerial
 #else 
   #include <HardwareSerial.h>  // Arduino AVR
   #define SERIAL_CLASS HardwareSerial
@@ -73,8 +74,10 @@ class ArduinoHardware {
 #if defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
-#elif defined(USE_TEENSY_HW_SERIAL) or defined(USE_STM32_HW_SERIAL)
+#elif defined(USE_TEENSY_HW_SERIAL)
       iostream = &Serial1;
+#elif defined(USE_SERIALUSB)
+      iostream = &SerialUSB;
 #else
       iostream = &Serial;
 #endif
@@ -92,7 +95,7 @@ class ArduinoHardware {
     int getBaud(){return baud_;}
 
     void init(){
-#if defined(USE_USBCON)
+#if defined(USE_USBCON) || defined(USE_SERIALUSB)
       // Startup delay as a fail-safe to upload a new sketch
       delay(3000); 
 #endif
