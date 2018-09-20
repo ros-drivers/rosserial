@@ -40,6 +40,9 @@
   #include <ESP8266WiFi.h>
 #elif defined(ESP32)
   #include <WiFi.h> // Using Espressif's WiFi.h
+#elif defined(STM32ETHERNET)
+  #include <LwIP.h>
+  #include <STM32Ethernet.h> // Using STM32Duino Ethernet library
 #else
   #include <SPI.h>
   #include <Ethernet.h>
