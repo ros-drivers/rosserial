@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_xbee</name>
-  <version>0.7.7</version>
+  <version>0.8.0</version>
   <description>
      Allows multipoint communication between rosserial
      nodes connected to an xbee. All nodes communicate back

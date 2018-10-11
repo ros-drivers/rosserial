@@ -2,8 +2,8 @@
 Changelog for package rosserial_mbed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2018-10-11)
+------------------
 * Use the ! prefix introduced in gcc4mbed for mbed examples (`#304 <https://github.com/ros-drivers/rosserial/issues/304>`_)
   Follows the changes introduced in the following commit:
   https://github.com/adamgreen/gcc4mbed/commit/7d79ef307e65f4f913bed655c887a632352c286c

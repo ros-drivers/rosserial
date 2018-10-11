@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rosserial_test</name>
-  <version>0.7.7</version>
+  <version>0.8.0</version>
   <description>
     A specialized harness which allows end-to-end integration testing of the
     rosserial client and server components.

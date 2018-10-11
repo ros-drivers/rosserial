@@ -2,8 +2,8 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2018-10-11)
+------------------
 * fix no attribute message_cache issue in message_info_service (`#393 <https://github.com/ros-drivers/rosserial/issues/393>`_)
 * Added service to force an Arduino hard reset in serial_node.py (`#349 <https://github.com/ros-drivers/rosserial/issues/349>`_)
   * Added hard_reset service call to serial_node

@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_vex_v5</name>
-  <version>0.7.7</version>
+  <version>0.8.0</version>
   <description>
     rosserial for the VEX Cortex V5 Robot Brain platform.
   </description>

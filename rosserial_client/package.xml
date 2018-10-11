@@ -1,6 +1,6 @@
 <package format="2">
   <name>rosserial_client</name>
-  <version>0.7.7</version>
+  <version>0.8.0</version>
   <description>
     Generalized client side source for rosserial.
   </description>

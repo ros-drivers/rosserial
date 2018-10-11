@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2018-10-11)
+------------------
 * Fix compiling on boost > 1.66 (`#362 <https://github.com/ros-drivers/rosserial/issues/362>`_)
   Reflective of changes made to boost::asio noted here:
   http://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/net_ts.html

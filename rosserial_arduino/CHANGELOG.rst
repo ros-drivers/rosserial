@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2018-10-11)
+------------------
 * Enhance ArduinoTcpHardware (`#379 <https://github.com/ros-drivers/rosserial/issues/379>`_)
   - Add support to check for current TCP connection status to reconnect
   - stop tcp before re-connecting
