@@ -2,6 +2,22 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Enhance ArduinoTcpHardware (`#379 <https://github.com/ros-drivers/rosserial/issues/379>`_)
+  - Add support to check for current TCP connection status to reconnect
+  - stop tcp before re-connecting
+* Changed hardcoded pin 13 to LED_BUILTIN (`#328 <https://github.com/ros-drivers/rosserial/issues/328>`_)
+  To make the code work on an Arduino Nano V3 clone board.
+  (might need to be updated in BlinkM as well, but I didnt try that example)
+* Added service to force an Arduino hard reset in serial_node.py (`#349 <https://github.com/ros-drivers/rosserial/issues/349>`_)
+  * Added hard_reset service call to serial_node
+  * Refactored SerialClient to use a write thread, working around deadlock when both Arduino and serial_node.py get stuck writing to each other.
+  * Updated cmakelists and package.xml to include dependencies. Removed unnecessary tcp functionality from arduino-specific serial_node.py
+* Added ESP32 support (`#345 <https://github.com/ros-drivers/rosserial/issues/345>`_)
+* In rosserial_arduino, changed embedded type size for ROS uint64 to 8 bytes from 4. (`#312 <https://github.com/ros-drivers/rosserial/issues/312>`_)
+* Contributors: Bo Chen, Chris Spencer, Pornthep Preechayasomboon, Tom O'Connell, blubbi321
+
 0.7.7 (2017-11-29)
 ------------------
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)

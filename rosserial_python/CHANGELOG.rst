@@ -2,6 +2,20 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix no attribute message_cache issue in message_info_service (`#393 <https://github.com/ros-drivers/rosserial/issues/393>`_)
+* Added service to force an Arduino hard reset in serial_node.py (`#349 <https://github.com/ros-drivers/rosserial/issues/349>`_)
+  * Added hard_reset service call to serial_node
+  * Refactored SerialClient to use a write thread, working around deadlock when both Arduino and serial_node.py get stuck writing to each other.
+  * Updated cmakelists and package.xml to include dependencies. Removed unnecessary tcp functionality from arduino-specific serial_node.py
+* Add support for boolean parameters (`#355 <https://github.com/ros-drivers/rosserial/issues/355>`_)
+* [python] fix an unboundlocalerror (`#346 <https://github.com/ros-drivers/rosserial/issues/346>`_)
+* Retry opening the serial port every 3 seconds (`#342 <https://github.com/ros-drivers/rosserial/issues/342>`_)
+  * Retry opening the serial port every 3 seconds
+  * Break out of the retry loop if we've been shut down
+* Contributors: Chris Spencer, Kenta Yonekura, Pikrass, dlguo-cpr
+
 0.7.7 (2017-11-29)
 ------------------
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)

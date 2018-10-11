@@ -2,6 +2,14 @@
 Changelog for package rosserial_mbed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use the ! prefix introduced in gcc4mbed for mbed examples (`#304 <https://github.com/ros-drivers/rosserial/issues/304>`_)
+  Follows the changes introduced in the following commit:
+  https://github.com/adamgreen/gcc4mbed/commit/7d79ef307e65f4f913bed655c887a632352c286c
+  Refer to `adamgreen/gcc4mbed#64 <https://github.com/adamgreen/gcc4mbed/issues/64>`_ for more details.
+* Contributors: Naoki Mizuno
+
 0.7.7 (2017-11-29)
 ------------------
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)

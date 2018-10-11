@@ -2,6 +2,9 @@
 Changelog for package rosserial_tivac
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.7.7 (2017-11-29)
 ------------------
 * Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)

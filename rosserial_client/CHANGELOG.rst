@@ -2,6 +2,12 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add an empty newline to the generated headers. (`#389 <https://github.com/ros-drivers/rosserial/issues/389>`_)
+* Add support for boolean parameters (`#355 <https://github.com/ros-drivers/rosserial/issues/355>`_)
+* Contributors: Miklós Márton, Pikrass
+
 0.7.7 (2017-11-29)
 ------------------
 * Add overall spin timeout to rosserial read. (`#334 <https://github.com/ros-drivers/rosserial/issues/334>`_)

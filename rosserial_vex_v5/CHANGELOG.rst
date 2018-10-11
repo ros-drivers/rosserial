@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package rosserial_vex_v5
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Forthcoming
+-----------
+* VEX Cortex Usage improvements and VEX V5 Support (`#385 <https://github.com/ros-drivers/rosserial/issues/385>`_)
+* Contributors: CanyonTurtle
+
 0.7.7
 -----------------------------
 - README fixes
