@@ -98,7 +98,7 @@ typedef boost::shared_ptr<Publisher> PublisherPtr;
 class Subscriber {
 public:
   Subscriber(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer)> write_fn)
+      boost::function<void(std::vector<uint8_t>& buffer)> write_fn)
     : write_fn_(write_fn) {
     ros::SubscribeOptions opts;
     opts.init<topic_tools::ShapeShifter>(
@@ -127,7 +127,7 @@ private:
   }
 
   ros::Subscriber subscriber_;
-  boost::function<void(std::vector<uint8_t> buffer)> write_fn_;
+  boost::function<void(std::vector<uint8_t>& buffer)> write_fn_;
 };
 
 typedef boost::shared_ptr<Subscriber> SubscriberPtr;
@@ -135,7 +135,7 @@ typedef boost::shared_ptr<Subscriber> SubscriberPtr;
 class ServiceClient {
 public:
   ServiceClient(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn)
+      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
     : write_fn_(write_fn) {
     topic_id_ = -1;
     if (!service_info_service_.isValid()) {
@@ -197,7 +197,7 @@ private:
   topic_tools::ShapeShifter response_message_;
   ros::ServiceClient service_client_;
   static ros::ServiceClient service_info_service_;
-  boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
+  boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
   std::string service_md5_;
   std::string request_message_md5_;
   std::string response_message_md5_;
@@ -209,14 +209,14 @@ typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
 
 class ServiceServer {
   class ServiceCallbackHelper : public ros::ServiceCallbackHelper {
-    boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn_;
+    boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
     uint16_t topic_id_;
     int got_response_;
     boost::mutex mutex_;
     boost::condition_variable cond_;
     topic_tools::ShapeShifter response_message_;
  public:
-    ServiceCallbackHelper(boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn):
+    ServiceCallbackHelper(boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn):
     write_fn_(write_fn), topic_id_(-1) {}
     virtual bool call(ros::ServiceCallbackHelperCallParams& params){
       std::vector<uint8_t> buffer(params.request.message_start, params.request.message_start + params.request.num_bytes);
@@ -254,7 +254,7 @@ class ServiceServer {
   };
 public:
   ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
-      boost::function<void(std::vector<uint8_t> buffer, const uint16_t topic_id)> write_fn)
+      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
   {
     if (!service_info_service_.isValid()) {
       // lazy-initialize the service caller.

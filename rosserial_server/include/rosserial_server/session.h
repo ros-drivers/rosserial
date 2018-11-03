@@ -529,7 +529,7 @@ private:
   boost::asio::deadline_timer sync_timer_;
   boost::asio::deadline_timer require_check_timer_;
 
-  std::map< uint16_t, boost::function<void(ros::serialization::IStream)> > callbacks_;
+  std::map< uint16_t, boost::function<void(ros::serialization::IStream&)> > callbacks_;
   std::map<uint16_t, PublisherPtr> publishers_;
   std::map<uint16_t, SubscriberPtr> subscribers_;
   std::map<std::string, ServiceClientPtr> service_clients_;
