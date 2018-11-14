@@ -72,7 +72,7 @@ def setAT(port, cmd):
 	port.flushInput()
 	send(port, 'AT'+cmd)
 	rsp = port.readline()
-	print rsp
+	print(rsp)
 	if 'OK' in rsp:
 		return True
 	else :
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 	opts, args = parser.parse_args()
 	
 	if len(args) < 2:
-		print "Not enough arguments!"
+		print("Not enough arguments!")
 		exit()
 	
 	baud = 57600
@@ -115,9 +115,9 @@ if __name__ == '__main__':
 	port = serial.Serial(port_name, baud, timeout=1.5)
 	
 	if beginAtMode(port):
-		print "Connected to the XBee"
+		print("Connected to the XBee")
 	else:
-		print "Failed to connect to the XBee"
+		print("Failed to connect to the XBee")
 		exit()
 
 	
@@ -136,18 +136,18 @@ if __name__ == '__main__':
 
 		
 	if setAT(port, 'RE'): #reset the xbee
-		print "XBee reset"
+		print("XBee reset")
 	else:
-		print "Reset failed"
+		print("Reset failed")
 		exit()
 	beginAtMode(port)
 	time.sleep(1)
-	print "Sending command : ", cmd
+	print("Sending command : {}".format(cmd)
 
 	if setAT(port, cmd):
-		print "XBee sucessfully programed!"
+		print("XBee sucessfully programed!")
 	else:
-		print "XBee programming failed.  Try again and then investigate using X-CTU"
+		print("XBee programming failed.  Try again and then investigate using X-CTU")
 
 	
 		

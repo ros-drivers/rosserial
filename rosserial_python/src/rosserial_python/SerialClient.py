@@ -39,13 +39,21 @@ import imp
 import threading
 import sys
 import multiprocessing
-import StringIO
 import errno
 import signal
 import socket
 import struct
 import time
-from Queue import Queue
+
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from serial import Serial, SerialException, SerialTimeoutException
 
@@ -132,7 +140,7 @@ class Subscriber:
 
     def callback(self, msg):
         """ Forward message to serial device. """
-        data_buffer = StringIO.StringIO()
+        data_buffer = StringIO()
         msg.serialize(data_buffer)
         self.parent.send(self.id, data_buffer.getvalue())
 
@@ -167,7 +175,7 @@ class ServiceServer:
 
     def callback(self, req):
         """ Forward request to serial device. """
-        data_buffer = StringIO.StringIO()
+        data_buffer = StringIO()
         req.serialize(data_buffer)
         self.response = None
         if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
@@ -209,7 +217,7 @@ class ServiceClient:
         # call service proxy
         resp = self.proxy(req)
         # serialize and publish
-        data_buffer = StringIO.StringIO()
+        data_buffer = StringIO()
         resp.serialize(data_buffer)
         self.parent.send(self.id, data_buffer.getvalue())
 
@@ -221,7 +229,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print "Fork_server is: ", fork_server
+        print("Fork_server is: {}".format(fork_server))
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -234,7 +242,7 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print "waiting for socket connection"
+            print("waiting for socket connection")
             (clientsocket, address) = self.serversocket.accept()
 
             #now do something with the clientsocket
@@ -311,7 +319,7 @@ class RosSerialServer:
             if chunk == '':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] == errno.EWOULDBLOCK:
                 return 0
             raise
@@ -679,7 +687,7 @@ class SerialClient(object):
         """ Respond to device with system time. """
         t = Time()
         t.data = rospy.Time.now()
-        data_buffer = StringIO.StringIO()
+        data_buffer = StringIO()
         t.serialize(data_buffer)
         self.send( TopicInfo.ID_TIME, data_buffer.getvalue() )
         self.lastsync = rospy.Time.now()
@@ -716,7 +724,7 @@ class SerialClient(object):
             resp.floats =param
         if t == str:
             resp.strings = param
-        data_buffer = StringIO.StringIO()
+        data_buffer = StringIO()
         resp.serialize(data_buffer)
         self.send(TopicInfo.ID_PARAMETER_REQUEST, data_buffer.getvalue())
 

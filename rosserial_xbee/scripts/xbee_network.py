@@ -79,7 +79,7 @@ class FakeSerial():
 		
 	def write(self, data):
 		if (debug):
-			print "Sending ", [d for d in data]
+			print("Sending {}".format([d for d in data]))
 		self.xbee.send('tx', frame_id='0', options="\x01", dest_addr=self.id,data=data)
 		
 	def putData(self, data):
@@ -94,7 +94,7 @@ class FakeSerial():
             return len(self.rxdata)
 
 if __name__== '__main__':
-	print "RosSerial Xbee Network"
+	print("RosSerial Xbee Network")
 	rospy.init_node('xbee_network')
 	sys.argv= rospy.myargv(argv=sys.argv) 
 	
@@ -102,18 +102,18 @@ if __name__== '__main__':
 	network_ids = [] 
 	
 	if len(sys.argv) <3 :
-		print """
+		print("""
 This program connects to rosserial xbee nodes.  The program must be called
 like :
 
 ./xbee_network.py <xbee_serial_port> ID1 [ ID2 ID3 ....] 
-"""
+""")
 		exit()
 	else :
 		xbee_port = sys.argv[1]		
 		network_ids  = [ struct.pack('>h', int(id) ) for id in sys.argv[2:] ]
 	
-	print "Contacting Xbees : " , network_ids
+	print("Contacting Xbees : {}".format(network_ids))
 
 		
 	# Open serial port
@@ -140,7 +140,7 @@ like :
 		try:
 			msg = xbee.wait_read_frame()
 			if (debug):
-				print "Received " , msg
+				print("Received {}".format(msg))
 	
 			if  msg['id'] == 'rx':
 				src = msg['source_addr']
@@ -148,11 +148,11 @@ like :
 				try:
 					client_ports[src].putData(data)
 				except KeyError as e:
-					print "Rcv ID corrupted"
+					print("Rcv ID corrupted")
 		except KeyboardInterrupt:
 			break
 	ser.close()
 	
-	print "Quiting the Sensor Network"
+	print("Quiting the Sensor Network")
 
 
