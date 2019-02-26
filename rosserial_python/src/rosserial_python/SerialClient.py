@@ -170,9 +170,9 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
-        if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
-            while self.response is None:
-                pass
+        self.parent.send(self.id, data_buffer.getvalue())
+        while self.response is None:
+            time.sleep(0.001)
         return self.response
 
     def handlePacket(self, data):
