@@ -170,8 +170,11 @@ class ServiceServer:
         data_buffer = StringIO.StringIO()
         req.serialize(data_buffer)
         self.response = None
+        self.error = False
         self.parent.send(self.id, data_buffer.getvalue())
         while self.response is None:
+            if self.error:
+                raise RuntimeError("Service call failed.")
             time.sleep(0.001)
         return self.response
 
@@ -780,7 +783,8 @@ class SerialClient(object):
                     try:
                         if isinstance(data, tuple):
                             topic, msg = data
-                            self._send(topic, msg)
+                            if self._send(topic, msg) < 0:
+                                self.error = True
                         elif isinstance(data, basestring):
                             self._write(data)
                         else:
