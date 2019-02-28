@@ -201,7 +201,7 @@ macro(add_teensy_executable TARGET_NAME)
                     ~/drone
                     )
                 unset(TEMPLATE_FILE)
-                find_file(TEMPLATE_FILE "catkin_ws/src/ros_teensy/teensy-cmake/Arduino.inc.in"
+                find_file(TEMPLATE_FILE "catkin_ws/src/rosserial_teensy/teensy-cmake/Arduino.inc.in"
                     PATH ${TEMPLATE_FILE_PATH}
                     )
             endif()

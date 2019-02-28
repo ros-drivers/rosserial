@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>ros_teensy</name>
+  <name>rosserial_teensy</name>
   <version>0.1.0</version>
   <description>
     Builds rosserial scripts for Teensy micro-controllers.

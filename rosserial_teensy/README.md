@@ -1,4 +1,4 @@
-# ros_teensy
+# rosserial_teensy
 
 [master]: https://dev.mcgillrobotics.com/buildStatus/icon?job=ros-teensy/master
 [master url]: https://dev.mcgillrobotics.com/job/ros-teensy/job/master
@@ -49,7 +49,7 @@ export arduino_location=<the_location>
 
 ## Usage
 
-To properly use the `ros_teensy` package, your package containing your MCU code
+To properly use the `rosserial_teensy` package, your package containing your MCU code
 to be compiled should follow this structure:
 
 ```
@@ -68,7 +68,7 @@ Note that the toolchain file used to compile the sources will be determined at
 a folder level, hence the reason for the `arch1` and `arch2` folders. These two
 folders could (or not) be compiled using the same cross-compiling toolchain.
 
-To compile using the `ros_teensy` toolchain you must include the following
+To compile using the `rosserial_teensy` toolchain you must include the following
 commands in your different CMakeLists.txt.
 
 At the package level:
@@ -78,7 +78,7 @@ cmake_minimum_required(VERSION 2.8)
 project(<package_name>)
 
 find_package(catkin REQUIRED COMPONENTS
-    ros_teensy
+    rosserial_teensy
     rosserial_client
     rosserial_arduino
 )
@@ -90,12 +90,12 @@ rosserial_generate_ros_lib(
 
 rosserial_configure_client(
     DIRECTORY architecture1
-    TOOLCHAIN_FILE ${ROS_TEENSY_TOOLCHAIN}
+    TOOLCHAIN_FILE ${rosserial_teensy_TOOLCHAIN}
 )
 
 rosserial_configure_client(
     DIRECTORY architecture2
-    TOOLCHAIN_FILE ${ROS_TEENSY_TOOLCHAIN}
+    TOOLCHAIN_FILE ${rosserial_teensy_TOOLCHAIN}
 )
 
 rosserial_add_client_target(architecture1 target1_Firmware ALL)

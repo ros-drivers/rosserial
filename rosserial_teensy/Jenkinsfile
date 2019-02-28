@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    PACKAGE_NAME = 'ros_teensy'
+    PACKAGE_NAME = 'rosserial_teensy'
     ROS_WORKSPACE = "${WORKSPACE}_ws"
   }
   stages {
