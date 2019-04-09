@@ -86,7 +86,7 @@ if (len(sys.argv) < 2):
 path = sys.argv[1]
 if path[-1] == "/":
     path = path[0:-1]
-print "\nExporting to %s" % path
+print("\nExporting to %s" % path)
 
 rospack = rospkg.RosPack()
 rosserial_client_copy_files(rospack, path+"/ros_lib/")

@@ -20,12 +20,7 @@ install(
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
 )
 
-install(
-  PROGRAMS scripts/make_libraries
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
 catkin_install_python(
-  PROGRAMS src/${PROJECT_NAME}/make_library.py
+  PROGRAMS scripts/make_libraries src/${PROJECT_NAME}/make_library.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
