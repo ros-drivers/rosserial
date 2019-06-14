@@ -49,6 +49,7 @@
 
 #include "rosserial_server/async_read_buffer.h"
 #include "rosserial_server/topic_handlers.h"
+#include "rosserial_server/SerializedMessage.h"
 
 namespace rosserial_server
 {
@@ -104,10 +105,19 @@ public:
         = boost::bind(&Session::setup_service_client_publisher, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
         = boost::bind(&Session::setup_service_client_subscriber, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_PUBLISHER]
+      = boost::bind(&Session::setup_service_server_publisher, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
+      = boost::bind(&Session::setup_service_server_subscriber, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_LOG]
         = boost::bind(&Session::handle_log, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_TIME]
         = boost::bind(&Session::handle_time, this, _1);
+
+    /* for rosservice server */
+    serialized_msg_pub_ = nh_.advertise<rosserial_server::SerializedMessage>("/serialized_msg", 10);
+    serialized_srv_req_sub_ = nh_.subscribe("/serialized_srv_req", 1, &Session::serialized_srv_req_callback, this);
+    ros::Duration(0.5).sleep(); // wait for the node "rosservice_server_manager.py" intialized
 
     active_ = true;
     attempt_sync();
@@ -407,6 +417,33 @@ private:
     set_sync_timeout(timeout_interval_);
   }
 
+  void setup_service_server_publisher(ros::serialization::IStream& stream) {
+    /* set to rosservice_server_manager.py */
+    serialized_msg_publish(rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_PUBLISHER, stream);
+
+    rosserial_msgs::TopicInfo topic_info;
+    ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
+
+    //ROS_ERROR("new rosservice server: name: %s, id: %d", topic_info.topic_name.c_str(), topic_info.topic_id);
+
+    if (!callbacks_.count(topic_info.topic_id)) {
+      ROS_INFO("Creating service server callback for %s",topic_info.topic_name.c_str());
+      callbacks_[topic_info.topic_id] = boost::bind(&Session::serialized_msg_publish, this, topic_info.topic_id, _1);
+    }
+
+    set_sync_timeout(timeout_interval_);
+  }
+
+  void setup_service_server_subscriber(ros::serialization::IStream& stream) {
+    /* set to rosservice_server_manager.py */
+    serialized_msg_publish(rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_SUBSCRIBER, stream);
+
+    //rosserial_msgs::TopicInfo topic_info;
+    //ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
+    //ROS_ERROR("new rosservice server: name: %s, id: %d", topic_info.topic_name.c_str(), topic_info.topic_id);
+  }
+
+
   // When the rosserial client creates a ServiceClient object (and/or when it registers that object with the NodeHandle)
   // it creates a publisher (to publish the service request message to us) and a subscriber (to receive the response)
   // the service client callback is attached to the *subscriber*, so when we receive the service response
@@ -482,6 +519,31 @@ private:
     set_sync_timeout(timeout_interval_);
   }
 
+  void serialized_msg_publish(uint16_t topic_id, ros::serialization::IStream& stream)
+  {
+    rosserial_server::SerializedMessage serialized_msg;
+
+    serialized_msg.id = topic_id;
+
+    /* bad implementation */
+    for(int i = 0; i < stream.getLength(); i++)
+      serialized_msg.body.push_back(stream.getData()[i]);
+
+    serialized_msg_pub_.publish(serialized_msg);
+
+    //ROS_INFO("[session]: publish serialzed msg, id: %d", topic_id);
+  }
+
+  void serialized_srv_req_callback(rosserial_server::SerializedMessageConstPtr serialized_msg)
+  {
+    std::vector<uint8_t> buffer(serialized_msg->body.size());
+    /* bad implementation */
+    for(int i = 0; i < serialized_msg->body.size(); i++)
+      buffer.at(i) = serialized_msg->body.at(i);
+
+    write_message(buffer, serialized_msg->id);
+  }
+
   Socket socket_;
   AsyncReadBuffer<Socket> async_read_buffer_;
   enum { buffer_max = 1023 };
@@ -503,6 +565,9 @@ private:
   std::map<uint16_t, PublisherPtr> publishers_;
   std::map<uint16_t, SubscriberPtr> subscribers_;
   std::map<std::string, ServiceClientPtr> services_;
+
+  ros::Publisher serialized_msg_pub_;
+  ros::Subscriber serialized_srv_req_sub_;
 };
 
 }  // namespace

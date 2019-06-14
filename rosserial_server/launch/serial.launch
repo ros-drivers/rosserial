@@ -4,4 +4,6 @@
     <param name="port" value="$(arg port)" />
   </node>
   <node pkg="rosserial_python" type="message_info_service.py" name="rosserial_message_info" />
+
+  <node pkg="rosserial_server" type="rosservice_server_manager.py" name="" output="screen" />
 </launch>

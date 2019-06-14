@@ -6,12 +6,25 @@ find_package(catkin REQUIRED COMPONENTS
   rosserial_msgs
   std_msgs
   topic_tools
+  message_generation
 )
 
 find_package(Boost REQUIRED COMPONENTS
   system
   thread
 )
+
+add_message_files(
+  FILES
+  SerializedMessage.msg
+)
+
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
 
 catkin_package(
   INCLUDE_DIRS include
@@ -31,17 +44,17 @@ include_directories(
 add_executable(${PROJECT_NAME}_serial_node src/serial_node.cpp)
 target_link_libraries(${PROJECT_NAME}_serial_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_serial_node PROPERTIES OUTPUT_NAME serial_node PREFIX "")
-add_dependencies(${PROJECT_NAME}_serial_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_serial_node ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(${PROJECT_NAME}_socket_node src/socket_node.cpp)
 target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_socket_node PROPERTIES OUTPUT_NAME socket_node PREFIX "")
-add_dependencies(${PROJECT_NAME}_socket_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_socket_node ${catkin_EXPORTED_TARGETS}  ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(${PROJECT_NAME}_udp_socket_node src/udp_socket_node.cpp)
 target_link_libraries(${PROJECT_NAME}_udp_socket_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_udp_socket_node PROPERTIES OUTPUT_NAME udp_socket_node PREFIX "")
-add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS}  ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 install(
   TARGETS
