@@ -50,6 +50,11 @@
 #include "rosserial_server/async_read_buffer.h"
 #include "rosserial_server/topic_handlers.h"
 
+namespace
+{
+  bool terminate_start_flag_ = false;
+};
+
 namespace rosserial_server
 {
 
@@ -85,6 +90,9 @@ public:
     ros_spin_timer_.expires_from_now(ros_spin_interval_);
     ros_spin_timer_.async_wait(boost::bind(&Session::ros_spin_timeout, this,
                                            boost::asio::placeholders::error));
+
+
+    signal(SIGINT, &Session::signal_catch);
   }
 
   Socket& socket()
@@ -116,6 +124,11 @@ public:
 
   void stop()
   {
+    std::cout << "stop!!!" << std::endl;
+    // Send stop tx command to MCU
+    //std::vector<uint8_t> message(0);
+    //write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
+
     // Abort any pending ROS callbacks.
     ros_callback_queue_.clear();
 
@@ -158,6 +171,16 @@ private:
    */
   void ros_spin_timeout(const boost::system::error_code& error) {
     ros_callback_queue_.callAvailable();
+
+    // Stop the tx from MCU, not sure whether the process should be here
+    if(terminate_start_flag_ )
+      {
+        std::vector<uint8_t> message(0);
+        write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
+        ROS_WARN("stop rosserial communication \n");
+        ros::shutdown();
+        return;
+      }
 
     if (ros::ok())
     {
@@ -272,6 +295,7 @@ private:
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size());
     uint8_t msg_len_checksum = 255 - checksum(message.size());
     stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
+    std::cout << "message size: " << message.size() << ", msg_len_checksum:" << topic_id << std::endl;
     msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
 
     memcpy(stream.advance(message.size()), &message[0], message.size());
@@ -381,6 +405,11 @@ private:
 
   static uint8_t checksum(uint16_t val) {
     return (val >> 8) + val;
+  }
+
+  static void signal_catch(int sig)
+  {
+    terminate_start_flag_ = true;
   }
 
   //// RECEIVED MESSAGE HANDLERS ////
