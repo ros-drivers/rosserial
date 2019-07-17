@@ -39,13 +39,21 @@ import imp
 import threading
 import sys
 import multiprocessing
-import StringIO
 import errno
 import signal
 import socket
 import struct
 import time
-from Queue import Queue
+
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
 
 from serial import Serial, SerialException, SerialTimeoutException
 
@@ -221,7 +229,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print "Fork_server is: ", fork_server
+        print("Fork_server is: ", fork_server)
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -234,7 +242,7 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print "waiting for socket connection"
+            print("waiting for socket connection")
             (clientsocket, address) = self.serversocket.accept()
 
             #now do something with the clientsocket
@@ -311,7 +319,7 @@ class RosSerialServer:
             if chunk == '':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] == errno.EWOULDBLOCK:
                 return 0
             raise
@@ -409,7 +417,8 @@ class SerialClient(object):
                 self.port.flushInput()
 
         # request topic sync
-        self.write_queue.put("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
+        msg = "\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff"
+        self.write_queue.put(msg if str == bytes else msg.encode())
 
     def txStopRequest(self, signal, frame):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
@@ -417,7 +426,8 @@ class SerialClient(object):
             with self.read_lock:
                 self.port.flushInput()
 
-        self.write_queue.put("\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4")
+        msg = "\xff" + self.protocol_ver + "\x00\x00\xff\x0b\x00\xf4"
+        self.write_queue.put(msg if str == bytes else msg.encode())
 
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")
@@ -739,7 +749,7 @@ class SerialClient(object):
         """
         Queues data to be written to the serial port.
         """
-        self.write_queue.put((topic, msg))
+        self.write_queue.put((topic, msg if str == bytes else msg.encode()))
 
     def _write(self, data):
         """
@@ -781,7 +791,7 @@ class SerialClient(object):
                         if isinstance(data, tuple):
                             topic, msg = data
                             self._send(topic, msg)
-                        elif isinstance(data, basestring):
+                        elif isinstance(data, bytes):
                             self._write(data)
                         else:
                             rospy.logerr("Trying to write invalid data type: %s" % type(data))

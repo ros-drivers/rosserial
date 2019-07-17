@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #####################################################################
 # Software License Agreement (BSD License)
@@ -60,7 +60,7 @@ class MessageInfoService(object):
 
   def _message_info_cb(self, req):
     package_message = tuple(req.type.split("/"))
-    if not self.message_cache.has_key(package_message):
+    if package_message not in self.message_cache:
       rospy.loginfo("Loading module to return info on %s/%s." % package_message)
       msg = load_message(*package_message)
       self.message_cache[package_message] = (msg._md5sum, msg._full_text)
