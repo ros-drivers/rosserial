@@ -215,7 +215,7 @@ class ServiceClient:
 
 class RosSerialServer:
     """
-        RosSerialServer waits for a socket connection then passes itself, forked as a
+        RosSerialServer waits for a socket connection then passes itself, forked as ae
         new process, to SerialClient which uses it as a serial port. It continues to listen
         for additional connections. Each forked process is a new ros node, and proxies ros
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
@@ -226,11 +226,11 @@ class RosSerialServer:
         self.fork_server = fork_server
 
     def listen(self):
-        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serversocket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM , 0)
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
-        self.serversocket.listen(1)
+        self.serversocket.listen(10)
 
         while True:
             #accept connections
@@ -238,7 +238,7 @@ class RosSerialServer:
             (clientsocket, address) = self.serversocket.accept()
 
             #now do something with the clientsocket
-            rospy.loginfo("Established a socket connection from %s on port %s" % (address))
+            #rospy.loginfo("Established a socket connection from %s on port %s" % (address))
             self.socket = clientsocket
             self.isConnected = True
 
