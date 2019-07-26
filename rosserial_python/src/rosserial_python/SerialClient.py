@@ -281,6 +281,9 @@ class RosSerialServer:
     def flushInput(self):
         pass
 
+    def flushOutput(self):
+        pass    
+
     def write(self, data):
         if not self.isConnected:
             return
