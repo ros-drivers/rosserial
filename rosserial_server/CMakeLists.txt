@@ -13,6 +13,8 @@ find_package(Boost REQUIRED COMPONENTS
   thread
 )
 
+find_package(PythonLibs REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
@@ -24,8 +26,9 @@ catkin_package(
 
 include_directories(
   include
-    ${Boost_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIR}   
 )
 
 add_executable(${PROJECT_NAME}_serial_node src/serial_node.cpp)
@@ -42,6 +45,9 @@ add_executable(${PROJECT_NAME}_udp_socket_node src/udp_socket_node.cpp)
 target_link_libraries(${PROJECT_NAME}_udp_socket_node ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME}_udp_socket_node PROPERTIES OUTPUT_NAME udp_socket_node PREFIX "")
 add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS})
+
+add_executable(${PROJECT_NAME}_test src/test.cpp)
+target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PYTHON_LIBRARY})
 
 install(
   TARGETS
