@@ -548,7 +548,7 @@ public:
    * Logging
    */
 
-private:
+protected:
   void log(char byte, const char * msg)
   {
     rosserial_msgs::Log l;
@@ -583,7 +583,7 @@ public:
    * Parameters
    */
 
-private:
+protected:
   bool param_recieved;
   rosserial_msgs::RequestParamResponse req_param_resp;
 
