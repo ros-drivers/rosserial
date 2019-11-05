@@ -6,5 +6,4 @@
     <param name="client_port" value="$(arg port)" />
     <param name="client_addr" value="$(arg addr)" />
   </node>
-  <node pkg="rosserial_python" type="message_info_service.py" name="rosserial_message_info" />
 </launch>

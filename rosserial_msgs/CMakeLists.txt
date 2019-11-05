@@ -11,9 +11,7 @@ add_message_files(FILES
 )
 
 add_service_files(FILES
-  RequestMessageInfo.srv
   RequestParam.srv
-  RequestServiceInfo.srv
 )
 
 generate_messages()
