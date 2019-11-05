@@ -37,9 +37,8 @@
 
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
-#include <rosserial_msgs/RequestMessageInfo.h>
-#include <rosserial_msgs/RequestServiceInfo.h>
 #include <topic_tools/shape_shifter.h>
+#include <rosserial_server/msg_lookup.h>
 
 namespace rosserial_server
 {
@@ -47,26 +46,23 @@ namespace rosserial_server
 class Publisher {
 public:
   Publisher(ros::NodeHandle& nh, const rosserial_msgs::TopicInfo& topic_info) {
-    if (!message_service_.isValid()) {
-      // lazy-initialize the service caller.
-      message_service_ = nh.serviceClient<rosserial_msgs::RequestMessageInfo>("message_info");
-      if (!message_service_.waitForExistence(ros::Duration(5.0))) {
-        ROS_WARN("Timed out waiting for message_info service to become available.");
-      }
+    rosserial_server::MsgInfo msginfo;
+    try
+    {
+      msginfo = lookupMessage(topic_info.message_type);
+    }
+    catch (const std::exception& e)
+    {
+      ROS_WARN_STREAM("Unable to look up message: " << e.what());
     }
 
-    rosserial_msgs::RequestMessageInfo info;
-    info.request.type = topic_info.message_type;
-    if (message_service_.call(info)) {
-      if (info.response.md5 != topic_info.md5sum) {
-        ROS_WARN_STREAM("Message" << topic_info.message_type  << "MD5 sum from client does not match that in system. Will avoid using system's message definition.");
-        info.response.definition = "";
-      }
-    } else {
-      ROS_WARN("Failed to call message_info service. Proceeding without full message definition.");
+    if (!msginfo.md5sum.empty() && msginfo.md5sum != topic_info.md5sum)
+    {
+      ROS_WARN_STREAM("Message" << topic_info.message_type  << "MD5 sum from client does not "
+                      "match that in system. Will avoid using system's message definition.");
+      msginfo.full_text = "";
     }
-
-    message_.morph(topic_info.md5sum, topic_info.message_type, info.response.definition, "false");
+    message_.morph(topic_info.md5sum, topic_info.message_type, msginfo.full_text, "false");
     publisher_ = message_.advertise(nh, topic_info.topic_name, 1);
   }
 
@@ -130,26 +126,26 @@ public:
       boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
     : write_fn_(write_fn) {
     topic_id_ = -1;
-    if (!service_info_service_.isValid()) {
-      // lazy-initialize the service caller.
-      service_info_service_ = nh.serviceClient<rosserial_msgs::RequestServiceInfo>("service_info");
-      if (!service_info_service_.waitForExistence(ros::Duration(5.0))) {
-        ROS_WARN("Timed out waiting for service_info service to become available.");
-      }
-    }
 
-    rosserial_msgs::RequestServiceInfo info;
-    info.request.service = topic_info.message_type;
-    ROS_DEBUG("Calling service_info service for topic name %s",topic_info.topic_name.c_str());
-    if (service_info_service_.call(info)) {
-      request_message_md5_ = info.response.request_md5;
-      response_message_md5_ = info.response.response_md5;
-    } else {
-      ROS_WARN("Failed to call service_info service. The service client will be created with blank md5sum.");
+    rosserial_server::MsgInfo srvinfo;
+    rosserial_server::MsgInfo reqinfo;
+    rosserial_server::MsgInfo respinfo;
+    try
+    {
+      srvinfo = lookupMessage(topic_info.message_type);
+      reqinfo = lookupMessage(topic_info.message_type + "Request");
+      respinfo = lookupMessage(topic_info.message_type + "Response");
     }
+    catch (const std::exception& e)
+    {
+      ROS_WARN_STREAM("Unable to look up service definition: " << e.what());
+    }
+    request_message_md5_ = reqinfo.md5sum;
+    response_message_md5_ = respinfo.md5sum;
+
     ros::ServiceClientOptions opts;
     opts.service = topic_info.topic_name;
-    opts.md5sum = service_md5_ = info.response.service_md5;
+    opts.md5sum = srvinfo.md5sum;
     opts.persistent = false; // always false for now
     service_client_ = nh.serviceClient(opts);
   }

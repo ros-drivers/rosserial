@@ -22,32 +22,34 @@ catkin_package(
     rosserial_msgs
     std_msgs
     topic_tools
+  LIBRARIES ${PROJECT_NAME}_lookup
 )
 
 include_directories(
   include
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  ${PYTHON_INCLUDE_DIR}   
 )
 
+add_library(${PROJECT_NAME}_lookup src/msg_lookup.cpp)
+target_link_libraries(${PROJECT_NAME}_lookup ${PYTHON_LIBRARY})
+target_include_directories(${PROJECT_NAME}_lookup SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
+
 add_executable(${PROJECT_NAME}_serial_node src/serial_node.cpp)
-target_link_libraries(${PROJECT_NAME}_serial_node ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_serial_node ${catkin_LIBRARIES} ${PROJECT_NAME}_lookup)
 set_target_properties(${PROJECT_NAME}_serial_node PROPERTIES OUTPUT_NAME serial_node PREFIX "")
 add_dependencies(${PROJECT_NAME}_serial_node ${catkin_EXPORTED_TARGETS})
 
 add_executable(${PROJECT_NAME}_socket_node src/socket_node.cpp)
-target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_socket_node ${catkin_LIBRARIES} ${PROJECT_NAME}_lookup)
 set_target_properties(${PROJECT_NAME}_socket_node PROPERTIES OUTPUT_NAME socket_node PREFIX "")
 add_dependencies(${PROJECT_NAME}_socket_node ${catkin_EXPORTED_TARGETS})
 
 add_executable(${PROJECT_NAME}_udp_socket_node src/udp_socket_node.cpp)
-target_link_libraries(${PROJECT_NAME}_udp_socket_node ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_udp_socket_node ${catkin_LIBRARIES} ${PROJECT_NAME}_lookup)
 set_target_properties(${PROJECT_NAME}_udp_socket_node PROPERTIES OUTPUT_NAME udp_socket_node PREFIX "")
 add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS})
 
-add_executable(${PROJECT_NAME}_test src/test.cpp)
-target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PYTHON_LIBRARY})
 
 install(
   TARGETS
