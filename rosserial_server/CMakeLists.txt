@@ -53,10 +53,12 @@ add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS})
 
 install(
   TARGETS
+    ${PROJECT_NAME}_lookup
     ${PROJECT_NAME}_serial_node
     ${PROJECT_NAME}_socket_node
     ${PROJECT_NAME}_udp_socket_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 install(
