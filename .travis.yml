@@ -1,13 +1,13 @@
 sudo: required
-dist: trusty
+dist: bionic
 language: generic
 
 env:
-  - CI_ROS_DISTRO=indigo CC=gcc CXX=g++ PATH=/usr/sbin:/usr/bin:/sbin:/bin
-  - CI_ROS_DISTRO=indigo CC=clang CXX=clang++ PATH=/usr/local/clang-5.0.0/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  - CI_ROS_DISTRO=melodic CC=gcc CXX=g++ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+  - CI_ROS_DISTRO=melodic CC=clang CXX=clang++ PATH=/usr/local/clang/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 before_install:
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu bionic main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update
   - sudo apt-get install dpkg -y
