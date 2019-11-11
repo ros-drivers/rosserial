@@ -33,7 +33,7 @@
 namespace rosserial_server
 {
 
-const MsgInfo lookupMessage(const std::string& message_type)
+const MsgInfo lookupMessage(const std::string& message_type, const std::string submodule)
 {
   MsgInfo msginfo;
   size_t slash_pos = message_type.find('/');
@@ -42,12 +42,12 @@ const MsgInfo lookupMessage(const std::string& message_type)
     throw std::runtime_error("Passed message type string does not include a slash character.");
   }
   std::string module_name = message_type.substr(0, slash_pos);
-  std::string class_name = message_type.substr(slash_pos, std::string::npos);
+  std::string class_name = message_type.substr(slash_pos + 1, std::string::npos);
 
   // For now we initialize and finalize for each message. It's quick to do and avoids
   // an initialized Python interpreter hanging around for the duration of the execution.
   Py_Initialize();
-  PyObject* module = PyImport_ImportModule(module_name.c_str());
+  PyObject* module = PyImport_ImportModule((module_name + "." + submodule).c_str());
   if (!module)
   {
     throw std::runtime_error("Unable to import message module " + module_name + ".");

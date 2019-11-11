@@ -132,9 +132,9 @@ public:
     rosserial_server::MsgInfo respinfo;
     try
     {
-      srvinfo = lookupMessage(topic_info.message_type);
-      reqinfo = lookupMessage(topic_info.message_type + "Request");
-      respinfo = lookupMessage(topic_info.message_type + "Response");
+      srvinfo = lookupMessage(topic_info.message_type, "srv");
+      reqinfo = lookupMessage(topic_info.message_type + "Request", "srv");
+      respinfo = lookupMessage(topic_info.message_type + "Response", "srv");
     }
     catch (const std::exception& e)
     {
