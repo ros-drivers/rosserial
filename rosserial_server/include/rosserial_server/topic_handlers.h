@@ -140,6 +140,7 @@ public:
     {
       ROS_WARN_STREAM("Unable to look up service definition: " << e.what());
     }
+    service_md5_ = srvinfo.md5sum;
     request_message_md5_ = reqinfo.md5sum;
     response_message_md5_ = respinfo.md5sum;
 
@@ -151,6 +152,9 @@ public:
   }
   void setTopicId(uint16_t topic_id) {
     topic_id_ = topic_id;
+  }
+  std::string getServiceMD5() {
+    return service_md5_;
   }
   std::string getRequestMessageMD5() {
     return request_message_md5_;
