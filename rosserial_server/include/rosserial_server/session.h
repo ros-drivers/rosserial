@@ -124,10 +124,7 @@ public:
 
   void stop()
   {
-    std::cout << "stop!!!" << std::endl;
-    // Send stop tx command to MCU
-    //std::vector<uint8_t> message(0);
-    //write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
+    ROS_DEBUG_STREAM("stop");
 
     // Abort any pending ROS callbacks.
     ros_callback_queue_.clear();
@@ -177,7 +174,7 @@ private:
       {
         std::vector<uint8_t> message(0);
         write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
-        ROS_WARN("stop rosserial communication \n");
+        ROS_INFO_STREAM("send TX_STOP message");
         ros::shutdown();
         return;
       }
@@ -295,7 +292,7 @@ private:
     ros::serialization::OStream stream(&buffer_ptr->at(0), buffer_ptr->size());
     uint8_t msg_len_checksum = 255 - checksum(message.size());
     stream << (uint16_t)0xfeff << (uint16_t)message.size() << msg_len_checksum << topic_id;
-    std::cout << "message size: " << message.size() << ", msg_len_checksum:" << topic_id << std::endl;
+    ROS_DEBUG_STREAM_NAMED("async_write", "message size: " << message.size() << ", msg_len_checksum:" << topic_id << std::endl);
     msg_checksum = 255 - (checksum(checksum_stream) + checksum(topic_id));
 
     memcpy(stream.advance(message.size()), &message[0], message.size());
