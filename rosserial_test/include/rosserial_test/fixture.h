@@ -74,6 +74,7 @@ public:
 
 class SingleClientFixture : public ::testing::Test {
 protected:
+  SingleClientFixture(): as(2) {}
   static void SetModeFromParam() {
     std::string mode;
     ros::param::get("~mode", mode);
@@ -90,15 +91,16 @@ protected:
     if (setup == NULL) SetModeFromParam();
     setup->SetUp();
     rosserial::ClientComms::fd = setup->fd;
+    as.start();
   }
   virtual void TearDown() {
     setup->TearDown();
+    as.stop();
   }
 
   rosserial::ros::NodeHandle client_nh;
   ros::NodeHandle nh;
+  ros::AsyncSpinner as;
   static AbstractSetup* setup;
 };
 AbstractSetup* SingleClientFixture::setup = NULL;
-
-
