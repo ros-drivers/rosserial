@@ -243,7 +243,7 @@ public:
   bool request_handle(topic_tools::ShapeShifter& request_message, topic_tools::ShapeShifter& response_message) {
 
     get_response_ = false;
-    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " request");
+    ROS_ERROR_STREAM("service receive " << service_server_.getService() << " request");
 
     size_t length = ros::serialization::serializationLength(request_message);
     std::vector<uint8_t> buffer(length);
@@ -273,7 +273,7 @@ public:
 
   void response_handle(ros::serialization::IStream stream) {
     ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, response_message_);
-    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " response");
+    std::cout << "service receive " << service_server_.getService() << " response" << std::endl;
     get_response_ = true;
   }
 

@@ -3,13 +3,17 @@ project(rosserial_test)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rosserial_arduino
   rosserial_client
   rosserial_msgs
   rosserial_python
   rosserial_server
   rostest
   std_msgs
+  std_srvs
 )
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 catkin_package(
   CATKIN_DEPENDS
@@ -41,6 +45,7 @@ if(CATKIN_ENABLE_TESTING)
   endfunction()
 
   add_rosserial_test_executable(publish_subscribe)
+  add_rosserial_test_executable(service_server)
 
   add_rostest(test/rosserial_server_socket.test)
   add_rostest(test/rosserial_server_serial.test)
