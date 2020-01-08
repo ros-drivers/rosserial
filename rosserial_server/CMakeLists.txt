@@ -50,15 +50,20 @@ target_link_libraries(${PROJECT_NAME}_udp_socket_node ${catkin_LIBRARIES} ${PROJ
 set_target_properties(${PROJECT_NAME}_udp_socket_node PROPERTIES OUTPUT_NAME udp_socket_node PREFIX "")
 add_dependencies(${PROJECT_NAME}_udp_socket_node ${catkin_EXPORTED_TARGETS})
 
-
 install(
   TARGETS
     ${PROJECT_NAME}_lookup
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+install(
+  TARGETS
     ${PROJECT_NAME}_serial_node
     ${PROJECT_NAME}_socket_node
     ${PROJECT_NAME}_udp_socket_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 install(
