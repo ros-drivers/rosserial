@@ -40,6 +40,10 @@
 
 #include <ros/ros.h>
 
+#include <cstdint> // size_t
+#include <type_traits> // std::make_signed
+typedef std::make_signed<size_t>::type signed_size_t;
+
 namespace rosserial_server
 {
 
@@ -78,7 +82,7 @@ public:
     }
 
     // Number of bytes which must be transferred to satisfy the request.
-    ssize_t transfer_bytes = read_requested_bytes_ - bytesAvailable();
+    signed_size_t transfer_bytes = read_requested_bytes_ - bytesAvailable();
 
     if (transfer_bytes > 0)
     {
