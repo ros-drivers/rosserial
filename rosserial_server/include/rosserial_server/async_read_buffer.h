@@ -40,6 +40,7 @@
 
 #include <ros/ros.h>
 
+// ssize_t is POSIX-only type. Use make_signed for portable code.
 #include <cstdint> // size_t
 #include <type_traits> // std::make_signed
 typedef std::make_signed<size_t>::type signed_size_t;
