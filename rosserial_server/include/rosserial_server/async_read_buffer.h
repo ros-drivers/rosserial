@@ -166,7 +166,11 @@ private:
 
     // Post the callback rather than executing it here so, so that we have a chance to do the cleanup
     // below prior to it actually getting run, in the event that the callback queues up another read.
+#if BOOST_VERSION >= 107000
+    boost::asio::post(stream_.get_executor(), boost::bind(read_success_callback_, stream));
+#else
     stream_.get_io_service().post(boost::bind(read_success_callback_, stream));
+#endif
 
     // Resetting these values clears our state so that we know there isn't a callback pending.
     read_requested_bytes_ = 0;

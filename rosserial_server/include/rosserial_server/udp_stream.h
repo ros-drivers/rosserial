@@ -48,7 +48,9 @@ namespace rosserial_server
 {
 
 using boost::asio::ip::udp;
+#if BOOST_VERSION < 107000
 using boost::asio::handler_type;
+#endif
 
 
 class UdpStream : public udp::socket
@@ -62,9 +64,11 @@ public:
   {
     boost::system::error_code ec;
     const protocol_type protocol = server_endpoint.protocol();
-    this->get_service().open(this->get_implementation(), protocol, ec);
+
+    udp::socket::open(protocol, ec);
     boost::asio::detail::throw_error(ec, "open");
-    this->get_service().bind(this->get_implementation(), server_endpoint, ec);
+
+    udp::socket::bind(server_endpoint, ec);
     boost::asio::detail::throw_error(ec, "bind");
 
     client_endpoint_ = client_endpoint;
@@ -84,9 +88,8 @@ public:
     boost::asio::async_completion<WriteHandler,
       void (boost::system::error_code, std::size_t)> init(handler);
 
-    this->get_service().async_send_to(
-        this->get_implementation(), buffers, client_endpoint_, 0,
-        init.completion_handler);
+    udp::socket::async_send_to(
+        buffers, client_endpoint_, 0, init.completion_handler);
 
     return init.result.get();
 #else
@@ -110,7 +113,7 @@ public:
     boost::asio::async_completion<ReadHandler,
       void (boost::system::error_code, std::size_t)> init(handler);
 
-    this->get_service().async_receive(this->get_implementation(),
+    udp::socket::async_receive(
         buffers, 0, init.completion_handler);
 
     return init.result.get();
