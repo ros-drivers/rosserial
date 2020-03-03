@@ -37,21 +37,21 @@ __author__ = "astambler@willowgarage.com (Adam Stambler)"
 import serial
 import yaml
 import sys
-import time 
+import time
 
 from optparse import OptionParser
 
-#		
+#
 
 help = """
 %prog [options] port my_adr
 
-setup_xbee.py is a configuration script for Xbees.  It takes  
+setup_xbee.py is a configuration script for Xbees.  It takes
 factory fresh xbee and programs it to work with your rosserial network.
 If XBee is not factory fresh, use Digi's X-CTU software to program it.
 
     port :    serial port of port of the xbee (/dev/ttyUSB0)
-    my_adr:   MY address is the 16 bit address of this xbee in the 
+    my_adr:   MY address is the 16 bit address of this xbee in the
               network. This must be a unique address in the network.
               This address is always 0 for the coordinator.  """
 parser = OptionParser(usage=help)
@@ -67,18 +67,18 @@ def send(port, cmd):
 	for c in cmd+'\r':
 		port.write(c)
 		time.sleep(0.06)
-		
+
 def setAT(port, cmd):
 	port.flushInput()
 	send(port, 'AT'+cmd)
 	rsp = port.readline()
-	print rsp
+	print(rsp)
 	if 'OK' in rsp:
 		return True
 	else :
 		return False
 
-baud_lookup= { 1200   : 0, 
+baud_lookup= { 1200   : 0,
 			   2400   : 1,
 			   4800   : 2,
 			   9600   : 3,
@@ -88,9 +88,9 @@ baud_lookup= { 1200   : 0,
 			   115200 : 7}
 
 
-	
+
 def beginAtMode(port):
-	
+
 	for i in range(0,3):
 		port.write('+')
 		time.sleep(0.05)
@@ -101,30 +101,30 @@ def beginAtMode(port):
 		return False
 
 if __name__ == '__main__':
-	
+
 	opts, args = parser.parse_args()
-	
+
 	if len(args) < 2:
-		print "Not enough arguments!"
+		print("Not enough arguments!")
 		exit()
-	
+
 	baud = 57600
 	port_name = args[0]
 	my_address = int(args[1])
 
 	port = serial.Serial(port_name, baud, timeout=1.5)
-	
+
 	if beginAtMode(port):
-		print "Connected to the XBee"
+		print("Connected to the XBee")
 	else:
-		print "Failed to connect to the XBee"
+		print("Failed to connect to the XBee")
 		exit()
 
-	
+
 	cmd = ''
 	if (opts.coordinator):
 		cmd += 'AP2,CE1,' #API mode 2, and enable coordinator
-	
+
 	cmd += 'MY%d,'%int(args[1]) #set the xbee address
 	cmd += 'BD%d,'%baud_lookup[57600] #set the xbee to interface at 57600 baud
 	cmd += 'ID%d,'%opts.pan_id
@@ -134,20 +134,20 @@ if __name__ == '__main__':
 	cmd += 'RO5,' #sets packetization timeout to 5 characters
 	cmd += 'WR' #wrtie the commands to nonvolatile memory
 
-		
+
 	if setAT(port, 'RE'): #reset the xbee
-		print "XBee reset"
+		print("XBee reset")
 	else:
-		print "Reset failed"
+		print("Reset failed")
 		exit()
 	beginAtMode(port)
 	time.sleep(1)
-	print "Sending command : ", cmd
+	print("Sending command : ", cmd)
 
 	if setAT(port, cmd):
-		print "XBee sucessfully programed!"
+		print("XBee sucessfully programed!")
 	else:
-		print "XBee programming failed.  Try again and then investigate using X-CTU"
+		print("XBee programming failed.  Try again and then investigate using X-CTU")
 
-	
-		
+
+
