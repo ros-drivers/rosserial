@@ -59,33 +59,33 @@ class FakeSerial():
 		self.id = id
 		self.lock = threading.Lock()
 		self.timeout = 0.1
-		
+
 	def read(self, size = 1):
 		t= 0
 		counts = self.timeout/0.01
-		#print "s%d   %s"%(size, self.rxdata)
+		#print("s%d   %s"%(size, self.rxdata))
 		while( ( len(self.rxdata) < size ) and  (not rospy.is_shutdown()) ):
 			time.sleep(0.01)
 			t = t +1
 			if (t >  counts):
 				return ''
-			
+
 		with (self.lock):
 			out = self.rxdata[:size]
 			self.rxdata = self.rxdata[size:]
-			
-		#print "fake out " , out
+
+		#print("fake out " , out)
 		return out
-		
+
 	def write(self, data):
 		if (debug):
-			print "Sending ", [d for d in data]
+			print("Sending ", [d for d in data])
 		self.xbee.send('tx', frame_id='0', options="\x01", dest_addr=self.id,data=data)
-		
+
 	def putData(self, data):
 		with (self.lock):
 			self.rxdata = self.rxdata+data
-	
+
 	def flushInput(self):
 		self.rxdata = ''
 
@@ -94,28 +94,28 @@ class FakeSerial():
             return len(self.rxdata)
 
 if __name__== '__main__':
-	print "RosSerial Xbee Network"
+	print("RosSerial Xbee Network")
 	rospy.init_node('xbee_network')
-	sys.argv= rospy.myargv(argv=sys.argv) 
-	
+	sys.argv= rospy.myargv(argv=sys.argv)
+
 	xbee_port = ''
-	network_ids = [] 
-	
+	network_ids = []
+
 	if len(sys.argv) <3 :
-		print """
+		print("""
 This program connects to rosserial xbee nodes.  The program must be called
 like :
 
-./xbee_network.py <xbee_serial_port> ID1 [ ID2 ID3 ....] 
-"""
+./xbee_network.py <xbee_serial_port> ID1 [ ID2 ID3 ....]
+""")
 		exit()
 	else :
-		xbee_port = sys.argv[1]		
+		xbee_port = sys.argv[1]
 		network_ids  = [ struct.pack('>h', int(id) ) for id in sys.argv[2:] ]
-	
-	print "Contacting Xbees : " , network_ids
 
-		
+	print("Contacting Xbees : " , network_ids)
+
+
 	# Open serial port
 	ser = serial.Serial(xbee_port, 57600, timeout=0.01)
 	ser.flush()
@@ -124,35 +124,35 @@ like :
 	time.sleep(1)
 	# Create API object
 	xbee = XBee(ser, escaped= True)
-	
+
 	for xid in network_ids:
 		client_ports[xid] = FakeSerial(xid, xbee)
 		time.sleep(.2)
 		clients[xid] = SerialClient(client_ports[xid])
-		 
+
 	threads = [ threading.Thread(target=c.run) for c in clients.values()]
-	
+
 	for t in threads:
-		t.deamon =True 
+		t.deamon =True
 		t.start()
 
 	while not rospy.is_shutdown():
 		try:
 			msg = xbee.wait_read_frame()
 			if (debug):
-				print "Received " , msg
-	
+				print("Received " , msg)
+
 			if  msg['id'] == 'rx':
 				src = msg['source_addr']
 				data = msg['rf_data']
 				try:
 					client_ports[src].putData(data)
 				except KeyError as e:
-					print "Rcv ID corrupted"
+					print("Rcv ID corrupted")
 		except KeyboardInterrupt:
 			break
 	ser.close()
-	
-	print "Quiting the Sensor Network"
+
+	print("Quiting the Sensor Network")
 
 
