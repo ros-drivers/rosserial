@@ -84,6 +84,10 @@ class ArduinoHardware {
       this->iostream = h.iostream;
       this->baud_ = h.baud_;
     }
+
+    void setPort(SERIAL_CLASS* io){
+      this->iostream = io;
+    }
   
     void setBaud(long baud){
       this->baud_= baud;
