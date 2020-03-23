@@ -194,7 +194,7 @@ protected:
   int bytes_;
   int topic_;
   int index_;
-  int checksum_;
+  unsigned int checksum_;  //int checksum_; //There must be some Errors caused by  modular operation of negative number.zzz.
 
   bool configured_;
 
