@@ -136,6 +136,13 @@ public:
     active_ = false;
   }
 
+  void shutdown()
+  {
+    if (is_active())
+      stop();
+    io_service_.stop();
+  }
+
   bool is_active()
   {
     return active_;
@@ -169,7 +176,7 @@ private:
     }
     else
     {
-      io_service_.stop();
+      shutdown();
     }
   }
 
@@ -315,6 +322,10 @@ private:
       sync_timer_.expires_from_now(interval);
       sync_timer_.async_wait(boost::bind(&Session::sync_timeout, this,
             boost::asio::placeholders::error));
+    }
+    else
+    {
+      shutdown();
     }
   }
 

@@ -78,6 +78,10 @@ private:
       timer_.expires_from_now(boost::posix_time::milliseconds(2000));
       timer_.async_wait(boost::bind(&UdpSocketSession::check_connection, this));
     }
+    else
+    {
+      shutdown();
+    }
   }
 
   boost::asio::deadline_timer timer_;
