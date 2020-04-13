@@ -139,7 +139,9 @@ public:
   void shutdown()
   {
     if (is_active())
+    {
       stop();
+    }
     io_service_.stop();
   }
 
