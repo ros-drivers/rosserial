@@ -50,11 +50,13 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   PyObject* module = PyImport_ImportModule((module_name + "." + submodule).c_str());
   if (!module)
   {
+    Py_Finalize();
     throw std::runtime_error("Unable to import message module " + module_name + ".");
   }
   PyObject* msg_class = PyObject_GetAttrString(module, class_name.c_str());
   if (!msg_class)
   {
+    Py_Finalize();
     throw std::runtime_error("Unable to find message class " + class_name +
                              " in module " + module_name + ".");
   }
@@ -64,6 +66,7 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   PyObject* md5sum = PyObject_GetAttrString(msg_class, "_md5sum");
   if (!md5sum)
   {
+    Py_Finalize();
     throw std::runtime_error("Class for message " + message_type + " did not contain" +
                              "expected _md5sum attribute.");
   }
