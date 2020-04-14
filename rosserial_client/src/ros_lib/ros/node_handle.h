@@ -104,19 +104,19 @@ template<class Hardware,
 class NodeHandle_ : public NodeHandleBase_
 {
 protected:
-  Hardware hardware_;
+  Hardware hardware_{};
 
   /* time used for syncing */
-  uint32_t rt_time;
+  uint32_t rt_time{0};
 
   /* used for computing current time */
-  uint32_t sec_offset, nsec_offset;
+  uint32_t sec_offset{0}, nsec_offset{0};
 
   /* Spinonce maximum work timeout */
-  uint32_t spin_timeout_;
+  uint32_t spin_timeout_{0};
 
-  uint8_t message_in[INPUT_SIZE];
-  uint8_t message_out[OUTPUT_SIZE];
+  uint8_t message_in[INPUT_SIZE] = {0};
+  uint8_t message_out[OUTPUT_SIZE] = {0};
 
   Publisher * publishers[MAX_PUBLISHERS];
   Subscriber_ * subscribers[MAX_SUBSCRIBERS];
@@ -125,31 +125,6 @@ protected:
    * Setup Functions
    */
 public:
-  NodeHandle_() : configured_(false)
-  {
-
-    for (unsigned int i = 0; i < MAX_PUBLISHERS; i++)
-      publishers[i] = 0;
-
-    for (unsigned int i = 0; i < MAX_SUBSCRIBERS; i++)
-      subscribers[i] = 0;
-
-    for (unsigned int i = 0; i < INPUT_SIZE; i++)
-      message_in[i] = 0;
-
-    for (unsigned int i = 0; i < OUTPUT_SIZE; i++)
-      message_out[i] = 0;
-
-    req_param_resp.ints_length = 0;
-    req_param_resp.ints = NULL;
-    req_param_resp.floats_length = 0;
-    req_param_resp.floats = NULL;
-    req_param_resp.ints_length = 0;
-    req_param_resp.ints = NULL;
-
-    spin_timeout_ = 0;
-  }
-
   Hardware* getHardware()
   {
     return &hardware_;
@@ -189,19 +164,19 @@ public:
   }
 
 protected:
-  //State machine variables for spinOnce
-  int mode_;
-  int bytes_;
-  int topic_;
-  int index_;
-  int checksum_;
+  // State machine variables for spinOnce
+  int mode_{0};
+  int bytes_{0};
+  int topic_{0};
+  int index_{0};
+  int checksum_{0};
 
-  bool configured_;
+  bool configured_{false};
 
   /* used for syncing the time */
-  uint32_t last_sync_time;
-  uint32_t last_sync_receive_time;
-  uint32_t last_msg_timeout_time;
+  uint32_t last_sync_time{0};
+  uint32_t last_sync_receive_time{0};
+  uint32_t last_msg_timeout_time{0};
 
 public:
   /* This function goes in your loop() function, it handles
@@ -333,7 +308,7 @@ public:
           else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST)
           {
             req_param_resp.deserialize(message_in);
-            param_recieved = true;
+            param_received = true;
           }
           else if (topic_ == TopicInfo::ID_TX_STOP)
           {
@@ -584,17 +559,17 @@ public:
    */
 
 protected:
-  bool param_recieved;
-  rosserial_msgs::RequestParamResponse req_param_resp;
+  bool param_received{false};
+  rosserial_msgs::RequestParamResponse req_param_resp{};
 
   bool requestParam(const char * name, int time_out =  1000)
   {
-    param_recieved = false;
+    param_received = false;
     rosserial_msgs::RequestParamRequest req;
     req.name  = (char*)name;
     publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
     uint32_t end_time = hardware_.time() + time_out;
-    while (!param_recieved)
+    while (!param_received)
     {
       spinOnce();
       if (hardware_.time() > end_time)
