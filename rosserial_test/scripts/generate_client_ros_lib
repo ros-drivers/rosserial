@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 __usage__ = """
 make_libraries generates the rosserial library files.  It
 is passed the output folder. This version does not copy a ros.h,
