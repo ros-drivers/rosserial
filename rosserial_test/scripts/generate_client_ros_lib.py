@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 __usage__ = """
 make_libraries generates the rosserial library files.  It
 is passed the output folder. This version does not copy a ros.h,
@@ -35,12 +33,12 @@ ROS_TO_EMBEDDED_TYPES = {
 
 # need correct inputs
 if (len(sys.argv) < 2):
-    print __usage__
+    print(__usage__)
     exit()
 
 # output path
 path = path.join(sys.argv[1], 'rosserial')
-print "\nExporting to %s" % path
+print("\nExporting to %s" % path)
 
 rospack = rospkg.RosPack()
 rosserial_client_copy_files(rospack, path + sep)
