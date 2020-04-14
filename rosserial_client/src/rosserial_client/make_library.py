@@ -210,7 +210,7 @@ class ArrayDataType(PrimitiveDataType):
 
     def make_initializer(self, f, trailer):
         if self.size == None:
-            f.write('      %s_length(0), %s(NULL)%s\n' % (self.name, self.name, trailer))
+            f.write('      %s_length(0), st_%s(), %s(NULL)%s\n' % (self.name, self.name, self.name, trailer))
         else:
             f.write('      %s()%s\n' % (self.name, trailer))
 
@@ -343,7 +343,7 @@ class Message:
 
     def _write_serializer(self, f):
                 # serializer
-        f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
+        f.write('    virtual int serialize(unsigned char *outbuffer) const override\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
@@ -354,7 +354,7 @@ class Message:
 
     def _write_deserializer(self, f):
         # deserializer
-        f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
+        f.write('    virtual int deserialize(unsigned char *inbuffer) override\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
@@ -389,10 +389,10 @@ class Message:
         f.write('\n')
 
     def _write_getType(self, f):
-        f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
+        f.write('    virtual const char * getType() override { return "%s/%s"; };\n'%(self.package, self.name))
 
     def _write_getMD5(self, f):
-        f.write('    const char * getMD5(){ return "%s"; };\n'%self.md5)
+        f.write('    virtual const char * getMD5() override { return "%s"; };\n'%self.md5)
 
     def _write_impl(self, f):
         f.write('  class %s : public ros::Msg\n' % self.name)
@@ -465,7 +465,7 @@ class Service:
         f.write('static const char %s[] = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
 
         def write_type(out, name):
-            out.write('    const char * getType(){ return %s; };\n'%(name))
+            out.write('    virtual const char * getType() override { return %s; };\n'%(name))
         _write_getType = lambda out: write_type(out, self.name.upper())
         self.req._write_getType = _write_getType
         self.resp._write_getType = _write_getType
