@@ -209,7 +209,7 @@ public:
    */
 
 
-  virtual int spinOnce()
+  virtual int spinOnce() override
   {
     /* restart if timed out */
     uint32_t c_time = hardware_.time();
@@ -360,7 +360,7 @@ public:
 
 
   /* Are we connected to the PC? */
-  virtual bool connected()
+  virtual bool connected() override
   {
     return configured_;
   };
@@ -399,7 +399,7 @@ public:
     return current_time;
   }
 
-  void setNow(Time & new_now)
+  void setNow(const Time & new_now)
   {
     uint32_t ms = hardware_.time();
     sec_offset = new_now.sec - ms / 1000 - 1;
@@ -508,7 +508,7 @@ public:
     configured_ = true;
   }
 
-  virtual int publish(int id, const Msg * msg)
+  virtual int publish(int id, const Msg * msg) override
   {
     if (id >= 100 && !configured_)
       return 0;
