@@ -447,7 +447,7 @@ public:
   bool advertiseService(ServiceServer<MReq, MRes, ObjT>& srv)
   {
     bool v = advertise(srv.pub);
-    bool w = subscribe(&srv);
+    bool w = subscribe(srv);
     return v && w;
   }
 
@@ -456,7 +456,7 @@ public:
   bool serviceClient(ServiceClient<MReq, MRes>& srv)
   {
     bool v = advertise(srv.pub);
-    bool w = subscribe(&srv);
+    bool w = subscribe(srv);
     return v && w;
   }
 
