@@ -1,0 +1,18 @@
+<launch>
+  <rosparam>
+    bool_value: true
+    int_value: 1
+    float_value: 0.5f
+    string_value: "samle text"
+  </rosparam>
+
+  <include file="$(find rosserial_server)/launch/serial.launch">
+    <arg name="port" value="/tmp/rosserial_pty3" />
+  </include>
+
+  <test test-name="rosserial_server_socket_test_parameters" pkg="rosserial_test"
+        type="rosserial_test_parameters" time-limit="10.0">
+    <param name="mode" value="serial" />
+    <param name="port" value="/tmp/rosserial_pty3" />
+  </test>
+</launch>
