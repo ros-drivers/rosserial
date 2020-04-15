@@ -8,4 +8,16 @@
     <param name="mode" value="socket" />
     <param name="tcp_port" value="11413" />
   </test>
+
+  <rosparam>
+    bool_value: true
+    int_value: 1
+    float_value: 0.5f
+    string_value: "samle text"
+  </rosparam>
+  <test test-name="rosserial_server_socket_test_parameters" pkg="rosserial_test"
+        type="rosserial_test_parameters" time-limit="10.0">
+    <param name="mode" value="socket" />
+    <param name="tcp_port" value="11413" />
+  </test>
 </launch>
