@@ -2,8 +2,12 @@
   <rosparam>
     bool_value: true
     int_value: 1
-    float_value: 0.5f
-    string_value: "samle text"
+    float_value: 0.5
+    string_value: "sample text"
+    bool_array: [true, false]
+    int_array: [1, 2]
+    float_array: [0.5, 4.0]
+    string_array: ["sample text", "more text"]
   </rosparam>
 
   <include file="$(find rosserial_server)/launch/serial.launch">
