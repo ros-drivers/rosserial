@@ -14,7 +14,7 @@
     <arg name="port" value="/tmp/rosserial_pty3" />
   </include>
 
-  <test test-name="rosserial_server_socket_test_parameters" pkg="rosserial_test"
+  <test test-name="rosserial_server_serial_test_parameters" pkg="rosserial_test"
         type="rosserial_test_parameters" time-limit="10.0">
     <param name="mode" value="serial" />
     <param name="port" value="/tmp/rosserial_pty3" />
