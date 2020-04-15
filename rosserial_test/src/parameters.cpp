@@ -12,21 +12,21 @@ namespace rosserial {
 TEST_F(SingleClientFixture, single_bool_param) {
   client_nh.initNode();
   bool value = false;
-  nh.getParam("bool_value", &value);
+  client_nh.getParam("bool_value", &value);
   EXPECT_EQ(value, true);
 }
 
 TEST_F(SingleClientFixture, single_int_param) {
   client_nh.initNode();
   int value = 0;
-  nh.getParam("int_value", &value);
+  client_nh.getParam("int_value", &value);
   EXPECT_EQ(value, 1);
 }
 
 TEST_F(SingleClientFixture, single_float_param) {
   client_nh.initNode();
   float value = 0.f;
-  nh.getParam("float_value", &value);
+  client_nh.getParam("float_value", &value);
   EXPECT_EQ(value, 0.5f);
 }
 
@@ -34,7 +34,7 @@ TEST_F(SingleClientFixture, single_string_param) {
   client_nh.initNode();
   char textbuf[20] = "";
   char* buf_ptr = textbuf;
-  nh.getParam("string_value", &buf_ptr);
+  client_nh.getParam("string_value", &buf_ptr);
   EXPECT_STREQ(textbuf, "sample text")
 }
 
