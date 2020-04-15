@@ -501,7 +501,7 @@ private:
         req_param.response.strings.push_back(value);
         break;
       case XmlRpc::XmlRpcValue::TypeDateTime:
-        throw std::runtime_error("Type DateTime is unpussorted.");
+        throw std::runtime_error("Type DateTime is unsupported.");
         break;
       case XmlRpc::XmlRpcValue::TypeBase64:
         throw std::runtime_error("Type Base64 is unsupported.");
