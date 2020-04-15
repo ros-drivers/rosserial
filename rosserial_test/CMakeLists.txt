@@ -40,6 +40,7 @@ if(CATKIN_ENABLE_TESTING)
   endfunction()
 
   add_rosserial_test_executable(publish_subscribe)
+  add_rosserial_test_executable(parameters)
 
   add_rostest(test/rosserial_server_socket.test)
   add_rostest(test/rosserial_server_serial.test)
