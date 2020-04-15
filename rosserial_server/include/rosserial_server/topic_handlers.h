@@ -78,11 +78,8 @@ public:
 private:
   ros::Publisher publisher_;
   topic_tools::ShapeShifter message_;
-
-  static ros::ServiceClient message_service_;
 };
 
-ros::ServiceClient Publisher::message_service_;
 typedef boost::shared_ptr<Publisher> PublisherPtr;
 
 
