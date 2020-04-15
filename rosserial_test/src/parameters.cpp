@@ -35,7 +35,7 @@ TEST_F(SingleClientFixture, single_string_param) {
   char textbuf[20] = "";
   char* buf_ptr = textbuf;
   client_nh.getParam("string_value", &buf_ptr);
-  EXPECT_STREQ(textbuf, "sample text")
+  EXPECT_STREQ(textbuf, "sample text");
 }
 
 int main(int argc, char **argv){

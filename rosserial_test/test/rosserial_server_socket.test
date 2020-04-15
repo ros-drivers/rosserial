@@ -12,8 +12,8 @@
   <rosparam>
     bool_value: true
     int_value: 1
-    float_value: 0.5f
-    string_value: "samle text"
+    float_value: 0.5
+    string_value: "sample text"
   </rosparam>
   <test test-name="rosserial_server_socket_test_parameters" pkg="rosserial_test"
         type="rosserial_test_parameters" time-limit="10.0">
