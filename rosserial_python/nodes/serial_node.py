@@ -44,7 +44,6 @@ import multiprocessing
 import sys
 
 if __name__=="__main__":
-
     rospy.init_node("serial_node")
     rospy.loginfo("ROS Serial Python Node")
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #####################################################################
 # Software License Agreement (BSD License)
 #
@@ -41,7 +39,6 @@ import imp
 import io
 import multiprocessing
 import queue
-import signal
 import socket
 import struct
 import sys
@@ -222,7 +219,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print("Fork_server is: ", fork_server)
+        rospy.loginfo("Fork_server is: %s" % fork_server)
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -235,17 +232,17 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print("waiting for socket connection")
-            (clientsocket, address) = self.serversocket.accept()
+            rospy.loginfo("Waiting for socket connection")
+            clientsocket, address = self.serversocket.accept()
 
             #now do something with the clientsocket
-            rospy.loginfo("Established a socket connection from %s on port %s" % (address))
+            rospy.loginfo("Established a socket connection from %s on port %s" % address)
             self.socket = clientsocket
             self.isConnected = True
 
             if self.fork_server: # if configured to launch server in a separate process
                 rospy.loginfo("Forking a socket server process")
-                process = multiprocessing.Process(target=self.startSocketServer, args=(address))
+                process = multiprocessing.Process(target=self.startSocketServer, args=address)
                 process.daemon = True
                 process.start()
                 rospy.loginfo("launched startSocketServer")
@@ -267,16 +264,16 @@ class RosSerialServer:
             rospy.loginfo("socket.error exception caught")
             self.isConnected = False
         finally:
+            rospy.loginfo("Client has exited, closing socket.")
             self.socket.close()
-            for sub in list(client.subscribers.values()):
+            for sub in client.subscribers.values():
                 sub.unregister()
-            for srv in list(client.services.values()):
+            for srv in client.services.values():
                 srv.unregister()
-            #pass
 
     def startSocketServer(self, port, address):
-        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % (address,))
-        rospy.init_node("serial_node_%r" % (address,))
+        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % address)
+        rospy.init_node("serial_node_%r" % address)
         self.startSerialClient()
 
     def flushInput(self):
@@ -289,9 +286,10 @@ class RosSerialServer:
         totalsent = 0
 
         while totalsent < length:
-            rospy.logerr(repr(data))
-            rospy.logerr(repr(self.socket))
-            sent = self.socket.send(data[totalsent:])
+            try:
+                sent = self.socket.send(data[totalsent:])
+            except BrokenPipeError:
+                sent = 0
             if sent == 0:
                 raise RuntimeError("RosSerialServer.write() socket connection broken")
             totalsent = totalsent + sent
@@ -347,6 +345,10 @@ class SerialClient(object):
         self.synced = False
         self.fix_pyserial_for_test = fix_pyserial_for_test
 
+        self.publishers = dict()  # id:Publishers
+        self.subscribers = dict() # topic:Subscriber
+        self.services = dict()    # topic:Service
+
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
         if port is None:
@@ -374,10 +376,6 @@ class SerialClient(object):
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
-        self.publishers = dict()  # id:Publishers
-        self.subscribers = dict() # topic:Subscriber
-        self.services = dict()    # topic:Service
-
         self.buffer_out = -1
         self.buffer_in = -1
 
@@ -399,8 +397,6 @@ class SerialClient(object):
         self.requestTopics()
         self.lastsync = rospy.Time.now()
 
-        signal.signal(signal.SIGINT, self.txStopRequest)
-
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
         rospy.loginfo('Requesting topics...')
@@ -413,17 +409,14 @@ class SerialClient(object):
         # request topic sync
         self.write_queue.put(self.header + self.protocol_ver + b"\x00\x00\xff\x00\x00\xff")
 
-    def txStopRequest(self, signal, frame):
-        """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
+    def txStopRequest(self):
+        """ Send stop tx request to client before the node exits. """
         if not self.fix_pyserial_for_test:
             with self.read_lock:
                 self.port.flushInput()
 
         self.write_queue.put(self.header + self.protocol_ver + b"\x00\x00\xff\x0b\x00\xf4")
-
-        # tx_stop_request is x0b
-        rospy.loginfo("Send tx stop request")
-        sys.exit(0)
+        rospy.loginfo("Sending tx stop request")
 
     def tryRead(self, length):
         try:
@@ -457,7 +450,7 @@ class SerialClient(object):
         # Handle reading.
         data = ''
         read_step = None
-        while not rospy.is_shutdown():
+        while self.write_thread.is_alive() and not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if self.synced:
                     rospy.logerr("Lost sync with device, restarting...")
@@ -555,6 +548,8 @@ class SerialClient(object):
                 with self.write_lock:
                     self.port.flushOutput()
                 self.requestTopics()
+        self.txStopRequest()
+        self.write_thread.join()
 
     def setPublishSize(self, size):
         if self.buffer_out < 0:
@@ -746,7 +741,6 @@ class SerialClient(object):
         Writes raw data over the serial port. Assumes the data is formatting as a packet. http://wiki.ros.org/rosserial/Overview/Protocol
         """
         with self.write_lock:
-            rospy.logerr(repr(data))
             self.port.write(data)
             self.last_write = rospy.Time.now()
 
@@ -764,7 +758,7 @@ class SerialClient(object):
             length_checksum = 255 - (sum(array.array('B', length_bytes)) % 256)
             length_checksum_bytes = struct.pack('B', length_checksum)
 
-            topic_bytes = struct.pack('<h', length)
+            topic_bytes = struct.pack('<h', topic)
             msg_checksum = 255 - (sum(array.array('B', topic_bytes + msg_bytes)) % 256)
             msg_checksum_bytes = struct.pack('B', msg_checksum)
 
@@ -793,6 +787,10 @@ class SerialClient(object):
                     except SerialTimeoutException as exc:
                         rospy.logerr('Write timeout: %s' % exc)
                         time.sleep(1)
+                    except RuntimeError as exc:
+                        rospy.logerr('Write thread exception: %s' % exc)
+                        break
+
 
     def sendDiagnostics(self, level, msg_text):
         msg = diagnostic_msgs.msg.DiagnosticArray()
