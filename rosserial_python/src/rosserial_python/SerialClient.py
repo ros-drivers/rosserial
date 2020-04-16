@@ -287,12 +287,9 @@ class RosSerialServer:
 
         while totalsent < length:
             try:
-                sent = self.socket.send(data[totalsent:])
+                totalsent += self.socket.send(data[totalsent:])
             except BrokenPipeError:
-                sent = 0
-            if sent == 0:
                 raise RuntimeError("RosSerialServer.write() socket connection broken")
-            totalsent = totalsent + sent
 
     def read(self, rqsted_length):
         self.msg = b''
