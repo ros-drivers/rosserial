@@ -210,7 +210,7 @@ class ArrayDataType(PrimitiveDataType):
 
     def make_initializer(self, f, trailer):
         if self.size == None:
-            f.write('      %s_length(0), st_%s(), %s(NULL)%s\n' % (self.name, self.name, self.name, trailer))
+            f.write('      %s_length(0), st_%s(), %s(nullptr)%s\n' % (self.name, self.name, self.name, trailer))
         else:
             f.write('      %s()%s\n' % (self.name, trailer))
 
