@@ -118,8 +118,8 @@ protected:
   uint8_t message_in[INPUT_SIZE] = {0};
   uint8_t message_out[OUTPUT_SIZE] = {0};
 
-  Publisher * publishers[MAX_PUBLISHERS];
-  Subscriber_ * subscribers[MAX_SUBSCRIBERS];
+  Publisher * publishers[MAX_PUBLISHERS] = {nullptr};
+  Subscriber_ * subscribers[MAX_SUBSCRIBERS] {nullptr};
 
   /*
    * Setup Functions
