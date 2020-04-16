@@ -301,7 +301,7 @@ class RosSerialServer:
 
         while len(self.msg) < rqsted_length:
             chunk = self.socket.recv(rqsted_length - len(self.msg))
-            if chunk == '':
+            if chunk == b'':
                 raise RuntimeError("RosSerialServer.read() socket connection broken")
             self.msg = self.msg + chunk
         return self.msg
@@ -309,7 +309,7 @@ class RosSerialServer:
     def inWaiting(self):
         try: # the caller checks just for <1, so we'll peek at just one byte
             chunk = self.socket.recv(1, socket.MSG_DONTWAIT|socket.MSG_PEEK)
-            if chunk == '':
+            if chunk == b'':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
         except BlockingIOError:
@@ -538,7 +538,7 @@ class SerialClient(object):
                 else:
                     rospy.loginfo("wrong checksum for topic id and msg")
 
-            except ImportError as exc:
+            except IOError as exc:
                 rospy.logwarn('Last read step: %s' % read_step)
                 rospy.logwarn('Run loop error: %s' % exc)
                 # One of the read calls had an issue. Just to be safe, request that the client
