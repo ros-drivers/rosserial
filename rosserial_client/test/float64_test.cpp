@@ -51,8 +51,8 @@ TEST_F(TestFloat64, testRoundTrip)
         // Compare against C++ cast results.
         // In some of the test cases, truncation and loss of precision is expected
         // but it should be the same as what C++ compiler implements for (float).
-        EXPECT_FLOAT_EQ((float)cases[i], (float)val);
-        EXPECT_FLOAT_EQ((float)cases[i], (float)deserialized);
+        EXPECT_FLOAT_EQ(static_cast<float>(cases[i]), static_cast<float>(val));
+        EXPECT_FLOAT_EQ(static_cast<float>(cases[i]), static_cast<float>(deserialized));
     }
   }
 }
