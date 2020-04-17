@@ -44,7 +44,7 @@
 # Includes a custom startup file to specify on the interrupt vector some interrupt handlers.
 # 
 
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.7.2)
 include(CMakeParseArguments)
 
 if(NOT WIN32)
