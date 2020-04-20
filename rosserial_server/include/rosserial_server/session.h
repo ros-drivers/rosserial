@@ -61,7 +61,8 @@ class Session : boost::noncopyable
 {
 public:
   Session(boost::asio::io_service& io_service)
-    : socket_(io_service),
+    : io_service_(io_service),
+      socket_(io_service),
       sync_timer_(io_service),
       require_check_timer_(io_service),
       ros_spin_timer_(io_service),
@@ -135,6 +136,15 @@ public:
     active_ = false;
   }
 
+  void shutdown()
+  {
+    if (is_active())
+    {
+      stop();
+    }
+    io_service_.stop();
+  }
+
   bool is_active()
   {
     return active_;
@@ -165,6 +175,10 @@ private:
       ros_spin_timer_.expires_from_now(ros_spin_interval_);
       ros_spin_timer_.async_wait(boost::bind(&Session::ros_spin_timeout, this,
                                              boost::asio::placeholders::error));
+    }
+    else
+    {
+      shutdown();
     }
   }
 
@@ -310,6 +324,10 @@ private:
       sync_timer_.expires_from_now(interval);
       sync_timer_.async_wait(boost::bind(&Session::sync_timeout, this,
             boost::asio::placeholders::error));
+    }
+    else
+    {
+      shutdown();
     }
   }
 
@@ -482,6 +500,7 @@ private:
     set_sync_timeout(timeout_interval_);
   }
 
+  boost::asio::io_service& io_service_;
   Socket socket_;
   AsyncReadBuffer<Socket> async_read_buffer_;
   enum { buffer_max = 1023 };

@@ -36,7 +36,7 @@
 THIS_PACKAGE = "rosserial_windows"
 
 __usage__ = """
-make_libraries.py generates the Windows rosserial library files.  It 
+make_libraries.py generates the Windows rosserial library files.  It
 requires the location of your project's ros_lib folder.
 
 rosrun rosserial_windows make_libraries.py <output_path>
@@ -71,14 +71,14 @@ ROS_TO_EMBEDDED_TYPES = {
 
 # need correct inputs
 if (len(sys.argv) < 2):
-    print __usage__
+    print(__usage__)
     exit()
-    
+
 # get output path
 path = sys.argv[1]
 if path[-1] == "/":
     path = path[0:-1]
-print "\nExporting to %s" % path
+print("\nExporting to %s" % path)
 
 rospack = rospkg.RosPack()
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" 
+"""
 Sample code to use with ServiceClient.pde
 """
 
@@ -10,7 +10,7 @@ import rospy
 from rosserial_arduino.srv import *
 
 def callback(req):
-    print "The arduino is calling! Please send it a message:"
+    print("The arduino is calling! Please send it a message:")
     t = TestResponse()
     t.output = raw_input()
     return t

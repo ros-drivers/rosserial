@@ -221,7 +221,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print "Fork_server is: ", fork_server
+        print("Fork_server is: ", fork_server)
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -234,7 +234,7 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print "waiting for socket connection"
+            print("waiting for socket connection")
             (clientsocket, address) = self.serversocket.accept()
 
             #now do something with the clientsocket
@@ -311,7 +311,7 @@ class RosSerialServer:
             if chunk == '':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] == errno.EWOULDBLOCK:
                 return 0
             raise
@@ -402,7 +402,7 @@ class SerialClient(object):
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
         rospy.loginfo('Requesting topics...')
-        
+
         # TODO remove if possible
         if not self.fix_pyserial_for_test:
             with self.read_lock:
