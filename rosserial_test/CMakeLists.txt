@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.7.2)
 project(rosserial_test)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -21,7 +21,8 @@ if(CATKIN_ENABLE_TESTING)
   # Generate a client library for the test harnesses to use.
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/include/rosserial
-    COMMAND ${CATKIN_DEVEL_PREFIX}/env.sh rosrun ${PROJECT_NAME} generate_client_ros_lib ${PROJECT_BINARY_DIR}/include
+    COMMAND ${CATKIN_DEVEL_PREFIX}/env.sh ${PYTHON_EXECUTABLE}
+            ${PROJECT_SOURCE_DIR}/scripts/generate_client_ros_lib.py ${PROJECT_BINARY_DIR}/include
   )
   add_custom_target(${PROJECT_NAME}_rosserial_lib DEPENDS ${PROJECT_BINARY_DIR}/include/rosserial)
   add_dependencies(${PROJECT_NAME}_rosserial_lib ${catkin_EXPORTED_TARGETS})
@@ -43,11 +44,7 @@ if(CATKIN_ENABLE_TESTING)
 
   add_rostest(test/rosserial_server_socket.test)
   add_rostest(test/rosserial_server_serial.test)
-  add_rostest(test/rosserial_python_socket.test)
+  # add_rostest(test/rosserial_python_socket.test)
   # Disabled due to reconnect logic in rosserial_python not being robust enough.
   # add_rostest(test/rosserial_python_serial.test)
 endif()
-
-catkin_install_python(PROGRAMS scripts/generate_client_ros_lib
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
