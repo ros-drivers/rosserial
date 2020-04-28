@@ -15,7 +15,7 @@ public:
 };
 
 const ros::Time TestTime::times[] = {
-    {0L, 0L}, {0L, 500000000L}, {1L, 500000000L}};
+    {0UL, 0UL}, {0UL, 500000000UL}, {1UL, 500000000UL}};
 
 const ros::Duration TestTime::durations[] = {
     {0L, 0L}, {0L, 500000000L}, {0L, 600000000L}, {1L, 600000000L}};
@@ -25,22 +25,23 @@ const int TestTime::num_durations =
     sizeof(TestTime::durations) / sizeof(ros::Duration);
 
 const ros::Time TestTime::additions[] = {
-    {0L, 0L},         {0L, 500000000L}, {0L, 600000000L}, {1L, 600000000L},
-    {0L, 500000000L}, {1L, 0L},         {1L, 100000000L}, {2L, 100000000L},
-    {1L, 500000000L}, {2L, 0L},         {2L, 100000000L}, {3L, 100000000L}};
+    {0UL, 0UL},        {0UL, 500000000UL}, {0L, 600000000UL},
+    {1L, 600000000UL}, {0UL, 500000000UL}, {1UL, 0UL},
+    {1L, 100000000UL}, {2L, 100000000UL},  {1UL, 500000000UL},
+    {2UL, 0UL},        {2L, 100000000UL},  {3L, 100000000UL}};
 
 const ros::Time TestTime::subtractions[] = {{0L, 0L},
-                                            {0xFFFFFFFF, 500000000L},
-                                            {0xFFFFFFFF, 400000000L},
-                                            {0xFFFFFFFF - 1, 400000000L},
-                                            {0L, 500000000L},
-                                            {0L, 0L},
-                                            {0xFFFFFFFF, 900000000L},
-                                            {0xFFFFFFFF - 1, 900000000L},
-                                            {1L, 500000000L},
-                                            {1L, 0L},
-                                            {0L, 900000000L},
-                                            {0xFFFFFFFF, 900000000L}};
+                                            {0xFFFFFFFF, 500000000UL},
+                                            {0xFFFFFFFF, 400000000UL},
+                                            {0xFFFFFFFF - 1, 400000000UL},
+                                            {0UL, 500000000UL},
+                                            {0UL, 0UL},
+                                            {0xFFFFFFFF, 900000000UL},
+                                            {0xFFFFFFFF - 1, 900000000UL},
+                                            {1UL, 500000000UL},
+                                            {1UL, 0UL},
+                                            {0UL, 900000000UL},
+                                            {0xFFFFFFFF, 900000000UL}};
 
 TEST_F(TestTime, testAddition) {
   for (int i = 0; i < num_times; ++i) {
@@ -48,8 +49,12 @@ TEST_F(TestTime, testAddition) {
       auto time = times[i];
       time += durations[j];
       auto idx = i * num_durations + j;
-      EXPECT_EQ(time.sec, additions[idx].sec);
-      EXPECT_EQ(time.nsec, additions[idx].nsec);
+      EXPECT_EQ(time.sec, additions[idx].sec)
+          << "Add " << durations[j].sec << "." << durations[j].nsec << " to "
+          << times[i].sec << "." << times[i].nsec;
+      EXPECT_EQ(time.nsec, additions[idx].nsec)
+          << "Add " << durations[j].sec << "." << durations[j].nsec << " to "
+          << times[i].sec << "." << times[i].nsec;
     }
   }
 }
@@ -60,8 +65,12 @@ TEST_F(TestTime, testSubtraction) {
       auto time = times[i];
       time -= durations[j];
       auto idx = i * num_durations + j;
-      EXPECT_EQ(time.sec, additions[idx].sec);
-      EXPECT_EQ(time.nsec, additions[idx].nsec);
+      EXPECT_EQ(time.sec, subtractions[idx].sec)
+          << "Subtract " << durations[j].sec << "." << durations[j].nsec
+          << " from " << times[i].sec << "." << times[i].nsec;
+      EXPECT_EQ(time.nsec, subtractions[idx].nsec)
+          << "Subtract " << durations[j].sec << "." << durations[j].nsec
+          << " from " << times[i].sec << "." << times[i].nsec;
     }
   }
 }
