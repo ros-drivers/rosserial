@@ -1,5 +1,5 @@
-#include "ros_lib/ros/duration.h"
-#include "ros_lib/ros/time.h"
+#include "ros/duration.h"
+#include "ros/time.h"
 #include <gtest/gtest.h>
 
 class TestTime : public ::testing::Test {

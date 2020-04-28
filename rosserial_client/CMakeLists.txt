@@ -12,7 +12,7 @@ add_library(${PROJECT_NAME} src/ros_lib/duration.cpp src/ros_lib/time.cpp)
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rosserial_msgs REQUIRED)
-  include_directories(src ${rosserial_msgs_INCLUDE_DIRS})
+  include_directories(src/ros_lib ${rosserial_msgs_INCLUDE_DIRS})
   catkin_add_gtest(float64_test test/float64_test.cpp)
   catkin_add_gtest(subscriber_test test/subscriber_test.cpp)
   catkin_add_gtest(time_test test/time_test.cpp)
