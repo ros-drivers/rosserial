@@ -76,3 +76,4 @@ Duration Time::operator-(const Time &rhs) const {
   normalizeSecNSecSigned(d.sec, d.nsec);
   return d;
 }
+}
