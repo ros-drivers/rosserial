@@ -54,16 +54,15 @@ Time& Time::fromNSec(int32_t t)
 
 Time& Time::operator +=(const Duration &rhs)
 {
-  sec += rhs.sec;
-  nsec += rhs.nsec;
+  sec = sec - 1 + rhs.sec;
+  nsec = nsec + 1000000000UL + rhs.nsec;
   normalizeSecNSec(sec, nsec);
   return *this;
 }
 
-Time& Time::operator -=(const Duration &rhs)
-{
-  sec += -rhs.sec;
-  nsec += -rhs.nsec;
+Time& Time::operator -=(const Duration &rhs){
+  sec = sec - 1 - rhs.sec;
+  nsec = nsec + 1000000000UL - rhs.nsec;
   normalizeSecNSec(sec, nsec);
   return *this;
 }

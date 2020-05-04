@@ -1,4 +1,4 @@
-#include "ros_lib/ros/msg.h"
+#include "ros/msg.h"
 #include <gtest/gtest.h>
 #include <math.h>
 
