@@ -65,7 +65,13 @@ public:
 
   unsigned long time()
   {
+#if defined(OSAL_I2MS)
+    return OSAL_I2MS(osalOsGetSystemTimeX());
+#elif defined(TIME_I2MS)
+    return TIME_I2MS(osalOsGetSystemTimeX());
+#else
     return (osalOsGetSystemTimeX() * static_cast<systime_t>(1000)) / OSAL_ST_FREQUENCY;
+#endif
   }
 
 protected:
