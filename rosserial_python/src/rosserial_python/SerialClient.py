@@ -740,6 +740,13 @@ class SerialClient(object):
         Queues data to be written to the serial port.
         """
         self.write_queue.put((topic, msg))
+        """
+        Here need return a vaule .zzz
+        ServiceServer
+            callback
+                if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
+        """
+        return 1
 
     def _write(self, data):
         """
