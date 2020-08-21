@@ -53,7 +53,7 @@ public:
   /**
    * @brief This tricky function handles promoting a 32bit float to a 64bit
    *        double, so that AVR can publish messages containing float64
-   *        fields, despite AVV having no native support for double.
+   *        fields, despite AVR having no native support for double.
    *
    * @param[out] outbuffer pointer for buffer to serialize to.
    * @param[in] f value to serialize.
@@ -63,7 +63,10 @@ public:
    */
   static int serializeAvrFloat64(unsigned char* outbuffer, const float f)
   {
-    const int32_t* val = (int32_t*) &f;
+    // Cast through void* to silence a GCC warning about this being a
+    // non-portable cast (we don't care, it only has to work on AVR).
+    const void* vval = reinterpret_cast<const void*>(&f);
+    const int32_t* val = reinterpret_cast<const int32_t*>(vval);
     int16_t exp = ((*val >> 23) & 255);
     uint32_t mantissa = *val & 0x7FFFFF;
 
@@ -122,10 +125,12 @@ public:
    */
   static int deserializeAvrFloat64(const unsigned char* inbuffer, float* f)
   {
-    uint32_t* val = (uint32_t*)f;
     int16_t exp;
     uint32_t mantissa;
-
+    // Cast through void* to silence a GCC warning about this being a
+    // non-portable cast (we don't care, it only has to work on AVR).
+    void* vval = reinterpret_cast<void*>(f);
+    uint32_t* val = reinterpret_cast<uint32_t*>(vval);
     // Skip lowest 24 bits
     inbuffer += 3;
 
