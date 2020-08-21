@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>rosserial_teensy</name>
+  <version>0.1.0</version>
+  <description>
+    Builds rosserial scripts for Teensy micro-controllers.
+    This package uses the libraries built by the rosserial-arduino package and
+    compiles the code for an ARM micro-controller.
+   </description>
+
+  <maintainer email="david.lavoie-boutin@mail.mcgill.ca">David Lavoie-Boutin</maintainer>
+  <author email="david.lavoie-boutin@mail.mcgill.ca">David Lavoie-Boutin</author>
+  <license>GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+
+  <run_depend>arduino-core</run_depend>
+  <run_depend>rosserial_client</run_depend>
+  <run_depend>rosserial_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+
+</package>
