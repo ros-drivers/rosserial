@@ -72,6 +72,7 @@ public:
 
   Time& operator +=(const Duration &rhs);
   Time& operator -=(const Duration &rhs);
+  Duration operator -(const Time &rhs) const;
 
   static Time now();
   static void setNow(Time & new_now);
