@@ -36,6 +36,7 @@
 #define ROSSERIAL_SERVER_SESSION_H
 
 #include <map>
+#include <stdexcept>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
@@ -44,6 +45,7 @@
 #include <ros/ros.h>
 #include <rosserial_msgs/TopicInfo.h>
 #include <rosserial_msgs/Log.h>
+#include <rosserial_msgs/RequestParam.h>
 #include <topic_tools/shape_shifter.h>
 #include <std_msgs/Time.h>
 
@@ -105,6 +107,8 @@ public:
         = boost::bind(&Session::setup_service_client_publisher, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
         = boost::bind(&Session::setup_service_client_subscriber, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST]
+        = boost::bind(&Session::handle_parameter_request, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_LOG]
         = boost::bind(&Session::handle_log, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_TIME]
@@ -471,6 +475,83 @@ private:
         topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
     }
     set_sync_timeout(timeout_interval_);
+  }
+
+  void handle_parameter_request(ros::serialization::IStream& stream) {
+    rosserial_msgs::RequestParam req_param;
+    ros::serialization::Serializer<rosserial_msgs::RequestParamRequest>::read(stream, req_param.request);
+
+    const auto add_single_value = [&req_param] (XmlRpc::XmlRpcValue& value)
+    {
+      switch(value.getType())
+      {
+      case XmlRpc::XmlRpcValue::TypeInvalid:
+        throw std::runtime_error("Invalid value.");
+        break;
+      case XmlRpc::XmlRpcValue::TypeBoolean:
+        req_param.response.ints.push_back(static_cast<bool>(value));
+        break;
+      case XmlRpc::XmlRpcValue::TypeInt:
+        req_param.response.ints.push_back(static_cast<int>(value));
+        break;
+      case XmlRpc::XmlRpcValue::TypeDouble:
+        req_param.response.floats.push_back(static_cast<double>(value));
+        break;
+      case XmlRpc::XmlRpcValue::TypeString:
+        req_param.response.strings.push_back(value);
+        break;
+      case XmlRpc::XmlRpcValue::TypeDateTime:
+        throw std::runtime_error("Type DateTime is unsupported.");
+        break;
+      case XmlRpc::XmlRpcValue::TypeBase64:
+        throw std::runtime_error("Type Base64 is unsupported.");
+        break;
+      case XmlRpc::XmlRpcValue::TypeArray:
+        throw std::runtime_error("Nested arrays are unsupported.");
+        break;
+      case XmlRpc::XmlRpcValue::TypeStruct:
+        throw std::runtime_error("Type struct is unsupported.");
+        break;
+      }
+    };
+
+    try
+    {
+      XmlRpc::XmlRpcValue value;
+      if (!nh_.getParam(req_param.request.name, value))
+      {
+        throw std::runtime_error("Parameter was not retreived.");
+      }
+      if (value.getType() == XmlRpc::XmlRpcValue::TypeArray)
+      {
+        for (int i = 0; i < value.size(); i++)
+        {
+          if (value[i].getType() != value[0].getType())
+          {
+            throw std::runtime_error("Heterogenous arrays are unsupported.");
+          }
+          add_single_value(value[i]);
+        }
+      }
+      else
+      {
+        add_single_value(value);
+      }
+    }
+    catch (const std::exception& e)
+    {
+      ROS_ERROR("Could not fetch parameter: %s", e.what());
+      req_param.response.ints.clear();
+      req_param.response.floats.clear();
+      req_param.response.strings.clear();
+    }
+
+    // write service response over the wire
+    size_t length = ros::serialization::serializationLength(req_param.response);
+    std::vector<uint8_t> buffer(length);
+    ros::serialization::OStream ostream(&buffer[0], length);
+    ros::serialization::Serializer<rosserial_msgs::RequestParamResponse>::write(ostream, req_param.response);
+    write_message(buffer, rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST);
   }
 
   void handle_log(ros::serialization::IStream& stream) {
