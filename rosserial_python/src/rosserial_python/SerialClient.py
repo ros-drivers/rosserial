@@ -171,7 +171,15 @@ class ServiceServer:
         req.serialize(data_buffer)
         self.response = None
         if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
+            zwait=0
+            #send ok,wait..."
             while self.response is None:
+                #wait 3s , check time out .zzz
+                time.sleep(0.001)
+                zwait=zwait+1
+                if zwait>=3000:
+                    rospy.logwarn("service client waited for response for %s ms,it's time out."%zwait)
+                    break
                 pass
         return self.response
 
@@ -740,7 +748,14 @@ class SerialClient(object):
         Queues data to be written to the serial port.
         """
         self.write_queue.put((topic, msg))
-
+        """
+        Here need return a vaule .zzz
+        ServiceServer
+            callback
+                if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
+        """
+        return 1
+    
     def _write(self, data):
         """
         Writes raw data over the serial port. Assumes the data is formatting as a packet. http://wiki.ros.org/rosserial/Overview/Protocol
