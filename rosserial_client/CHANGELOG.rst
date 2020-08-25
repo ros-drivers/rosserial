@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.0 (2020-08-25)
+------------------
 * Method to compute duration between time stamps (`#498 <https://github.com/ros-drivers/rosserial/issues/498>`_)
 * Python 3 and GCC7+ fixes (`#508 <https://github.com/ros-drivers/rosserial/issues/508>`_)
   * Fixes for new warnings/behaviours in GCC 7+.

@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.0 (2020-08-25)
+------------------
 * Only initialize embedded python interpreter once. (`#491 <https://github.com/ros-drivers/rosserial/issues/491>`_)
 * Port 482 and 483 forward from Melodic branch (`#492 <https://github.com/ros-drivers/rosserial/issues/492>`_)
 * Fix warning when using std_msgs/Empty (`#482 <https://github.com/ros-drivers/rosserial/issues/482>`_)

@@ -1,8 +1,8 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package rosserial_vex_cortex
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Forthcoming
------------
+0.9.0 (2020-08-25)
+------------------
 * Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)
 * Fix Travis for Noetic + Python 3
 * Bump minimum CMake version to 3.7.2 (Melodic).

@@ -2,8 +2,8 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.0 (2020-08-25)
+------------------
 * Install arduino_python scripts to bin destination (`#506 <https://github.com/ros-drivers/rosserial/issues/506>`_)
 * Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)
 * Added target ID to support Teensy 4.0 (`#460 <https://github.com/ros-drivers/rosserial/issues/460>`_)
