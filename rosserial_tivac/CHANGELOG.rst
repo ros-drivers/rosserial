@@ -2,6 +2,13 @@
 Changelog for package rosserial_tivac
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Contributors: Hermann von Kleist, Mike Purvis
+
 0.8.0 (2018-10-11)
 ------------------
 

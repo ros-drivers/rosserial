@@ -2,6 +2,13 @@
 Changelog for package rosserial_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Drop separate node for message service (`#446 <https://github.com/ros-drivers/rosserial/issues/446>`_)
+* Contributors: Mike Purvis
+
 0.8.0 (2018-10-11)
 ------------------
 

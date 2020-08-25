@@ -2,6 +2,12 @@
 Changelog for package rosserial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Contributors: Mike Purvis
+
 0.8.0 (2018-10-11)
 ------------------
 

@@ -2,6 +2,23 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Method to compute duration between time stamps (`#498 <https://github.com/ros-drivers/rosserial/issues/498>`_)
+* Python 3 and GCC7+ fixes (`#508 <https://github.com/ros-drivers/rosserial/issues/508>`_)
+  * Fixes for new warnings/behaviours in GCC 7+.
+  * Resolve uninitMemberVar warnings in NodeHandle.
+  * Use nullptr consistently.
+* Correctly handle seconds overflow in client time (`#497 <https://github.com/ros-drivers/rosserial/issues/497>`_)
+* Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)
+* Do not fail when trying to update ros_lib which already exists (`#494 <https://github.com/ros-drivers/rosserial/issues/494>`_)
+* ros_lib: Removed code duplication in node_handle.h (`#483 <https://github.com/ros-drivers/rosserial/issues/483>`_)
+* AVR Float64: fix cases like denormal numbers & inf (`#442 <https://github.com/ros-drivers/rosserial/issues/442>`_)
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Change the access modifiers in NodeHandle\_ from "private" to "protected" to make it easier to derive. (`#426 <https://github.com/ros-drivers/rosserial/issues/426>`_)
+* Small Python 3 fixes for rosserial scripts. (`#420 <https://github.com/ros-drivers/rosserial/issues/420>`_)
+* Contributors: Asuki Kono, Hermann von Kleist, Mike Purvis, Petteri Aimonen, Rik Baehnemann, 趙　漠居(Zhao, Moju)
+
 0.8.0 (2018-10-11)
 ------------------
 * Add an empty newline to the generated headers. (`#389 <https://github.com/ros-drivers/rosserial/issues/389>`_)
