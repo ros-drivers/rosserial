@@ -37,6 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <cstring>
 
 namespace ros
 {
@@ -53,7 +54,7 @@ public:
   /**
    * @brief This tricky function handles promoting a 32bit float to a 64bit
    *        double, so that AVR can publish messages containing float64
-   *        fields, despite AVV having no native support for double.
+   *        fields, despite AVR having no native support for double.
    *
    * @param[out] outbuffer pointer for buffer to serialize to.
    * @param[in] f value to serialize.
@@ -63,9 +64,11 @@ public:
    */
   static int serializeAvrFloat64(unsigned char* outbuffer, const float f)
   {
-    const int32_t* val = (int32_t*) &f;
-    int16_t exp = ((*val >> 23) & 255);
-    uint32_t mantissa = *val & 0x7FFFFF;
+    int32_t val;
+    std::memcpy(&val, &f, sizeof(val));
+
+    int16_t exp = ((val >> 23) & 255);
+    uint32_t mantissa = val & 0x7FFFFF;
 
     if (exp == 255)
     {
@@ -122,7 +125,6 @@ public:
    */
   static int deserializeAvrFloat64(const unsigned char* inbuffer, float* f)
   {
-    uint32_t* val = (uint32_t*)f;
     int16_t exp;
     uint32_t mantissa;
 
@@ -171,12 +173,13 @@ public:
     mantissa >>= 1;
 
     // Put mantissa and exponent into place
-    *val = mantissa;
-    *val |= (uint32_t)exp << 23;
+    uint32_t val = mantissa;
+    val |= static_cast<uint32_t>(exp) << 23;
 
     // Copy negative sign.
-    *val |= ((uint32_t)(*(inbuffer++)) & 0x80) << 24;
+    val |= (static_cast<uint32_t>(*(inbuffer++)) & 0x80) << 24;
 
+    std::memcpy(f, &val, sizeof(val));
     return 8;
   }
 

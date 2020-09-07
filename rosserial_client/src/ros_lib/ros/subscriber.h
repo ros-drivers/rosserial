@@ -71,21 +71,21 @@ public:
     topic_ = topic_name;
   };
 
-  virtual void callback(unsigned char* data)
+  virtual void callback(unsigned char* data) override
   {
     msg.deserialize(data);
     (obj_->*cb_)(msg);
   }
 
-  virtual const char * getMsgType()
+  virtual const char * getMsgType() override
   {
     return this->msg.getType();
   }
-  virtual const char * getMsgMD5()
+  virtual const char * getMsgMD5() override
   {
     return this->msg.getMD5();
   }
-  virtual int getEndpointType()
+  virtual int getEndpointType() override
   {
     return endpoint_;
   }
@@ -111,21 +111,21 @@ public:
     topic_ = topic_name;
   };
 
-  virtual void callback(unsigned char* data)
+  virtual void callback(unsigned char* data) override
   {
     msg.deserialize(data);
     this->cb_(msg);
   }
 
-  virtual const char * getMsgType()
+  virtual const char * getMsgType() override
   {
     return this->msg.getType();
   }
-  virtual const char * getMsgMD5()
+  virtual const char * getMsgMD5() override
   {
     return this->msg.getMD5();
   }
-  virtual int getEndpointType()
+  virtual int getEndpointType() override
   {
     return endpoint_;
   }

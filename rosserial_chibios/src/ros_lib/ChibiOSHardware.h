@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Willow Garage, Inc.
+ * Copyright (c) 2020, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,64 +32,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_SERVICE_CLIENT_H_
-#define _ROS_SERVICE_CLIENT_H_
+#ifndef ROS_CHIBIOS_HARDWARE_H_
+#define ROS_CHIBIOS_HARDWARE_H_
 
-#include "rosserial_msgs/TopicInfo.h"
+#include <hal.h>
 
-#include "ros/publisher.h"
-#include "ros/subscriber.h"
-
-namespace ros
-{
-
-template<typename MReq , typename MRes>
-class ServiceClient : public Subscriber_
-{
+class ChibiOSHardware {
 public:
-  ServiceClient(const char* topic_name) :
-    pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
+  void setPort(BaseChannel* io)
   {
-    this->topic_ = topic_name;
-    this->waiting = true;
+    io_ = io;
   }
 
-  virtual void call(const MReq & request, MRes & response) override
+  BaseChannel* getPort()
   {
-    if (!pub.nh_->connected()) return;
-    ret = &response;
-    waiting = true;
-    pub.publish(&request);
-    while (waiting && pub.nh_->connected())
-      if (pub.nh_->spinOnce() < 0) break;
+    return io_;
   }
 
-  // these refer to the subscriber
-  virtual void callback(unsigned char *data) override
+  void init()
   {
-    ret->deserialize(data);
-    waiting = false;
-  }
-  virtual const char * getMsgType() override
-  {
-    return this->resp.getType();
-  }
-  virtual const char * getMsgMD5() override
-  {
-    return this->resp.getMD5();
-  }
-  virtual int getEndpointType() override
-  {
-    return rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_SUBSCRIBER;
   }
 
-  MReq req;
-  MRes resp;
-  MRes * ret;
-  bool waiting;
-  Publisher pub;
+  int read()
+  {
+    return chnGetTimeout(io_, TIME_IMMEDIATE);
+  }
+
+  void write(uint8_t* data, int length)
+  {
+    chnWrite(io_, data, length);
+  }
+
+  unsigned long time()
+  {
+#if defined(OSAL_I2MS)
+    return OSAL_I2MS(osalOsGetSystemTimeX());
+#elif defined(TIME_I2MS)
+    return TIME_I2MS(osalOsGetSystemTimeX());
+#else
+    return (osalOsGetSystemTimeX() * static_cast<systime_t>(1000)) / OSAL_ST_FREQUENCY;
+#endif
+  }
+
+protected:
+  BaseChannel* io_ = nullptr;
 };
-
-}
 
 #endif

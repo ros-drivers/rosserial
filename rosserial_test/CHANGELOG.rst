@@ -2,6 +2,15 @@
 Changelog for package rosserial_test
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.0 (2020-08-25)
+------------------
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Generate the test client using PYTHON_EXECUTABLE.
+* Disable rosserial_python test.
+* Properly initialize message_info stub, drop from test.
+* Contributors: Asuki Kono, Mike Purvis
+
 0.8.0 (2018-10-11)
 ------------------
 

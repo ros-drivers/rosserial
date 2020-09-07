@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #####################################################################
 # Software License Agreement (BSD License)
 #
@@ -35,17 +33,17 @@
 
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
-import imp
-import threading
-import sys
-import multiprocessing
-import io
+import array
 import errno
-import signal
+import imp
+import io
+import multiprocessing
+import queue
 import socket
 import struct
+import sys
+import threading
 import time
-from queue import Queue
 
 from serial import Serial, SerialException, SerialTimeoutException
 
@@ -221,7 +219,7 @@ class RosSerialServer:
         operations (e.g. publish/subscribe) from its connection to the rest of ros.
     """
     def __init__(self, tcp_portnum, fork_server=False):
-        print("Fork_server is: ", fork_server)
+        rospy.loginfo("Fork_server is: %s" % fork_server)
         self.tcp_portnum = tcp_portnum
         self.fork_server = fork_server
 
@@ -234,17 +232,17 @@ class RosSerialServer:
 
         while True:
             #accept connections
-            print("waiting for socket connection")
-            (clientsocket, address) = self.serversocket.accept()
+            rospy.loginfo("Waiting for socket connection")
+            clientsocket, address = self.serversocket.accept()
 
             #now do something with the clientsocket
-            rospy.loginfo("Established a socket connection from %s on port %s" % (address))
+            rospy.loginfo("Established a socket connection from %s on port %s" % address)
             self.socket = clientsocket
             self.isConnected = True
 
             if self.fork_server: # if configured to launch server in a separate process
                 rospy.loginfo("Forking a socket server process")
-                process = multiprocessing.Process(target=self.startSocketServer, args=(address))
+                process = multiprocessing.Process(target=self.startSocketServer, args=address)
                 process.daemon = True
                 process.start()
                 rospy.loginfo("launched startSocketServer")
@@ -266,16 +264,16 @@ class RosSerialServer:
             rospy.loginfo("socket.error exception caught")
             self.isConnected = False
         finally:
+            rospy.loginfo("Client has exited, closing socket.")
             self.socket.close()
             for sub in client.subscribers.values():
                 sub.unregister()
             for srv in client.services.values():
                 srv.unregister()
-            #pass
 
     def startSocketServer(self, port, address):
-        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % (address,))
-        rospy.init_node("serial_node_%r" % (address,))
+        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % address)
+        rospy.init_node("serial_node_%r" % address)
         self.startSerialClient()
 
     def flushInput(self):
@@ -288,19 +286,19 @@ class RosSerialServer:
         totalsent = 0
 
         while totalsent < length:
-            sent = self.socket.send(data[totalsent:])
-            if sent == 0:
+            try:
+                totalsent += self.socket.send(data[totalsent:])
+            except BrokenPipeError:
                 raise RuntimeError("RosSerialServer.write() socket connection broken")
-            totalsent = totalsent + sent
 
     def read(self, rqsted_length):
-        self.msg = ''
+        self.msg = b''
         if not self.isConnected:
             return self.msg
 
         while len(self.msg) < rqsted_length:
             chunk = self.socket.recv(rqsted_length - len(self.msg))
-            if chunk == '':
+            if chunk == b'':
                 raise RuntimeError("RosSerialServer.read() socket connection broken")
             self.msg = self.msg + chunk
         return self.msg
@@ -308,18 +306,23 @@ class RosSerialServer:
     def inWaiting(self):
         try: # the caller checks just for <1, so we'll peek at just one byte
             chunk = self.socket.recv(1, socket.MSG_DONTWAIT|socket.MSG_PEEK)
-            if chunk == '':
+            if chunk == b'':
                 raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
             return len(chunk)
-        except socket.error as e:
-            if e.args[0] == errno.EWOULDBLOCK:
-                return 0
-            raise
+        except BlockingIOError:
+            return 0
 
 class SerialClient(object):
     """
         ServiceServer responds to requests from the serial device.
     """
+    header = b'\xff'
+
+    # hydro introduces protocol ver2 which must match node_handle.h
+    # The protocol version is sent as the 2nd sync byte emitted by each end
+    protocol_ver1 = b'\xff'
+    protocol_ver2 = b'\xfe'
+    protocol_ver = protocol_ver2
 
     def __init__(self, port=None, baud=57600, timeout=5.0, fix_pyserial_for_test=False):
         """ Initialize node, connect to bus, attempt to negotiate topics. """
@@ -327,7 +330,7 @@ class SerialClient(object):
         self.read_lock = threading.RLock()
 
         self.write_lock = threading.RLock()
-        self.write_queue = Queue()
+        self.write_queue = queue.Queue()
         self.write_thread = None
 
         self.lastsync = rospy.Time(0)
@@ -338,6 +341,10 @@ class SerialClient(object):
         self.timeout = timeout
         self.synced = False
         self.fix_pyserial_for_test = fix_pyserial_for_test
+
+        self.publishers = dict()  # id:Publishers
+        self.subscribers = dict() # topic:Subscriber
+        self.services = dict()    # topic:Service
 
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
@@ -366,16 +373,6 @@ class SerialClient(object):
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
-        # hydro introduces protocol ver2 which must match node_handle.h
-        # The protocol version is sent as the 2nd sync byte emitted by each end
-        self.protocol_ver1 = b'\xff'
-        self.protocol_ver2 = b'\xfe'
-        self.protocol_ver = self.protocol_ver2
-
-        self.publishers = dict()  # id:Publishers
-        self.subscribers = dict() # topic:Subscriber
-        self.services = dict()    # topic:Service
-
         self.buffer_out = -1
         self.buffer_in = -1
 
@@ -397,8 +394,6 @@ class SerialClient(object):
         self.requestTopics()
         self.lastsync = rospy.Time.now()
 
-        signal.signal(signal.SIGINT, self.txStopRequest)
-
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
         rospy.loginfo('Requesting topics...')
@@ -409,19 +404,16 @@ class SerialClient(object):
                 self.port.flushInput()
 
         # request topic sync
-        self.write_queue.put(b"\xff" + self.protocol_ver + b"\x00\x00\xff\x00\x00\xff")
+        self.write_queue.put(self.header + self.protocol_ver + b"\x00\x00\xff\x00\x00\xff")
 
-    def txStopRequest(self, signal, frame):
-        """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
+    def txStopRequest(self):
+        """ Send stop tx request to client before the node exits. """
         if not self.fix_pyserial_for_test:
             with self.read_lock:
                 self.port.flushInput()
 
-        self.write_queue.put(b"\xff" + self.protocol_ver + b"\x00\x00\xff\x0b\x00\xf4")
-
-        # tx_stop_request is x0b
-        rospy.loginfo("Send tx stop request")
-        sys.exit(0)
+        self.write_queue.put(self.header + self.protocol_ver + b"\x00\x00\xff\x0b\x00\xf4")
+        rospy.loginfo("Sending tx stop request")
 
     def tryRead(self, length):
         try:
@@ -455,7 +447,7 @@ class SerialClient(object):
         # Handle reading.
         data = ''
         read_step = None
-        while not rospy.is_shutdown():
+        while self.write_thread.is_alive() and not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if self.synced:
                     rospy.logerr("Lost sync with device, restarting...")
@@ -479,7 +471,7 @@ class SerialClient(object):
                 flag = [0, 0]
                 read_step = 'syncflag'
                 flag[0] = self.tryRead(1)
-                if (flag[0] != b'\xff'):
+                if (flag[0] != self.header):
                     continue
 
                 # Find protocol version.
@@ -488,7 +480,11 @@ class SerialClient(object):
                 if flag[1] != self.protocol_ver:
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, ERROR_MISMATCHED_PROTOCOL)
                     rospy.logerr("Mismatched protocol version in packet (%s): lost sync or rosserial_python is from different ros release than the rosserial client" % repr(flag[1]))
-                    protocol_ver_msgs = {b'\xff': 'Rev 0 (rosserial 0.4 and earlier)', b'\xfe': 'Rev 1 (rosserial 0.5+)', b'\xfd': 'Some future rosserial version'}
+                    protocol_ver_msgs = {
+                            self.protocol_ver1: 'Rev 0 (rosserial 0.4 and earlier)',
+                            self.protocol_ver2: 'Rev 1 (rosserial 0.5+)',
+                            b'\xfd': 'Some future rosserial version'
+                    }
                     if flag[1] in protocol_ver_msgs:
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
@@ -496,21 +492,14 @@ class SerialClient(object):
                     rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                     continue
 
-                # Read message length.
+                # Read message length, checksum (3 bytes)
                 read_step = 'message length'
-                msg_len_bytes = self.tryRead(2)
-                msg_length, = struct.unpack("<H", msg_len_bytes)
-
-                # Read message length checksum.
-                read_step = 'message length checksum'
-                msg_len_chk_bytes = self.tryRead(1)
-                msg_len_chk, = struct.unpack("<B", msg_len_chk_bytes)
-                msg_len_checksum = sum(msg_len_bytes) + msg_len_chk
+                msg_len_bytes = self.tryRead(3)
+                msg_length, _ = struct.unpack("<hB", msg_len_bytes)
 
                 # Validate message length checksum.
-                if msg_len_checksum % 256 != 255:
-                    rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
-                    rospy.loginfo("chk is %d" % msg_len_chk)
+                if sum(array.array("B", msg_len_bytes)) % 256 != 255:
+                    rospy.loginfo("Wrong checksum for msg length, length %d, dropping message." % (msg_length))
                     continue
 
                 # Read topic id (2 bytes)
@@ -530,9 +519,8 @@ class SerialClient(object):
 
                 # Reada checksum for topic id and msg
                 read_step = 'data checksum'
-                chk_bytes = self.tryRead(1)
-                chk, = struct.unpack("<B", chk_bytes)
-                checksum = sum(topic_id_header) + sum(msg) + chk
+                chk = self.tryRead(1)
+                checksum = sum(array.array('B', topic_id_header + msg + chk))
 
                 # Validate checksum.
                 if checksum % 256 == 255:
@@ -557,15 +545,17 @@ class SerialClient(object):
                 with self.write_lock:
                     self.port.flushOutput()
                 self.requestTopics()
+        self.txStopRequest()
+        self.write_thread.join()
 
-    def setPublishSize(self, bytes):
+    def setPublishSize(self, size):
         if self.buffer_out < 0:
-            self.buffer_out = bytes
+            self.buffer_out = size
             rospy.loginfo("Note: publish buffer size is %d bytes" % self.buffer_out)
 
-    def setSubscribeSize(self, bytes):
+    def setSubscribeSize(self, size):
         if self.buffer_in < 0:
-            self.buffer_in = bytes
+            self.buffer_in = size
             rospy.loginfo("Note: subscribe buffer size is %d bytes" % self.buffer_in)
 
     def setupPublisher(self, data):
@@ -586,7 +576,7 @@ class SerialClient(object):
         try:
             msg = TopicInfo()
             msg.deserialize(data)
-            if not msg.topic_name in self.subscribers.keys():
+            if not msg.topic_name in list(self.subscribers.keys()):
                 sub = Subscriber(msg, self)
                 self.subscribers[msg.topic_name] = sub
                 self.setSubscribeSize(msg.buffer_size)
@@ -751,22 +741,25 @@ class SerialClient(object):
             self.port.write(data)
             self.last_write = rospy.Time.now()
 
-    def _send(self, topic, msg):
+    def _send(self, topic, msg_bytes):
         """
         Send a message on a particular topic to the device.
         """
-        length = len(msg)
+        length = len(msg_bytes)
         if self.buffer_in > 0 and length > self.buffer_in:
             rospy.logerr("Message from ROS network dropped: message larger than buffer.\n%s" % msg)
             return -1
         else:
-            #modified frame : header(2 bytes) + msg_len(2 bytes) + msg_len_chk(1 byte) + topic_id(2 bytes) + msg(x bytes) + msg_topic_id_chk(1 byte)
-            # second byte of header is protocol version
-            msg_len_checksum = 255 - ( ((length&255) + (length>>8))%256 )
-            msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum(msg))%256 )
-            data = b"\xff" + self.protocol_ver  + struct.pack("<BBBBB", length&255, length>>8, msg_len_checksum, topic&255, topic>>8)
-            data = data + msg + struct.pack("<B", msg_checksum)
-            self._write(data)
+            # frame : header (1b) + version (1b) + msg_len(2b) + msg_len_chk(1b) + topic_id(2b) + msg(nb) + msg_topic_id_chk(1b)
+            length_bytes = struct.pack('<h', length)
+            length_checksum = 255 - (sum(array.array('B', length_bytes)) % 256)
+            length_checksum_bytes = struct.pack('B', length_checksum)
+
+            topic_bytes = struct.pack('<h', topic)
+            msg_checksum = 255 - (sum(array.array('B', topic_bytes + msg_bytes)) % 256)
+            msg_checksum_bytes = struct.pack('B', msg_checksum)
+
+            self._write(self.header + self.protocol_ver + length_bytes + length_checksum_bytes + topic_bytes + msg_bytes + msg_checksum_bytes)
             return length
 
     def processWriteQueue(self):
@@ -791,6 +784,10 @@ class SerialClient(object):
                     except SerialTimeoutException as exc:
                         rospy.logerr('Write timeout: %s' % exc)
                         time.sleep(1)
+                    except RuntimeError as exc:
+                        rospy.logerr('Write thread exception: %s' % exc)
+                        break
+
 
     def sendDiagnostics(self, level, msg_text):
         msg = diagnostic_msgs.msg.DiagnosticArray()
