@@ -2,6 +2,17 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.0 (2020-08-25)
+------------------
+* Install arduino_python scripts to bin destination (`#506 <https://github.com/ros-drivers/rosserial/issues/506>`_)
+* Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)
+* Added target ID to support Teensy 4.0 (`#460 <https://github.com/ros-drivers/rosserial/issues/460>`_)
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Allow user code to change Arduino port used by client (`#472 <https://github.com/ros-drivers/rosserial/issues/472>`_)
+* Avoid looping over write buffer in Arduino client. (`#475 <https://github.com/ros-drivers/rosserial/issues/475>`_)
+* Fix py3 print usages and trailing whitespaces (`#469 <https://github.com/ros-drivers/rosserial/issues/469>`_)
+* Contributors: André Araújo, D. Petrini, Hermann von Kleist, Mike Purvis, Rik Baehnemann, acxz, schnaubelt
+
 0.8.0 (2018-10-11)
 ------------------
 * Enhance ArduinoTcpHardware (`#379 <https://github.com/ros-drivers/rosserial/issues/379>`_)

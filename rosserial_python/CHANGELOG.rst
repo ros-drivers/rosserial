@@ -2,6 +2,22 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.0 (2020-08-25)
+------------------
+* Python 3 and GCC7+ fixes (`#508 <https://github.com/ros-drivers/rosserial/issues/508>`_)
+  * Port of rosserial_python to py3.
+  * Throw from inside the BrokenPipeError.
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Update pyserial rosdep.
+* Use time.sleep instead of rospy.sleep. (`#489 <https://github.com/ros-drivers/rosserial/issues/489>`_)
+* Make deprecation message a warning and more specific (`#479 <https://github.com/ros-drivers/rosserial/issues/479>`_)
+* Properly initialize message_info stub, drop from test.
+* Fix py3 print usages and trailing whitespaces (`#469 <https://github.com/ros-drivers/rosserial/issues/469>`_)
+* Drop separate node for message service (`#446 <https://github.com/ros-drivers/rosserial/issues/446>`_)
+* Fix reconnection of rosserial-python (`#445 <https://github.com/ros-drivers/rosserial/issues/445>`_)
+* Contributors: Asuki Kono, Daisuke Sato, Hermann von Kleist, Hikaru Sugiura, Mike Purvis, acxz
+
 0.8.0 (2018-10-11)
 ------------------
 * fix no attribute message_cache issue in message_info_service (`#393 <https://github.com/ros-drivers/rosserial/issues/393>`_)
