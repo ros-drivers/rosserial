@@ -168,9 +168,9 @@ class ServiceServer:
         data_buffer = io.BytesIO()
         req.serialize(data_buffer)
         self.response = None
-        if self.parent.send(self.id, data_buffer.getvalue()) >= 0:
-            while self.response is None:
-                pass
+        self.parent.send(self.id, data_buffer.getvalue())
+        while self.response is None:
+            pass
         return self.response
 
     def handlePacket(self, data):
@@ -505,7 +505,7 @@ class SerialClient(object):
                 # Read topic id (2 bytes)
                 read_step = 'topic id'
                 topic_id_header = self.tryRead(2)
-                topic_id, = struct.unpack("<h", topic_id_header)
+                topic_id, = struct.unpack("<H", topic_id_header)
 
                 # Read serialized message data.
                 read_step = 'data'
