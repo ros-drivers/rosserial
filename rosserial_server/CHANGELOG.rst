@@ -2,8 +2,8 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.1 (2020-09-09)
+------------------
 * Add boost::thread dependency to rosserial_server (`#513 <https://github.com/ros-drivers/rosserial/issues/513>`_)
 * Contributors: Mike Purvis
 
