@@ -2,6 +2,9 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.9.0 (2020-08-25)
 ------------------
 * Method to compute duration between time stamps (`#498 <https://github.com/ros-drivers/rosserial/issues/498>`_)

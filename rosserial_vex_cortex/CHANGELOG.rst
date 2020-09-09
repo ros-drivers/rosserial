@@ -1,6 +1,9 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package rosserial_vex_cortex
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Forthcoming
+-----------
+
 0.9.0 (2020-08-25)
 ------------------
 * Use os.path.join for path concatenation (`#495 <https://github.com/ros-drivers/rosserial/issues/495>`_)

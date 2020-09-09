@@ -2,6 +2,9 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.9.0 (2020-08-25)
 ------------------
 * Install arduino_python scripts to bin destination (`#506 <https://github.com/ros-drivers/rosserial/issues/506>`_)

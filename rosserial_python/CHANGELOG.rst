@@ -2,6 +2,11 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rosserial_python py3 fix (`#514 <https://github.com/ros-drivers/rosserial/issues/514>`_)
+* Contributors: BriceRenaudeau
+
 0.9.0 (2020-08-25)
 ------------------
 * Python 3 and GCC7+ fixes (`#508 <https://github.com/ros-drivers/rosserial/issues/508>`_)
