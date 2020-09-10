@@ -72,6 +72,7 @@ public:
     boost::asio::detail::throw_error(ec, "bind");
 
     client_endpoint_ = client_endpoint;
+    server_endpoint_ = server_endpoint;
   }
 
   template <typename ConstBufferSequence, typename WriteHandler>
@@ -119,13 +120,14 @@ public:
     return init.result.get();
 #else
     return this->get_service().async_receive_from(
-        this->get_implementation(), buffers, client_endpoint_, 0,
+        this->get_implementation(), buffers, server_endpoint_, 0,
         BOOST_ASIO_MOVE_CAST(ReadHandler)(handler));
 #endif
   }
 
 private:
   udp::endpoint client_endpoint_;
+  udp::endpoint server_endpoint_;
 };
 
 }  // namespace
