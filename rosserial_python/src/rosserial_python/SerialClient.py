@@ -269,7 +269,8 @@ class RosSerialServer:
             for sub in client.subscribers.values():
                 sub.unregister()
             for srv in client.services.values():
-                srv.unregister()
+                if isinstance(srv, ServiceServer):
+                    srv.unregister()
 
     def startSocketServer(self, port, address):
         rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % address)
