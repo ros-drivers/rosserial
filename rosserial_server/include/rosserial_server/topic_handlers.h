@@ -193,9 +193,10 @@ typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
 
 class ServiceServer {
 public:
-  ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info,
+  ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info, size_t capacity,
       boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
     : write_fn_(write_fn) {
+    response_buffer_.resize(capacity);
     topic_id_ = -1;
     get_response_ = false;
 
@@ -265,21 +266,23 @@ public:
           }
       }
 
-    response_message = response_message_;
+    ros::serialization::IStream response_stream(&response_buffer_[0], buffer_len_);
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::read(response_stream, response_message);
 
     ROS_ERROR_STREAM("OK!!");
     return true;
   }
 
   void response_handle(ros::serialization::IStream stream) {
-    ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, response_message_);
+    buffer_len_ = stream.getLength();
+    std::memcpy(&response_buffer_[0], stream.getData(),stream.getLength());
     std::cout << "service receive " << service_server_.getService() << " response" << std::endl;
     get_response_ = true;
   }
 
 private:
-  //topic_tools::ShapeShifter request_message_;
-  topic_tools::ShapeShifter response_message_;
+  std::vector<uint8_t> response_buffer_;
+  size_t buffer_len_;
   ros::ServiceServer service_server_;
   boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
   std::string service_md5_;
