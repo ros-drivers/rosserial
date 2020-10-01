@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <cstring>
+#include <string.h>
 
 namespace ros
 {
@@ -65,7 +65,7 @@ public:
   static int serializeAvrFloat64(unsigned char* outbuffer, const float f)
   {
     int32_t val;
-    std::memcpy(&val, &f, sizeof(val));
+    memcpy(&val, &f, sizeof(val));
 
     int16_t exp = ((val >> 23) & 255);
     uint32_t mantissa = val & 0x7FFFFF;
@@ -179,7 +179,7 @@ public:
     // Copy negative sign.
     val |= (static_cast<uint32_t>(*(inbuffer++)) & 0x80) << 24;
 
-    std::memcpy(f, &val, sizeof(val));
+    memcpy(f, &val, sizeof(val));
     return 8;
   }
 
