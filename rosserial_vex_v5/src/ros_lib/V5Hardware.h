@@ -70,9 +70,9 @@ class V5Hardware {
     // note: the serial port initialization for rosserial for VEX Cortex must be implemented in `src/init.cpp` 
     // see that file for more information. 
     void init() {
-      serctl(SERCTL_DISABLE_COBS, NULL);
       rosFile = fopen("/ser/sout", "r+");
-
+      pros::c::fdctl(fileno(rosFile), SERCTL_DISABLE_COBS, NULL);
+      
       // not typesafe, be careful!
       void** taskArgs = (void**) malloc( sizeof(void*) * 2);
       taskArgs[0] = &inputBuffer;
