@@ -1,5 +1,5 @@
 # generate new pros project with name as first argument
-prosv5 conductor new-project $1
+prosv5 conduct new-project $1
 
 # go into incude directory and generate ros message library.
 cd $1/include
