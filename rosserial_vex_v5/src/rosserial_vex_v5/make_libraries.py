@@ -47,6 +47,7 @@ from rosserial_client.make_library import *
 
 # for copying files
 import shutil
+import os.path
 
 ROS_TO_EMBEDDED_TYPES = {
     'bool'    :   ('bool',              1, PrimitiveDataType, []),
@@ -74,18 +75,15 @@ if (len(sys.argv) < 2):
     exit()
 
 # get output path
-path = sys.argv[1]
-if path[-1] == "/":
-    path = path[0:-1]
-print("\nExporting to %s" % path)
+output_path = os.path.join(sys.argv[1], "ros_lib")
+print("\nExporting to %s" % output_path)
 
 rospack = rospkg.RosPack()
 
 # copy ros_lib stuff in
-rosserial_vex_v5_dir = rospack.get_path(THIS_PACKAGE)
-shutil.copytree(rosserial_vex_v5_dir+"/src/ros_lib", path+"/ros_lib")
-rosserial_client_copy_files(rospack, path+"/ros_lib/")
+shutil.rmtree(output_path, ignore_errors=True)
+shutil.copytree(os.path.join(rospack.get_path(THIS_PACKAGE), "src", "ros_lib"), output_path)
+rosserial_client_copy_files(rospack, output_path)
 
 # generate messages
-rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES)
-
+rosserial_generate(rospack, output_path, ROS_TO_EMBEDDED_TYPES)

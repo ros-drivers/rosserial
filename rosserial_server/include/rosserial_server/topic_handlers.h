@@ -78,11 +78,8 @@ public:
 private:
   ros::Publisher publisher_;
   topic_tools::ShapeShifter message_;
-
-  static ros::ServiceClient message_service_;
 };
 
-ros::ServiceClient Publisher::message_service_;
 typedef boost::shared_ptr<Publisher> PublisherPtr;
 
 
@@ -184,7 +181,6 @@ private:
   topic_tools::ShapeShifter request_message_;
   topic_tools::ShapeShifter response_message_;
   ros::ServiceClient service_client_;
-  static ros::ServiceClient service_info_service_;
   boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
   std::string service_md5_;
   std::string request_message_md5_;
@@ -192,7 +188,6 @@ private:
   uint16_t topic_id_;
 };
 
-ros::ServiceClient ServiceClient::service_info_service_;
 typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
 
 }  // namespace

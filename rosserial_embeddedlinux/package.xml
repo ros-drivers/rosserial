@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_embeddedlinux</name>
-  <version>0.8.0</version>
+  <version>0.9.1</version>
   <description>
     rosserial for embedded Linux enviroments
   </description>

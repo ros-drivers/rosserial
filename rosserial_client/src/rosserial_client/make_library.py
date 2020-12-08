@@ -210,7 +210,7 @@ class ArrayDataType(PrimitiveDataType):
 
     def make_initializer(self, f, trailer):
         if self.size == None:
-            f.write('      %s_length(0), %s(NULL)%s\n' % (self.name, self.name, trailer))
+            f.write('      %s_length(0), st_%s(), %s(nullptr)%s\n' % (self.name, self.name, self.name, trailer))
         else:
             f.write('      %s()%s\n' % (self.name, trailer))
 
@@ -343,7 +343,7 @@ class Message:
 
     def _write_serializer(self, f):
                 # serializer
-        f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
+        f.write('    virtual int serialize(unsigned char *outbuffer) const override\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
@@ -354,7 +354,7 @@ class Message:
 
     def _write_deserializer(self, f):
         # deserializer
-        f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
+        f.write('    virtual int deserialize(unsigned char *inbuffer) override\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
         for d in self.data:
@@ -389,10 +389,10 @@ class Message:
         f.write('\n')
 
     def _write_getType(self, f):
-        f.write('    const char * getType(){ return "%s/%s"; };\n'%(self.package, self.name))
+        f.write('    virtual const char * getType() override { return "%s/%s"; };\n'%(self.package, self.name))
 
     def _write_getMD5(self, f):
-        f.write('    const char * getMD5(){ return "%s"; };\n'%self.md5)
+        f.write('    virtual const char * getMD5() override { return "%s"; };\n'%self.md5)
 
     def _write_impl(self, f):
         f.write('  class %s : public ros::Msg\n' % self.name)
@@ -465,7 +465,7 @@ class Service:
         f.write('static const char %s[] = "%s/%s";\n'%(self.name.upper(), self.package, self.name))
 
         def write_type(out, name):
-            out.write('    const char * getType(){ return %s; };\n'%(name))
+            out.write('    virtual const char * getType() override { return %s; };\n'%(name))
         _write_getType = lambda out: write_type(out, self.name.upper())
         self.req._write_getType = _write_getType
         self.resp._write_getType = _write_getType
@@ -495,13 +495,13 @@ def MakeLibrary(package, output_path, rospack):
 
     # find the messages in this package
     messages = list()
-    if os.path.exists(pkg_dir+"/msg"):
+    if os.path.exists(os.path.join(pkg_dir, "msg")):
         print('Exporting %s\n'%package)
         sys.stdout.write('  Messages:')
         sys.stdout.write('\n    ')
-        for f in os.listdir(pkg_dir+"/msg"):
+        for f in os.listdir(os.path.join(pkg_dir, "msg")):
             if f.endswith(".msg"):
-                msg_file = pkg_dir + "/msg/" + f
+                msg_file = os.path.join(pkg_dir, "msg", f)
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
                 definition = open(msg_file).readlines()
@@ -514,16 +514,16 @@ def MakeLibrary(package, output_path, rospack):
                     sys.stderr.write(err_msg)
 
     # find the services in this package
-    if (os.path.exists(pkg_dir+"/srv/")):
+    if os.path.exists(os.path.join(pkg_dir, "srv")):
         if messages == list():
             print('Exporting %s\n'%package)
         else:
             print('\n')
         sys.stdout.write('  Services:')
         sys.stdout.write('\n    ')
-        for f in os.listdir(pkg_dir+"/srv"):
+        for f in os.listdir(os.path.join(pkg_dir, "srv")):
             if f.endswith(".srv"):
-                srv_file = pkg_dir + "/srv/" + f
+                srv_file = os.path.join(pkg_dir, "srv", f)
                 # add to list of messages
                 print('%s,'%f[0:-4], end='')
                 definition, service = roslib.srvs.load_from_file(srv_file)
@@ -541,11 +541,11 @@ def MakeLibrary(package, output_path, rospack):
         print('\n')
 
     # generate for each message
-    output_path = output_path + "/" + package
+    output_path = os.path.join(output_path, package)
     for msg in messages:
         if not os.path.exists(output_path):
             os.makedirs(output_path)
-        header = open(output_path + "/" + msg.name + ".h", "w")
+        header = open(os.path.join(output_path, msg.name + ".h"), "w")
         msg.make_header(header)
         header.close()
 
@@ -572,21 +572,23 @@ def rosserial_generate(rospack, path, mapping):
     print('\n')
 
 def rosserial_client_copy_files(rospack, path):
-    os.makedirs(path+"/ros")
-    os.makedirs(path+"/tf")
+    if not os.path.exists(os.path.join(path, "ros")):
+        os.makedirs(os.path.join(path, "ros"))
+    if not os.path.exists(os.path.join(path, "tf")):
+        os.makedirs(os.path.join(path, "tf"))
     files = ['duration.cpp',
              'time.cpp',
-             'ros/duration.h',
-             'ros/msg.h',
-             'ros/node_handle.h',
-             'ros/publisher.h',
-             'ros/service_client.h',
-             'ros/service_server.h',
-             'ros/subscriber.h',
-             'ros/time.h',
-             'tf/tf.h',
-             'tf/transform_broadcaster.h']
+             os.path.join('ros', 'duration.h'),
+             os.path.join('ros', 'msg.h'),
+             os.path.join('ros', 'node_handle.h'),
+             os.path.join('ros', 'publisher.h'),
+             os.path.join('ros', 'service_client.h'),
+             os.path.join('ros', 'service_server.h'),
+             os.path.join('ros', 'subscriber.h'),
+             os.path.join('ros', 'time.h'),
+             os.path.join('tf', 'tf.h'),
+             os.path.join('tf', 'transform_broadcaster.h')]
     mydir = rospack.get_path("rosserial_client")
     for f in files:
-        shutil.copy(mydir+"/src/ros_lib/"+f, path+f)
+        shutil.copy(os.path.join(mydir, "src", "ros_lib", f), os.path.join(path, f))
 

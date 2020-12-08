@@ -1,0 +1,15 @@
+<package>
+  <name>rosserial_chibios</name>
+  <version>0.9.1</version>
+  <description>
+    rosserial for ChibiOS/HAL platforms.
+  </description>
+  <author>Hermann von Kleist</author>
+  <maintainer email="hermann.von_kleist@turag.de">Hermann von Kleist</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/rosserial_chibios</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>rosserial_client</run_depend>
+</package>

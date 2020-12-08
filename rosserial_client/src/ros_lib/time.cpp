@@ -54,17 +54,26 @@ Time& Time::fromNSec(int32_t t)
 
 Time& Time::operator +=(const Duration &rhs)
 {
-  sec += rhs.sec;
-  nsec += rhs.nsec;
+  sec = sec - 1 + rhs.sec;
+  nsec = nsec + 1000000000UL + rhs.nsec;
   normalizeSecNSec(sec, nsec);
   return *this;
 }
 
-Time& Time::operator -=(const Duration &rhs)
-{
-  sec += -rhs.sec;
-  nsec += -rhs.nsec;
+Time& Time::operator -=(const Duration &rhs){
+  sec = sec - 1 - rhs.sec;
+  nsec = nsec + 1000000000UL - rhs.nsec;
   normalizeSecNSec(sec, nsec);
   return *this;
+}
+
+Duration Time::operator-(const Time &rhs) const {
+  // Note: Considers wrap around as a continuation of time, e.g.,
+  // (0,0) - (0xFFFFFFFF, 0) = (1, 0)
+  Duration d;
+  d.sec = sec > rhs.sec ? sec - rhs.sec : -(rhs.sec - sec);
+  d.nsec = nsec > rhs.nsec ? nsec - rhs.nsec : -(rhs.nsec - nsec);
+  normalizeSecNSecSigned(d.sec, d.nsec);
+  return d;
 }
 }

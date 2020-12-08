@@ -35,6 +35,11 @@ namespace rosserial_server
 
 const MsgInfo lookupMessage(const std::string& message_type, const std::string submodule)
 {
+  // Lazy-initialize the embedded Python interpreter. Avoid calling the corresponding
+  // finalize method due to issues with importing cyaml in the second instance. The
+  // total memory cost of having this in-process is only about 5-6MB.
+  Py_Initialize();
+
   MsgInfo msginfo;
   size_t slash_pos = message_type.find('/');
   if (slash_pos == std::string::npos)
@@ -44,9 +49,6 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   std::string module_name = message_type.substr(0, slash_pos);
   std::string class_name = message_type.substr(slash_pos + 1, std::string::npos);
 
-  // For now we initialize and finalize for each message. It's quick to do and avoids
-  // an initialized Python interpreter hanging around for the duration of the execution.
-  Py_Initialize();
   PyObject* module = PyImport_ImportModule((module_name + "." + submodule).c_str());
   if (!module)
   {
@@ -70,17 +72,29 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   Py_XDECREF(msg_class);
 
 #if PY_VERSION_HEX > 0x03000000
-  full_text = full_text ? full_text : PyUnicode_New(0, 0);
-  msginfo.full_text.assign(PyUnicode_AsUTF8(full_text));
+  if (full_text)
+  {
+    msginfo.full_text.assign(PyUnicode_AsUTF8(full_text));
+  }
   msginfo.md5sum.assign(PyUnicode_AsUTF8(md5sum));
 #else
-  full_text = full_text ? full_text : PyString_FromString("");
-  msginfo.full_text.assign(PyString_AsString(full_text));
+  if (full_text)
+  {
+    msginfo.full_text.assign(PyString_AsString(full_text));
+  }
   msginfo.md5sum.assign(PyString_AsString(md5sum));
 #endif
+
+  // See https://github.com/ros/ros_comm/issues/344
+  // and https://github.com/ros/gencpp/pull/14
+  // Valid full_text returned, but it is empty, so insert single line
+  if (full_text && msginfo.full_text.empty())
+  {
+    msginfo.full_text = "\n";
+  }
+
   Py_XDECREF(full_text);
   Py_XDECREF(md5sum);
-  Py_Finalize();
 
   return msginfo;
 }

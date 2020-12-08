@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.7.2)
 
 #
 # Generate a rosserial_client ros_lib folder using the make_libraries

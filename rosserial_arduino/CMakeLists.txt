@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.7.2)
 project(rosserial_arduino)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -34,5 +34,5 @@ install(
 
 catkin_install_python(
   PROGRAMS src/${PROJECT_NAME}/make_libraries.py nodes/serial_node.py
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

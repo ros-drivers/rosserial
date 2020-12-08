@@ -5,7 +5,6 @@
 #
 # Copyright (c) 2013, Willow Garage
 # Copyright (c) 2014, Mike Purvis
-# Copyright (c) 2015, Vitor Matos
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,16 +34,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-THIS_PACKAGE = "rosserial_tivac"
+THIS_PACKAGE = "rosserial_chibios"
 
 __usage__ = """
-This script generates the message library and copies the rosserial client library
-for Energia based projects.
-Usage: rosrun rosserial_tivac make_libraries_energia <output_path>
+make_libraries.py generates the ChibiOS rosserial library files. It
+requires the location of your ChibiOS project folder.
 
-Example:
-Navigate to your sketches directory and run:
-rosrun rosserial_tivac make_libraries_energia .
+rosrun rosserial_chibios make_libraries.py <output_path>
 """
 
 import rospkg
@@ -87,10 +83,10 @@ print("\nExporting to %s" % output_path)
 
 rospack = rospkg.RosPack()
 
-# Copy hardware specific ros_lib
+# copy non-generated ros_lib files
 shutil.rmtree(output_path, ignore_errors=True)
-shutil.copytree(os.path.join(rospack.get_path(THIS_PACKAGE), "src", "ros_lib_energia"), output_path)
-
-# Generate and copy remaining ros_lib files
+shutil.copytree(os.path.join(rospack.get_path(THIS_PACKAGE), "src", "ros_lib"), output_path)
 rosserial_client_copy_files(rospack, output_path)
+
+# generate messages
 rosserial_generate(rospack, output_path, ROS_TO_EMBEDDED_TYPES)

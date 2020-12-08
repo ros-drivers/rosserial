@@ -42,6 +42,6 @@ import rospy
 
 if __name__=="__main__":
   rospy.init_node('message_info_service')
-  rospy.logerr("This node is no longer needed and will be removed in "
-               "a future release of rosserial.")
+  rospy.logwarn("The message info service node is no longer needed and will be "
+                "removed in a future release of rosserial.")
   rospy.spin()

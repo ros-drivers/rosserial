@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2011, Willow Garage, Inc.
+ * Copyright (c) 2020, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,64 +32,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_SERVICE_CLIENT_H_
-#define _ROS_SERVICE_CLIENT_H_
+#ifndef _ROS_H_
+#define _ROS_H_
 
-#include "rosserial_msgs/TopicInfo.h"
+#include "ros/node_handle.h"
 
-#include "ros/publisher.h"
-#include "ros/subscriber.h"
+#include "ChibiOSHardware.h"
 
 namespace ros
 {
-
-template<typename MReq , typename MRes>
-class ServiceClient : public Subscriber_
-{
-public:
-  ServiceClient(const char* topic_name) :
-    pub(topic_name, &req, rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_PUBLISHER)
-  {
-    this->topic_ = topic_name;
-    this->waiting = true;
-  }
-
-  virtual void call(const MReq & request, MRes & response) override
-  {
-    if (!pub.nh_->connected()) return;
-    ret = &response;
-    waiting = true;
-    pub.publish(&request);
-    while (waiting && pub.nh_->connected())
-      if (pub.nh_->spinOnce() < 0) break;
-  }
-
-  // these refer to the subscriber
-  virtual void callback(unsigned char *data) override
-  {
-    ret->deserialize(data);
-    waiting = false;
-  }
-  virtual const char * getMsgType() override
-  {
-    return this->resp.getType();
-  }
-  virtual const char * getMsgMD5() override
-  {
-    return this->resp.getMD5();
-  }
-  virtual int getEndpointType() override
-  {
-    return rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT + rosserial_msgs::TopicInfo::ID_SUBSCRIBER;
-  }
-
-  MReq req;
-  MRes resp;
-  MRes * ret;
-  bool waiting;
-  Publisher pub;
-};
-
+typedef NodeHandle_<ChibiOSHardware> NodeHandle; // default 25, 25, 512, 512
 }
 
 #endif

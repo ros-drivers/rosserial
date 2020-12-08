@@ -2,6 +2,17 @@
 Changelog for package rosserial_xbee
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.1 (2020-09-09)
+------------------
+
+0.9.0 (2020-08-25)
+------------------
+* Fix Travis for Noetic + Python 3
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Update pyserial rosdep.
+* Fix py3 print usages and trailing whitespaces (`#469 <https://github.com/ros-drivers/rosserial/issues/469>`_)
+* Contributors: Mike Purvis, acxz
+
 0.8.0 (2018-10-11)
 ------------------
 

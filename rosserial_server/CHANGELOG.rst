@@ -2,6 +2,26 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.1 (2020-09-09)
+------------------
+* Add boost::thread dependency to rosserial_server (`#513 <https://github.com/ros-drivers/rosserial/issues/513>`_)
+* Contributors: Mike Purvis
+
+0.9.0 (2020-08-25)
+------------------
+* Only initialize embedded python interpreter once. (`#491 <https://github.com/ros-drivers/rosserial/issues/491>`_)
+* Port 482 and 483 forward from Melodic branch (`#492 <https://github.com/ros-drivers/rosserial/issues/492>`_)
+* Fix warning when using std_msgs/Empty (`#482 <https://github.com/ros-drivers/rosserial/issues/482>`_)
+* Bump minimum CMake version to 3.7.2 (Melodic).
+* Removed unused service client for message info service (`#481 <https://github.com/ros-drivers/rosserial/issues/481>`_)
+* Call io_service.stop() when ros::ok() returns false (`#477 <https://github.com/ros-drivers/rosserial/issues/477>`_)
+* Call Py_Finalize before throwing exception (`#476 <https://github.com/ros-drivers/rosserial/issues/476>`_)
+* [Windows] use c++ signed trait to replace ssize_t for better portability. (`#463 <https://github.com/ros-drivers/rosserial/issues/463>`_)
+* Port rosserial_server to Boost 1.71. (`#468 <https://github.com/ros-drivers/rosserial/issues/468>`_)
+* rosserial_server: update install rules for binary targets (`#457 <https://github.com/ros-drivers/rosserial/issues/457>`_)
+* Fix bug: assign the md5 for service (`#449 <https://github.com/ros-drivers/rosserial/issues/449>`_)
+* Contributors: Hermann von Kleist, Johannes Meyer, Mike Purvis, Sean Yen, 趙　漠居(Zhao, Moju)
+
 0.8.0 (2018-10-11)
 ------------------
 * Fix compiling on boost > 1.66 (`#362 <https://github.com/ros-drivers/rosserial/issues/362>`_)

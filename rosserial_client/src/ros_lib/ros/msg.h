@@ -37,6 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <cstring>
 
 namespace ros
 {
@@ -53,7 +54,7 @@ public:
   /**
    * @brief This tricky function handles promoting a 32bit float to a 64bit
    *        double, so that AVR can publish messages containing float64
-   *        fields, despite AVV having no native support for double.
+   *        fields, despite AVR having no native support for double.
    *
    * @param[out] outbuffer pointer for buffer to serialize to.
    * @param[in] f value to serialize.
@@ -63,21 +64,44 @@ public:
    */
   static int serializeAvrFloat64(unsigned char* outbuffer, const float f)
   {
-    const int32_t* val = (int32_t*) &f;
-    int32_t exp = ((*val >> 23) & 255);
-    if (exp != 0)
+    int32_t val;
+    std::memcpy(&val, &f, sizeof(val));
+
+    int16_t exp = ((val >> 23) & 255);
+    uint32_t mantissa = val & 0x7FFFFF;
+
+    if (exp == 255)
     {
+      exp = 2047; // Special value for NaN, infinity etc.
+    }
+    else if (exp != 0)
+    {
+      exp += 1023 - 127; // Normal case
+    }
+    else if (!mantissa)
+    {
+      exp = 0; // Zero
+    }
+    else
+    {
+      // Denormalized value in float, will fit as normalized value in double
       exp += 1023 - 127;
+      mantissa <<= 1;
+      while (!(mantissa & 0x800000))
+      {
+          mantissa <<= 1;
+          exp--;
+      }
+      mantissa &= 0x7FFFFF;
     }
 
-    int32_t sig = *val;
     *(outbuffer++) = 0;
     *(outbuffer++) = 0;
     *(outbuffer++) = 0;
-    *(outbuffer++) = (sig << 5) & 0xff;
-    *(outbuffer++) = (sig >> 3) & 0xff;
-    *(outbuffer++) = (sig >> 11) & 0xff;
-    *(outbuffer++) = ((exp << 4) & 0xF0) | ((sig >> 19) & 0x0F);
+    *(outbuffer++) = (mantissa << 5) & 0xff;
+    *(outbuffer++) = (mantissa >> 3) & 0xff;
+    *(outbuffer++) = (mantissa >> 11) & 0xff;
+    *(outbuffer++) = ((exp << 4) & 0xF0) | ((mantissa >> 19) & 0x0F);
     *(outbuffer++) = (exp >> 4) & 0x7F;
 
     // Mark negative bit as necessary.
@@ -101,26 +125,61 @@ public:
    */
   static int deserializeAvrFloat64(const unsigned char* inbuffer, float* f)
   {
-    uint32_t* val = (uint32_t*)f;
+    int16_t exp;
+    uint32_t mantissa;
+
+    // Skip lowest 24 bits
     inbuffer += 3;
 
     // Copy truncated mantissa.
-    *val = ((uint32_t)(*(inbuffer++)) >> 5 & 0x07);
-    *val |= ((uint32_t)(*(inbuffer++)) & 0xff) << 3;
-    *val |= ((uint32_t)(*(inbuffer++)) & 0xff) << 11;
-    *val |= ((uint32_t)(*inbuffer) & 0x0f) << 19;
+    mantissa = ((uint32_t)(*(inbuffer++)) >> 4 & 0x0F);
+    mantissa |= ((uint32_t)(*(inbuffer++)) & 0xff) << 4;
+    mantissa |= ((uint32_t)(*(inbuffer++)) & 0xff) << 12;
+    mantissa |= ((uint32_t)(*inbuffer) & 0x0f) << 20;
 
-    // Copy truncated exponent.
-    uint32_t exp = ((uint32_t)(*(inbuffer++)) & 0xf0) >> 4;
+    // Copy exponent.
+    exp = ((uint32_t)(*(inbuffer++)) & 0xf0) >> 4;
     exp |= ((uint32_t)(*inbuffer) & 0x7f) << 4;
-    if (exp != 0)
+
+    if (exp == 2047)
     {
-      *val |= ((exp) - 1023 + 127) << 23;
+      exp = 255; // NaN, infinity etc.
+    }
+    else if (exp - 1023 > 127)
+    {
+      exp = 255;
+      mantissa = 0; // Too large for float, convert to infinity
+    }
+    else if (exp - 1023 >= -126)
+    {
+      exp -= 1023 - 127; // Normal case
+    }
+    else if (exp - 1023 < -150)
+    {
+      exp = 0; // Too small or zero
+    }
+    else
+    {
+      // Have to convert to denormalized representation for float
+      mantissa |= 0x1000000;
+      mantissa >>= ((-126 + 1023) - exp);
+      exp = 0;
     }
 
-    // Copy negative sign.
-    *val |= ((uint32_t)(*(inbuffer++)) & 0x80) << 24;
+    // Round off mantissa
+    if (mantissa != 0xFFFFFF)
+      mantissa += 1;
 
+    mantissa >>= 1;
+
+    // Put mantissa and exponent into place
+    uint32_t val = mantissa;
+    val |= static_cast<uint32_t>(exp) << 23;
+
+    // Copy negative sign.
+    val |= (static_cast<uint32_t>(*(inbuffer++)) & 0x80) << 24;
+
+    std::memcpy(f, &val, sizeof(val));
     return 8;
   }
 

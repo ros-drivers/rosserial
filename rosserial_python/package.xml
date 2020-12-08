@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_python</name>
-  <version>0.8.0</version>
+  <version>0.9.1</version>
   <description>
     A Python-based implementation of the rosserial protocol.
   </description>
@@ -15,5 +15,5 @@
   <run_depend>rospy</run_depend>
   <run_depend>rosserial_msgs</run_depend>
   <run_depend>diagnostic_msgs</run_depend>
-  <run_depend>python-serial</run_depend>
+  <run_depend>python3-serial</run_depend>
 </package>
