@@ -26,7 +26,6 @@
 #define EM_RINGBUF_CPP_H
 
 #include "ros_lib/rosserial_vex_v5/utils/RingBufHelpers.h"
-#include "main.h"
 
 template <typename Type, uint16_t MaxElements>
 class RingBufCPP
