@@ -35,7 +35,6 @@
 #ifndef _ROSSERIAL_VEX_V5_V5_HARDWARE_H_
 #define _ROSSERIAL_VEX_V5_V5_HARDWARE_H_
 
-#include "main.h"
 #include "ros_lib/rosserial_vex_v5/utils/RingBuf.h"
 
 // for the mutex.
