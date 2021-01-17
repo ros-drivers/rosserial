@@ -18,7 +18,7 @@ install(
 )
 
 install(
-  DIRECTORY launch/
+  DIRECTORY launch/launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
