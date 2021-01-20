@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -37,7 +37,7 @@
 
 #include "ros_lib/rosserial_vex_v5/utils/RingBuf.h"
 
-// for the mutex.
+ // for the mutex.
 #include "pros/apix.h"
 
 #define SERIAL_CLASS int
@@ -48,77 +48,78 @@ using RB = RingBufCPP<char, ROSVEX_BUFFER_INPUT_SIZE>;
 // load the serial reading into a buffer.
 inline void vexRosBufferInput(void* arg) {
 
-  void** arglist = (void**) arg;
-  RB* inputBuffer = (RB*) arglist[0];
-  __FILE* streamOut = (__FILE*) arglist[1];
+  void** arglist = (void**)arg;
+  RB* inputBuffer = (RB*)arglist[0];
+  __FILE* streamOut = (__FILE*)arglist[1];
 
   int readcount = 0;
-  while(1) {
-    char c =  fgetc(streamOut);
+  while (1) {
+    char c = fgetc(streamOut);
     inputBuffer->add(c);
   }
 }
 
 class V5Hardware {
 
-  public:
-    V5Hardware(): rosvexMutex(), inputBuffer(rosvexMutex), failCount(), successCount() {
+public:
+  V5Hardware() : rosvexMutex(), inputBuffer(rosvexMutex), failCount(), successCount() {
+  }
+
+  // any initialization code necessary to use the serial port
+  // note: the serial port initialization for rosserial for VEX Cortex must be implemented in `src/init.cpp` 
+  // see that file for more information. 
+  void init() {
+    pros::c::serctl(SERCTL_DISABLE_COBS, NULL);
+    rosFile = fopen("/ser/sout", "r+");
+    pros::c::fdctl(fileno(rosFile), SERCTL_DEACTIVATE, NULL);
+
+    // not typesafe, be careful!
+    void** taskArgs = (void**)malloc(sizeof(void*) * 2);
+    taskArgs[0] = &inputBuffer;
+    taskArgs[1] = rosFile;
+
+    pros::Task reader(vexRosBufferInput, taskArgs);
+  }
+
+  // read a byte from the serial port. -1 = failure
+  int read() {
+    char c;
+    // pull serial reading out of the buffer.
+    if (inputBuffer.pull(&c)) {
+      char sucmsg[16];
+      return c;
     }
 
-    // any initialization code necessary to use the serial port
-    // note: the serial port initialization for rosserial for VEX Cortex must be implemented in `src/init.cpp` 
-    // see that file for more information. 
-    void init() {
-      rosFile = fopen("/ser/sout", "r+");
-      pros::c::fdctl(fileno(rosFile), SERCTL_DISABLE_COBS, NULL);
-      
-      // not typesafe, be careful!
-      void** taskArgs = (void**) malloc( sizeof(void*) * 2);
-      taskArgs[0] = &inputBuffer;
-      taskArgs[1] = rosFile;
+    return -1;
+  }
 
-      pros::Task reader(vexRosBufferInput, taskArgs);
+  // write data to the connection to ROS
+  void write(uint8_t* data, int length) {
+    for (int i = 0; i < length; i++) {
+      vexroswritechar(data[i]);
     }
+  }
+  // returns milliseconds since start of program
+  unsigned long time() {
+    return pros::c::millis();
+  }
+private:
+  int failCount;
+  int successCount;
+  pros::Mutex rosvexMutex;
+  __FILE* rosFile;
+  RB inputBuffer;
 
-    // read a byte from the serial port. -1 = failure
-    int read() {
-      char c;
-      // pull serial reading out of the buffer.
-      if(inputBuffer.pull(&c)) {
-        char sucmsg[16];
-        return c;
-      }
+  // writing helper.
+  void vexroswritechar(uint8_t data) {
+    fputc(data, rosFile);
+    fflush(rosFile);
+  }
 
-      return -1;
-    }
-
-    // write data to the connection to ROS
-    void write(uint8_t* data, int length) {
-      for(int i = 0; i < length; i++) {
-        vexroswritechar(data[i]);
-      }
-    }
-    // returns milliseconds since start of program
-    unsigned long time() {
-      return pros::c::millis();
-    }
-  private:
-    int failCount;
-    int successCount;
-    pros::Mutex rosvexMutex;
-    __FILE * rosFile;
-    RB inputBuffer;
-
-    // writing helper.
-    void vexroswritechar(uint8_t data) {
-      fputc(data, rosFile);
-      fflush(rosFile);
-    }
-    
-    // reading helper.
-    char vexrosreadchar() {
-      return fgetc(rosFile);
-    }
-    };
+  // reading helper.
+  char vexrosreadchar() {
+    return fgetc(rosFile);
+  }
+};
 
 #endif
