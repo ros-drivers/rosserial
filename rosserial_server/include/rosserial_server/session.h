@@ -476,11 +476,11 @@ private:
   void handle_log(ros::serialization::IStream& stream) {
     rosserial_msgs::Log l;
     ros::serialization::Serializer<rosserial_msgs::Log>::read(stream, l);
-    if(l.level == rosserial_msgs::Log::ROSDEBUG) ROS_DEBUG("%s", l.msg.c_str());
-    else if(l.level == rosserial_msgs::Log::INFO) ROS_INFO("%s", l.msg.c_str());
-    else if(l.level == rosserial_msgs::Log::WARN) ROS_WARN("%s", l.msg.c_str());
-    else if(l.level == rosserial_msgs::Log::ERROR) ROS_ERROR("%s", l.msg.c_str());
-    else if(l.level == rosserial_msgs::Log::FATAL) ROS_FATAL("%s", l.msg.c_str());
+    if(l.level == rosserial_msgs::Log::ROSDEBUG) ROS_DEBUG_NAMED("clients", "%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::INFO) ROS_INFO_NAMED("clients", "%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::WARN) ROS_WARN_NAMED("clients", "%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::ERROR) ROS_ERROR_NAMED("clients", "%s", l.msg.c_str());
+    else if(l.level == rosserial_msgs::Log::FATAL) ROS_FATAL_NAMED("clients", "%s", l.msg.c_str());
   }
 
   void handle_time(ros::serialization::IStream& stream) {
