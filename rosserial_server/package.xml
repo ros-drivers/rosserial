@@ -17,6 +17,7 @@
   <depend>std_msgs</depend>
   <depend>roscpp</depend>
   <depend>topic_tools</depend>
+  <build_depend>python3-dev</build_depend>
   <build_depend>libboost-thread-dev</build_depend>
   <exec_depend>libboost-thread</exec_depend>
 </package>
