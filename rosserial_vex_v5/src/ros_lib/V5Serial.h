@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROSSERIAL_VEX_V5_V5_HARDWARE_H_
-#define _ROSSERIAL_VEX_V5_V5_HARDWARE_H_
+#ifndef _ROSSERIAL_VEX_V5_V5_SERIAL_H_
+#define _ROSSERIAL_VEX_V5_V5_SERIAL_H_
 
 #include "ros_lib/rosserial_vex_v5/utils/RingBuf.h"
 
@@ -59,10 +59,10 @@ inline void vexRosBufferInput(void* arg) {
   }
 }
 
-class V5Hardware {
+class V5Serial {
 
 public:
-  V5Hardware() : rosvexMutex(), inputBuffer(rosvexMutex), failCount(), successCount() {
+  V5Serial() : rosvexMutex(), inputBuffer(rosvexMutex), failCount(), successCount() {
   }
 
   // any initialization code necessary to use the serial port

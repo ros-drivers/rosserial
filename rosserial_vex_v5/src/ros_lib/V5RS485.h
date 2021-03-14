@@ -32,16 +32,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROSSERIAL_VEX_CORTEX_ROS_H_
-#define _ROSSERIAL_VEX_CORTEX_ROS_H_
+#ifndef _ROSSERIAL_VEX_V5_V5_V5RS485_H_
+#define _ROSSERIAL_VEX_V5_V5_V5RS485_H_
 
-#include "ros_lib/ros/node_handle.h"
+#include "pros/apix.h"
 
-#include "ros_lib/V5Serial.h"
-#include "ros_lib/V5RS485.h"
+class V5RS485 {
+   public:
+    V5RS485(int readPortNum = 19, int writePortNum = 20, int baud = 115200)
+        : readPort(readPortNum, baud),
+          writePort(writePortNum, baud) {}
 
-namespace ros {
-  typedef NodeHandle_<V5Serial> NodeHandle;
-}
+    void init() {
+        pros::delay(10);
+        readPort.flush();
+        writePort.flush();
+    }
+
+    // read a byte from the serial port. -1 = failure
+    int read() { 
+        int read = readPort.read_byte();
+        return read;
+    }
+
+    // write data to the connection to ROS
+    void write(uint8_t* data, int length) { 
+        int freeBytes = writePort.get_write_free();
+
+        if(freeBytes > length) { // Enough bytes free in buffer
+            writePort.write(data, length);
+        } else {
+            printf("Serial buffer full!\n");
+            writePort.write(data, freeBytes);
+            for(int i = freeBytes; i < length; i++) {
+                while(writePort.get_write_free() == 0) {
+                    pros::delay(5);
+                }
+                writePort.write_byte(data[i]);
+            }
+        }
+    }
+
+    // returns milliseconds since start of program
+    unsigned long time() { return pros::c::millis(); }
+
+   private:
+    pros::Serial readPort;
+    pros::Serial writePort;
+};
 
 #endif
