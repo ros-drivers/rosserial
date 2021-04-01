@@ -229,11 +229,15 @@ class RosSerialServer:
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
         self.serversocket.listen(1)
+        self.serversocket.settimeout(1)
 
-        while True:
-            #accept connections
-            rospy.loginfo("Waiting for socket connection")
-            clientsocket, address = self.serversocket.accept()
+        #accept connections
+        rospy.loginfo("Waiting for socket connection")
+        while not rospy.is_shutdown():
+            try:
+                clientsocket, address = self.serversocket.accept()
+            except socket.timeout:
+                continue
 
             #now do something with the clientsocket
             rospy.loginfo("Established a socket connection from %s on port %s" % address)
