@@ -349,7 +349,12 @@ class SerialClient(object):
         self.publishers = dict()  # id:Publishers
         self.subscribers = dict() # topic:Subscriber
         self.services = dict()    # topic:Service
-
+        
+        def shutdown():
+            self.txStopRequest()
+            rospy.loginfo('shutdown hook activated')
+        rospy.on_shutdown(shutdown)
+        
         self.pub_diagnostics = rospy.Publisher('/diagnostics', diagnostic_msgs.msg.DiagnosticArray, queue_size=10)
 
         if port is None:
@@ -549,7 +554,6 @@ class SerialClient(object):
                 with self.write_lock:
                     self.port.flushOutput()
                 self.requestTopics()
-        self.txStopRequest()
         self.write_thread.join()
 
     def setPublishSize(self, size):
