@@ -550,7 +550,6 @@ class SerialClient(object):
                 with self.write_lock:
                     self.port.flushOutput()
                 self.requestTopics()
-        # self.txStopRequest()
         self.write_thread.join()
 
     def setPublishSize(self, size):
