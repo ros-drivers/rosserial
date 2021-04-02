@@ -2,6 +2,12 @@
 Changelog for package rosserial_arduino
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix CMP0038 warning in arduino-cmake (`#553 <https://github.com/ros-drivers/rosserial/issues/553>`_)
+* Python3 import fix for rosserial_arduino (`#554 <https://github.com/ros-drivers/rosserial/issues/554>`_)
+* Contributors: Marco Camurri, Vasily Fedotov
+
 0.9.1 (2020-09-09)
 ------------------
 

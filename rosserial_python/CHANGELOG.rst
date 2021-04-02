@@ -2,6 +2,12 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Adds a shutdown hook for sending txStopRequest (`#551 <https://github.com/ros-drivers/rosserial/issues/551>`_)
+* Gracefully handle socket server end. (`#550 <https://github.com/ros-drivers/rosserial/issues/550>`_)
+* Contributors: Can Altineller, Karl Kangur
+
 0.9.1 (2020-09-09)
 ------------------
 * rosserial_python py3 fix (`#514 <https://github.com/ros-drivers/rosserial/issues/514>`_)
