@@ -2,8 +2,8 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.2 (2021-04-02)
+------------------
 * Use shutil.copyfile() instead of shutil.copy() (`#530 <https://github.com/ros-drivers/rosserial/issues/530>`_)
 * Changed C++ STL include and code into original C versions (`#525 <https://github.com/ros-drivers/rosserial/issues/525>`_)
 * Contributors: Ben Wolsieffer, Rafael Oliveira

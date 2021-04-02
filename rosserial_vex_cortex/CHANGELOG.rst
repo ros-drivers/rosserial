@@ -1,8 +1,8 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package rosserial_vex_cortex
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Forthcoming
------------
+0.9.2 (2021-04-02)
+------------------
 * Fix header mismatch in changelog.
 * Contributors: Mike Purvis
 

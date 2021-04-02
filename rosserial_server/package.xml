@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rosserial_server</name>
-  <version>0.9.1</version>
+  <version>0.9.2</version>
   <description>
     A more performance- and stability-oriented server alternative implemented
     in C++ to rosserial_python.
