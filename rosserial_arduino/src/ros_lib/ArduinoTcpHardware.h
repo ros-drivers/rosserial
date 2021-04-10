@@ -40,6 +40,8 @@
   #include <ESP8266WiFi.h>
 #elif defined(ESP32)
   #include <WiFi.h> // Using Espressif's WiFi.h
+#elif defined(ESP32_ETH)
+  #include <ETH.h> //using Espressif's WiFi.h ETH option
 #else
   #include <SPI.h>
   #include <Ethernet.h>
@@ -59,7 +61,7 @@ public:
 
   IPAddress getLocalIP()
   {
-#if defined(ESP8266) or defined(ESP32)
+#if defined(ESP8266) or defined(ESP32) or defined(ESP32_ETH)
     return tcp_.localIP();
 #else
     return Ethernet.localIP();
@@ -104,7 +106,7 @@ public:
   }
 
 protected:
-#if defined(ESP8266) or defined(ESP32)
+#if defined(ESP8266) or defined(ESP32) or defined(ESP32_ETH)
   WiFiClient tcp_;
 #else
   EthernetClient tcp_;
