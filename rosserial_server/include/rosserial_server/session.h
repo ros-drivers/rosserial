@@ -78,6 +78,8 @@ public:
     ros_spin_interval_ = boost::posix_time::milliseconds(10);
     require_param_name_ = "~require";
 
+    unrecognised_topic_retry_threshold_ = ros::param::param("~unrecognised_topic_retry_threshold", 0);
+
     nh_.setCallbackQueue(&ros_callback_queue_);
 
     // Intermittent callback to service ROS callbacks. To avoid polling like this,
@@ -252,7 +254,15 @@ private:
         }
       } else {
         ROS_WARN("Received message with unrecognized topicId (%d).", topic_id);
-        // TODO: Resynchronize on multiples?
+
+        if ((unrecognised_topic_retry_threshold_ > 0) && ++unrecognised_topics_ >= unrecognised_topic_retry_threshold_)
+        {
+          // The threshold for unrecognised topics has been exceeded.
+          // Attempt to request the topics from the client again
+          ROS_WARN("Unrecognised topic threshold exceeded. Requesting topics from client");
+          attempt_sync();
+          unrecognised_topics_ = 0;
+        }
       }
     }
 
@@ -517,6 +527,8 @@ private:
   boost::asio::deadline_timer require_check_timer_;
   boost::asio::deadline_timer ros_spin_timer_;
   std::string require_param_name_;
+  int unrecognised_topic_retry_threshold_{ 0 };
+  int unrecognised_topics_{ 0 };
 
   std::map<uint16_t, boost::function<void(ros::serialization::IStream&)> > callbacks_;
   std::map<uint16_t, PublisherPtr> publishers_;
