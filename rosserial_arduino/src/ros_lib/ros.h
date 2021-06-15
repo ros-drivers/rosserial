@@ -37,7 +37,7 @@
 
 #include "ros/node_handle.h"
 
-#if defined(ESP8266) or defined(ESP32) or defined(ROSSERIAL_ARDUINO_TCP)
+#if defined(ROSSERIAL_ARDUINO_TCP)
   #include "ArduinoTcpHardware.h"
 #else
   #include "ArduinoHardware.h"

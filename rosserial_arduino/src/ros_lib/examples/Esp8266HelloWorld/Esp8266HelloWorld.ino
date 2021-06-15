@@ -9,6 +9,9 @@
  *
  */
 #include <ESP8266WiFi.h>
+
+#define ROSSERIAL_ARDUINO_TCP
+
 #include <ros.h>
 #include <std_msgs/String.h>
 
