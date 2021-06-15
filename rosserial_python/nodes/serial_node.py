@@ -55,10 +55,15 @@ if __name__=="__main__":
     # TIOCM_DTR_str) line, which causes an IOError, when using simulated port
     fix_pyserial_for_test = rospy.get_param('~fix_pyserial_for_test', False)
 
-    tcp_portnum = int(rospy.get_param('~tcp_port', '11411'))
+    if(rospy.has_param('~tcp_port')):
+        tcp_portnum = int(rospy.get_param('~tcp_port', '11411'))
+    else:
+        tcp_portnum = int(rospy.get_param('/rosserial_embeddedlinux/tcp_port', '11411'))
     
-    # TODO: should this really be global?
-    fork_server = rospy.get_param('/rosserial_embeddedlinux/fork_server', False)
+    if(rospy.has_param('~fork_server')):
+        fork_server = rospy.get_param('~fork_server', False)
+    else:
+        fork_server = rospy.get_param('/rosserial_embeddedlinux/fork_server', False)
 
     # TODO: do we really want command line params in addition to parameter server params?
     sys.argv = rospy.myargv(argv=sys.argv)
