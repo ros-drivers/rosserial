@@ -15,6 +15,7 @@
 
   <depend>roscpp</depend>
   <depend>gtest</depend>
+  <depend>rosserial_arduino</depend>
   <depend>rosserial_client</depend>
   <depend>rosserial_msgs</depend>
   <depend>rosserial_python</depend>
