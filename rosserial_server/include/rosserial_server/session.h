@@ -243,7 +243,9 @@ private:
     } else {
       if (callbacks_.count(topic_id) == 1) {
         try {
-          callbacks_[topic_id](stream);
+          // stream includes the check sum byte. 
+          ros::serialization::IStream msg_stream(stream.getData(), stream.getLength()-1);
+          callbacks_[topic_id](msg_stream);
         } catch(ros::serialization::StreamOverrunException e) {
           if (topic_id < 100) {
             ROS_ERROR("Buffer overrun when attempting to parse setup message.");
