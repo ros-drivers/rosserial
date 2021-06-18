@@ -316,6 +316,95 @@ class RosSerialServer:
         except BlockingIOError:
             return 0
 
+   
+class RosSerialTCPClient(object):
+    """
+    Initiate a connection to a rosserial ethernet-based server over tcp on the given host/port
+    This is a file-like object, sim to the server edition above
+    
+    """
+    def __init__(self, serverHost, serverPort=11411):
+        rospy.loginfo("Connecting...")
+        self.socket = socket.create_connection((serverHost, serverPort))
+        if self.socket is None:
+            self.isConnected = False
+        else:
+            self.isConnected = True
+
+    
+    def run(self):
+        
+        if not self.isConnected:
+            return
+        else:
+            rospy.loginfo("Connected!")
+
+        client = SerialClient(self) #file-like object passing
+        try:
+            client.run()
+        except KeyboardInterrupt:
+            pass
+        except RuntimeError:
+            rospy.loginfo("RuntimeError exception caught")
+            self.isConnected = False
+        except socket.error:
+            rospy.loginfo("socket.error exception caught")
+            self.isConnected = False
+        finally:
+            self.socket.close()
+            for sub in client.subscribers.values():
+                sub.unregister()
+            for srv in client.services.values():
+                srv.unregister()
+            #pass
+
+    def startSocketServer(self, port, address):
+        rospy.loginfo("starting ROS Serial Python Node serial_node-%r" % (address,))
+        rospy.init_node("serial_node_%r" % (address,))
+        self.startSerialClient()
+
+    def flushInput(self):
+        pass
+    
+    def close(self):
+        self.socket.close()
+        
+    def write(self, data):
+        if not self.isConnected:
+            return
+        length = len(data)
+        totalsent = 0
+
+        while totalsent < length:
+            sent = self.socket.send(data[totalsent:])
+            if sent == 0:
+                raise RuntimeError("RosTCPClient.write() socket connection broken")
+            totalsent = totalsent + sent
+
+    def read(self, rqsted_length):
+        self.msg = ''
+        if not self.isConnected:
+            return self.msg
+
+        while len(self.msg) < rqsted_length:
+            chunk = self.socket.recv(rqsted_length - len(self.msg))
+            if chunk == '':
+                raise RuntimeError("RosTCPClient.read() socket connection broken")
+            self.msg = self.msg + chunk
+        return self.msg
+
+    def inWaiting(self):
+        try: # the caller checks just for <1, so we'll peek at just one byte
+            chunk = self.socket.recv(1, socket.MSG_DONTWAIT|socket.MSG_PEEK)
+            if chunk == '':
+                raise RuntimeError("RosSerialServer.inWaiting() socket connection broken")
+            return len(chunk)
+        except socket.error, e:
+            if e.args[0] == errno.EWOULDBLOCK:
+                return 0
+            raise
+
+        
 class SerialClient(object):
     """
         ServiceServer responds to requests from the serial device.

@@ -36,12 +36,13 @@
 __author__ = "mferguson@willowgarage.com (Michael Ferguson)"
 
 import rospy
-from rosserial_python import SerialClient, RosSerialServer
+from rosserial_python import SerialClient, RosSerialServer, RosSerialTCPClient
 from serial import SerialException
 from time import sleep
 import multiprocessing
 
 import sys
+import pdb
 
 if __name__=="__main__":
     rospy.init_node("serial_node")
@@ -66,6 +67,8 @@ if __name__=="__main__":
     else:
         fork_server = rospy.get_param('/rosserial_embeddedlinux/fork_server', False)
 
+    serverHost = rospy.get_param('~host', '192.168.1.100')
+    serverPort = 11411
     # TODO: do we really want command line params in addition to parameter server params?
     sys.argv = rospy.myargv(argv=sys.argv)
     if len(sys.argv) >= 2 :
@@ -87,7 +90,23 @@ if __name__=="__main__":
                 process.terminate()
                 process.join()
             rospy.loginfo("All done")
-
+    elif port_name == "tcpclient":
+       
+        while not rospy.is_shutdown():
+            rospy.loginfo("Connecting to server at %s:%d" % (serverHost,serverPort) )
+            try:
+                client = RosSerialTCPClient(serverHost, serverPort)
+                client.run()
+            except KeyboardInterrupt:
+                break
+            except OSError:
+                sleep(1.0)
+                continue
+            except:
+                rospy.logwarn("Unexpected Error.%s", sys.exc_info()[0])
+                client.close()
+                sleep(1.0)
+                continue
     else :          # Use serial port
         while not rospy.is_shutdown():
             rospy.loginfo("Connecting to %s at %d baud" % (port_name,baud) )
