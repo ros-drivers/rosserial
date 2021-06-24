@@ -48,7 +48,7 @@
     #include <usb_serial.h>  // Teensy 3.0 and 3.1
     #define SERIAL_CLASS usb_serial_class
   #endif
-#elif defined(_SAM3XA_)
+#elif defined(_SAM3XA_) and !(defined(USE_USBCON))
   #include <UARTClass.h>  // Arduino Due
   #define SERIAL_CLASS UARTClass
 #elif defined(USE_USBCON)
@@ -73,6 +73,8 @@ class ArduinoHardware {
 #if defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
+#elif defined(USBCON) and defined(USE_USBCON)
+      iostream=&SerialUSB;
 #elif defined(USE_TEENSY_HW_SERIAL) or defined(USE_STM32_HW_SERIAL)
       iostream = &Serial1;
 #else
