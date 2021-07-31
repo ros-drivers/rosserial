@@ -286,7 +286,7 @@ private:
   }
 
   //// SENDING MESSAGES ////
-
+  bool first = true; //!!! Allow for Arudino to establish connection and avoid constant reset on DTR
   void write_message(Buffer& message, const uint16_t topic_id) {
     uint8_t overhead_bytes = 8;
     uint16_t length = overhead_bytes + message.size();
@@ -304,6 +304,10 @@ private:
     stream << msg_checksum;
 
     ROS_DEBUG_NAMED("async_write", "Sending buffer of %d bytes to client.", length);
+    if(first){
+      ros::Duration(5).sleep();
+      first = false;
+    }
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_completion_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
