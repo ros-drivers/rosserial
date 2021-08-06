@@ -77,7 +77,7 @@ if (len(sys.argv) < 2):
 
 # get output path
 path = sys.argv[1]
-output_path = os.path.join(sys.argv[1], "ros_lib")
+output_path = os.path.join(sys.argv[1], "ros_lib/")
 print("\nExporting to %s" % output_path)
 
 rospack = rospkg.RosPack()
