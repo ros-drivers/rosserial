@@ -50,11 +50,13 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   PyObject* module = PyImport_ImportModule((module_name + "." + submodule).c_str());
   if (!module)
   {
+    Py_Finalize();
     throw std::runtime_error("Unable to import message module " + module_name + ".");
   }
   PyObject* msg_class = PyObject_GetAttrString(module, class_name.c_str());
   if (!msg_class)
   {
+    Py_Finalize();
     throw std::runtime_error("Unable to find message class " + class_name +
                              " in module " + module_name + ".");
   }
@@ -64,20 +66,34 @@ const MsgInfo lookupMessage(const std::string& message_type, const std::string s
   PyObject* md5sum = PyObject_GetAttrString(msg_class, "_md5sum");
   if (!md5sum)
   {
+    Py_Finalize();
     throw std::runtime_error("Class for message " + message_type + " did not contain" +
                              "expected _md5sum attribute.");
   }
   Py_XDECREF(msg_class);
 
 #if PY_VERSION_HEX > 0x03000000
-  full_text = full_text ? full_text : PyUnicode_New(0, 0);
-  msginfo.full_text.assign(PyUnicode_AsUTF8(full_text));
+  if (full_text)
+  {
+    msginfo.full_text.assign(PyUnicode_AsUTF8(full_text));
+  }
   msginfo.md5sum.assign(PyUnicode_AsUTF8(md5sum));
 #else
-  full_text = full_text ? full_text : PyString_FromString("");
-  msginfo.full_text.assign(PyString_AsString(full_text));
+  if (full_text)
+  {
+    msginfo.full_text.assign(PyString_AsString(full_text));
+  }
   msginfo.md5sum.assign(PyString_AsString(md5sum));
 #endif
+
+  // See https://github.com/ros/ros_comm/issues/344
+  // and https://github.com/ros/gencpp/pull/14
+  // Valid full_text returned, but it is empty, so insert single line
+  if (full_text && msginfo.full_text.empty())
+  {
+    msginfo.full_text = "\n";
+  }
+
   Py_XDECREF(full_text);
   Py_XDECREF(md5sum);
   Py_Finalize();

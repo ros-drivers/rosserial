@@ -70,7 +70,9 @@ class ArduinoHardware {
     }
     ArduinoHardware()
     {
-#if defined(USBCON) and !(defined(USE_USBCON))
+#if defined(_SAMD21_) and defined(USE_USBCON)
+      iostream=&SerialUSB;
+#elif defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
 #elif defined(USE_TEENSY_HW_SERIAL) or defined(USE_STM32_HW_SERIAL)
