@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find rosserial_vex_v5)/launch/hello_world.launch" pass_all_args="true"/>
+
+  <arg name="rvizconfig" default="$(find rosserial_vex_v5)/rviz/basic_odometry.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="false" />
+
+</launch>
