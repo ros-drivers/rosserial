@@ -32,38 +32,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_H_
-#define _ROS_H_
+#ifndef ROS_ARDUINO_BLUETOOTH_HARDWARE_H_
+#define ROS_ARDUINO_BLUETOOTH_HARDWARE_H_
 
-#include "ros/node_handle.h"
-
-#if defined(ROSSERIAL_ARDUINO_TCP)
-  #include "ArduinoTcpHardware.h"
-#elif defined(ROSSERIAL_ARDUINO_BLUETOOTH)
-  #include "ArduinoBluetoothHardware.h"
-#else
-  #include "ArduinoHardware.h"
+#if not defined(ESP32)
+  #error ARDUINO BLUETOOTH HARDWARE CURRENTLY SUPPORT ONLY ESP32
 #endif
 
-namespace ros
-{
-#if defined(__AVR_ATmega8__) or defined(__AVR_ATmega168__)
-  /* downsize our buffers */
-  typedef NodeHandle_<ArduinoHardware, 6, 6, 150, 150> NodeHandle;
+#include <Arduino.h>
+#include "BluetoothSerial.h"
 
-#elif defined(__AVR_ATmega328P__)
+class ArduinoHardware {
+public:
+  ArduinoHardware()
+  {
+  }
 
-  typedef NodeHandle_<ArduinoHardware, 25, 25, 280, 280> NodeHandle;
+  void init()
+  {
+    bluetooth_serial.begin("ROSSERIAL_BLUETOOTH");
+  }
 
-#elif defined(SPARK)
+  void init(char *name)
+  {
+    bluetooth_serial.begin(name);
+  }
 
-  typedef NodeHandle_<ArduinoHardware, 10, 10, 2048, 2048> NodeHandle;
+  int read(){
+    return bluetooth_serial.read();
+  }
 
-#else
+  void write(const uint8_t* data, int length)
+  {
+    bluetooth_serial.write(data, length);
+  }
 
-  typedef NodeHandle_<ArduinoHardware> NodeHandle; // default 25, 25, 512, 512
+  unsigned long time()
+  {
+    return millis();
+  }
 
-#endif
-}
+protected:
+  BluetoothSerial bluetooth_serial;
+};
 
 #endif
