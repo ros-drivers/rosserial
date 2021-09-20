@@ -9,6 +9,7 @@
  *   pair <MAC address>
  *   trust <MAC address>
  *   connect <MAC address>
+ *   info <MAC address> # check if successfully connected
  * After connect this device from PC, bind your device to serial device.
  *   sudo rfcomm bind 1 <MAC Address of your device>
  *   sudo stty -F /dev/rfcomm1 57600 cs8
@@ -16,7 +17,7 @@
  *   rosrun rosserial_python serial_node.py _port:=/dev/rfcomm1 _baud:=57600
  */
 
-#define ROSSERIAL_ARDUINO_BLUETOOTH
+#define ROSSERIAL_ARDUINO_BLUETOOTH // set this if you use rosserial over bluetooth
 
 #include <Arduino.h>
 #include <ros.h>
