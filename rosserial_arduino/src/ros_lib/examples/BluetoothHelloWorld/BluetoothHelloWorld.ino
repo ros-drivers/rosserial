@@ -2,7 +2,14 @@
  * rosserial Publisher Example with ArduinoBluetoothHardware
  * Prints "hello world!"
  * This intends to be connected from bluetooth interface of host PC.
- * After pairing and trusting this device from PC, bind your device to serial device.
+ * First pair and connect to your esp32 after burning firmware.
+ *   bluetoothctl
+ *   scan on # check MAC address
+ *   scan off
+ *   pair <MAC address>
+ *   trust <MAC address>
+ *   connect <MAC address>
+ * After connect this device from PC, bind your device to serial device.
  *   sudo rfcomm bind 1 <MAC Address of your device>
  *   sudo stty -F /dev/rfcomm1 57600 cs8
  * then you can now connect rosserial host node to serial device
