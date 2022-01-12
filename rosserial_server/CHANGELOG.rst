@@ -2,6 +2,14 @@
 Changelog for package rosserial_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.7 (2017-11-29)
+------------------
+* Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
+* Contributors: Bei Chen Liu
+
+0.7.6 (2017-03-01)
+------------------
+
 0.7.5 (2016-11-22)
 ------------------
 * Fixing build errors for boost >=1.60 (`#226 <https://github.com/ros-drivers/rosserial/issues/226>`_) (`#250 <https://github.com/ros-drivers/rosserial/issues/250>`_)

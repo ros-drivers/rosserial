@@ -1,0 +1,17 @@
+<package>
+  <name>rosserial_vex_v5</name>
+  <version>0.7.7</version>
+  <description>
+    rosserial for the VEX Cortex V5 Robot Brain platform.
+  </description>
+  <author>Cannon</author>
+  <maintainer email="canyonturtle@gmail.com">Canyon Turtle</maintainer>
+  <license>BSD</license>
+  <!--<url>http://ros.org/wiki/rosserial_arduino</url>-->
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>rosserial_client</run_depend>
+  <run_depend>rosserial_python</run_depend>
+</package>

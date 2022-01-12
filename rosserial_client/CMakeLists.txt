@@ -3,17 +3,10 @@ project(rosserial_client)
 
 find_package(catkin REQUIRED)
 catkin_package(
-  CFG_EXTRAS rosserial_client-extras.cmake
+  CFG_EXTRAS ${PROJECT_NAME}-extras.cmake
 )
 
 catkin_python_setup()
-
-install(DIRECTORY src/ros_lib
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
-)
-install(PROGRAMS scripts/make_libraries
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rosserial_msgs REQUIRED)
@@ -21,3 +14,18 @@ if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(float64_test test/float64_test.cpp)
   catkin_add_gtest(subscriber_test test/subscriber_test.cpp)
 endif()
+
+install(
+  DIRECTORY src/ros_lib
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
+)
+
+install(
+  PROGRAMS scripts/make_libraries
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+catkin_install_python(
+  PROGRAMS src/${PROJECT_NAME}/make_library.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

@@ -53,10 +53,10 @@ class MessageInfoService(object):
   def __init__(self):
     rospy.init_node("message_info_service")
     rospy.loginfo("rosserial message_info_service node")
-    self.service = rospy.Service("message_info", RequestMessageInfo, self._message_info_cb)
-    self.serviceInfoService = rospy.Service("service_info", RequestServiceInfo, self._service_info_cb)
     self.message_cache = {}
     self.service_cache = {}
+    self.service = rospy.Service("message_info", RequestMessageInfo, self._message_info_cb)
+    self.serviceInfoService = rospy.Service("service_info", RequestServiceInfo, self._service_info_cb)
 
   def _message_info_cb(self, req):
     package_message = tuple(req.type.split("/"))

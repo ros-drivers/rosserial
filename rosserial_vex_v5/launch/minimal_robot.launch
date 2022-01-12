@@ -1,0 +1,17 @@
+<launch>
+  <!-- the primary port that allows rosserial to function -->
+  <arg name="mainport" default="/dev/ttyACM1" />
+  <arg name="mainbaud" default="57600" />
+
+  <!-- the degug port, using screen to interface with -->
+  <!-- <arg name="debugport" default="/dev/ttyUSB0" /> -->
+  <!-- <arg name="debugbaud" default="57600" /> -->
+
+  <!-- The topic to log, initially set up for the hello world demo -->
+  <arg name="topicstolog" value="chatter" />
+
+  <node name="connector" type="serial_node.py" pkg="rosserial_arduino" output="screen">
+    <param name="port" value="$(arg mainport)" />
+    <param name="baud" value="$(arg mainbaud)" />
+  </node>
+</launch>

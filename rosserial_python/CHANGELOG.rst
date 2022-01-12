@@ -2,6 +2,18 @@
 Changelog for package rosserial_python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.7 (2017-11-29)
+------------------
+* Fix catkin lint errors (`#296 <https://github.com/ros-drivers/rosserial/issues/296>`_)
+* pyserial bug workaround to fix rosserial_test test against SerialClient.py (`#313 <https://github.com/ros-drivers/rosserial/issues/313>`_)
+* Add requestTopics to correct publish before setup (`#308 <https://github.com/ros-drivers/rosserial/issues/308>`_)
+* Contributors: Bei Chen Liu, Tom O'Connell
+
+0.7.6 (2017-03-01)
+------------------
+* Fix typo in serial error message (`#253 <https://github.com/ros-drivers/rosserial/issues/253>`_)
+* Contributors: Jonathan Binney
+
 0.7.5 (2016-11-22)
 ------------------
 
