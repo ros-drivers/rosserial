@@ -1,0 +1,10 @@
+<launch>
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+        <param name="Vthres_UP_L" type="int" value="2700"/>
+        <param name="Vthres_DOWN_L" type="int" value="2600"/>
+        <param name="Vthres_UP_R" type="int" value="2700"/>
+        <param name="Vthres_DOWN_R" type="int" value="2600"/>
+        <param name="port" type="string" value="/dev/ttyACM0"/>
+        <param name="baud" type="int" value="115200"/>
+    </node>
+</launch>
