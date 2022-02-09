@@ -40,35 +40,44 @@
 class V5RS485 {
    public:
     V5RS485(int readPortNum = 19, int writePortNum = 20, int baud = 115200)
-        : readPort(readPortNum, baud),
-          writePort(writePortNum, baud) {}
+        {
+            readPort = new pros::Serial(readPortNum);
+            writePort = new pros::Serial(writePortNum);
+            readPort->set_baudrate(baud);
+            writePort->set_baudrate(baud);
+        }
 
     void init() {
-        pros::delay(10);
-        readPort.flush();
-        writePort.flush();
+        pros::delay(20);
+        readPort->flush();
+        pros::delay(100);
+        writePort->flush();
     }
 
     // read a byte from the serial port. -1 = failure
     int read() { 
-        int read = readPort.read_byte();
+        int32_t read = readPort->read_byte();
+        if(read == PROS_ERR){
+            std::cout << pros::millis() << " Error read " << read << std::endl;
+        } 
         return read;
     }
 
     // write data to the connection to ROS
     void write(uint8_t* data, int length) { 
-        int freeBytes = writePort.get_write_free();
+        int freeBytes = writePort->get_write_free();
 
         if(freeBytes > length) { // Enough bytes free in buffer
-            writePort.write(data, length);
+            writePort->write(data, length);
         } else {
             printf("Serial buffer full!\n");
-            writePort.write(data, freeBytes);
+            writePort->write(data, freeBytes);
             for(int i = freeBytes; i < length; i++) {
-                while(writePort.get_write_free() == 0) {
+                while(writePort->get_write_free() == 0) {
                     pros::delay(5);
                 }
-                writePort.write_byte(data[i]);
+                writePort->write_byte(data[i]);
+                pros::delay(3);
             }
         }
     }
@@ -77,8 +86,9 @@ class V5RS485 {
     unsigned long time() { return pros::c::millis(); }
 
    private:
-    pros::Serial readPort;
-    pros::Serial writePort;
+   //These need to be pointers
+    pros::Serial *readPort = nullptr;
+    pros::Serial *writePort = nullptr;
 };
 
 #endif
