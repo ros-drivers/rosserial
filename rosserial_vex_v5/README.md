@@ -58,7 +58,7 @@ The project can exist anywhere (it does NOT need to be inside the ROS workspace)
 
 ```bash
 source ~/ros-vex-workspace/install/setup.bash
-rosrun rosserial_vex_v5 genscript.sh ~/path/to/prosproject
+rosrun rosserial_vex_v5 genproject.sh ~/path/to/prosproject
 ```
 
 # Examples

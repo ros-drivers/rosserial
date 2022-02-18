@@ -37,10 +37,11 @@
 
 #include "ros_lib/ros/node_handle.h"
 
-#include "ros_lib/V5Hardware.h"
+#include "ros_lib/V5Serial.h"
+#include "ros_lib/V5RS485.h"
 
 namespace ros {
-  typedef NodeHandle_<V5Hardware> NodeHandle;
+  typedef NodeHandle_<V5RS485> NodeHandle;
 }
 
 #endif

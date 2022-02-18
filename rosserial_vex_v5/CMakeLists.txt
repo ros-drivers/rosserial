@@ -18,11 +18,11 @@ install(
 )
 
 install(
-  DIRECTORY launch/
+  DIRECTORY launch/launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-catkin_install_python(
-  PROGRAMS src/${PROJECT_NAME}/make_libraries.py
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+#catkin_install_python(
+#  PROGRAMS src/${PROJECT_NAME}/make_libraries.py
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#)
