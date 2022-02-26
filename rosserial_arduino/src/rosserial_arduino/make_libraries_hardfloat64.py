@@ -33,13 +33,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-THIS_PACKAGE = "rosserial_embeddedlinux"
+THIS_PACKAGE = "rosserial_arduino"
 
 __usage__ = """
-make_libraries.py generates the rosserial library files.  It
-requires the location of your project folder.
+make_libraries.py generates the Arduino rosserial library files.  It
+requires the location of your Arduino sketchbook/libraries folder.
 
-rosrun rosserial_embeddedlinux make_libraries.py <output_path>
+rosrun rosserial_arduino make_libraries_hardfloat64.py <output_path>
 """
 
 import rospkg
@@ -78,8 +78,7 @@ if (len(sys.argv) < 2):
 # get output path
 path = sys.argv[1]
 output_path = os.path.join(sys.argv[1], "ros_lib")
-examples_path = os.path.join(sys.argv[1], "examples")
-print("\nExporting to %s and %s" % (output_path, examples_path))
+print("\nExporting to %s" % output_path)
 
 rospack = rospkg.RosPack()
 
@@ -87,7 +86,6 @@ rospack = rospkg.RosPack()
 shutil.rmtree(output_path, ignore_errors=True)
 shutil.copytree(os.path.join(rospack.get_path(THIS_PACKAGE), "src", "ros_lib"), output_path)
 rosserial_client_copy_files(rospack, output_path)
-shutil.copytree(os.path.join(rospack.get_path(THIS_PACKAGE), "src", "examples"), examples_path)
 
 # generate messages
 rosserial_generate(rospack, output_path, ROS_TO_EMBEDDED_TYPES)

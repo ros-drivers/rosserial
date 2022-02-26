@@ -444,7 +444,7 @@ class SerialClient(object):
         except Exception as e:
             raise IOError("Serial Port read failure: %s" % e)
 
-    def run(self):
+    def run(self, read_wait=True, callback_wait=True):
         """ Forward recieved messages to appropriate publisher. """
 
         # Launch write thread.
@@ -472,7 +472,7 @@ class SerialClient(object):
             # bottom attempts to reconfigure the topics.
             try:
                 with self.read_lock:
-                    if self.port.inWaiting() < 1:
+                    if read_wait and self.port.inWaiting() < 1:
                         time.sleep(0.001)
                         continue
 
@@ -540,7 +540,8 @@ class SerialClient(object):
                     except KeyError:
                         rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
                         self.requestTopics()
-                    time.sleep(0.001)
+                    if callback_wait:
+                        time.sleep(0.001)
                 else:
                     rospy.loginfo("wrong checksum for topic id and msg")
 

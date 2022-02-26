@@ -56,6 +56,16 @@ if __name__=="__main__":
     # TIOCM_DTR_str) line, which causes an IOError, when using simulated port
     fix_pyserial_for_test = rospy.get_param('~fix_pyserial_for_test', False)
 
+    # for cases where waiting for data and/or callbacks is problematic
+    # e.g. when using high speed USB with specific timing constraints
+    fast_read = rospy.get_param('~fast_read', False)
+    if fast_read:
+        read_wait = False
+        callback_wait = False
+    else:
+        read_wait = rospy.get_param('~read_wait', True)
+        callback_wait = rospy.get_param('~callback_wait', True)
+
     # TODO: do we really want command line params in addition to parameter server params?
     sys.argv = rospy.myargv(argv=sys.argv)
     if len(sys.argv) >= 2 :
@@ -65,7 +75,7 @@ if __name__=="__main__":
         rospy.loginfo("Connecting to %s at %d baud" % (port_name, baud))
         try:
             client = SerialClient(port_name, baud, fix_pyserial_for_test=fix_pyserial_for_test, auto_reset_timeout=auto_reset_timeout)
-            client.run()
+            client.run(read_wait, callback_wait)
         except KeyboardInterrupt:
             break
         except SerialException:
