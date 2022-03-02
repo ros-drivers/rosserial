@@ -404,7 +404,8 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
                 COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${COMPILE_FLAGS} ${LIB_DEP_INCLUDES}"
                 LINK_FLAGS "${ARDUINO_LINK_FLAGS} ${LINK_FLAGS}")
 
-    target_link_libraries(${INPUT_NAME} ${ALL_LIBS} "-lc -lm")
+    get_lib_flags(BOARD_LIB_FLAGS ${INPUT_BOARD})
+    target_link_libraries(${INPUT_NAME} ${ALL_LIBS} "${BOARD_LIB_FLAGS}")
 endfunction()
 
 #=============================================================================#
@@ -775,6 +776,49 @@ endfunction()
 #=============================================================================#
 # [PRIVATE/INTERNAL]
 #
+# get_fcpu(FCPU BOARD_ID)
+#
+#       FCPU_VAR -Variable holding output
+#       BOARD_ID - The board id name
+#
+# Sets the the cpu speed for the specified Arduino Board (if not set).
+#
+#=============================================================================#
+function(get_fcpu FCPU_VAR BOARD_ID)
+    set(FCPU)
+    if(DEFINED ${BOARD_ID}.build.f_cpu)
+        set(FCPU "${${BOARD_ID}.build.f_cpu}")
+    elseif(BOARD_ID STREQUAL "teensy41")
+        set(FCPU "600000000")
+    elseif(BOARD_ID STREQUAL "teensyMM")
+        set(FCPU "600000000")
+    elseif(BOARD_ID STREQUAL "teensy40")
+        set(FCPU "600000000")
+    elseif(BOARD_ID STREQUAL "teensy36")
+        set(FCPU "180000000")
+    elseif(BOARD_ID STREQUAL "teensy35")
+        set(FCPU "120000000")
+    elseif(BOARD_ID STREQUAL "teensy31")
+        set(FCPU "72000000")
+    elseif(BOARD_ID STREQUAL "teensy30")
+        set(FCPU "48000000")
+    elseif(BOARD_ID STREQUAL "teensyLC")
+        set(FCPU "48000000")
+    elseif(BOARD_ID STREQUAL "teensypp2")
+        set(FCPU "16000000L")
+    elseif(BOARD_ID STREQUAL "teensy2")
+        set(FCPU "16000000L")
+    else()
+        message(FATAL_ERROR "Failed to set CPU speed for ${BOARD_ID}")
+    endif()
+
+    # output 
+    set(${FCPU_VAR} "${FCPU}" PARENT_SCOPE)
+endfunction()
+
+#=============================================================================#
+# [PRIVATE/INTERNAL]
+#
 # get_arduino_flags(COMPILE_FLAGS LINK_FLAGS BOARD_ID MANUAL)
 #
 #       COMPILE_FLAGS_VAR -Variable holding compiler flags
@@ -786,7 +830,7 @@ endfunction()
 #
 #=============================================================================#
 function(get_arduino_flags COMPILE_FLAGS_VAR LINK_FLAGS_VAR BOARD_ID MANUAL)
-   
+
     set(BOARD_CORE ${${BOARD_ID}.build.core})
     if(BOARD_CORE)
         if(ARDUINO_SDK_VERSION MATCHES "([0-9]+)[.]([0-9]+)")
@@ -804,18 +848,37 @@ function(get_arduino_flags COMPILE_FLAGS_VAR LINK_FLAGS_VAR BOARD_ID MANUAL)
             message("Invalid Arduino SDK Version (${ARDUINO_SDK_VERSION})")
         endif()
 
+        get_fcpu(${BOARD_ID}.build.f_cpu ${BOARD_ID})
+
         # output
-        set(COMPILE_FLAGS "-DF_CPU=${${BOARD_ID}.build.f_cpu} -DARDUINO=${ARDUINO_VERSION_DEFINE} -mmcu=${${BOARD_ID}.build.mcu}")
+        set(COMPILE_FLAGS "-DF_CPU=${${BOARD_ID}.build.f_cpu} -DARDUINO=${ARDUINO_VERSION_DEFINE} -DLAYOUT_US_ENGLISH")
+        if(NOT DEFINED TEENSY)
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} -mmcu=${${BOARD_ID}.build.mcu}")
+        elseif(BOARD_ID STREQUAL "teensy40")
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} -DARDUINO_TEENSY40")
+        elseif(BOARD_ID STREQUAL "teensy41")
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} -DARDUINO_TEENSY41")
+        endif()
+        foreach(CFLAGS common dep cpu defs)
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} ${${BOARD_ID}.build.flags.${CFLAGS}}")
+        endforeach()
         if(DEFINED ${BOARD_ID}.build.vid)
             set(COMPILE_FLAGS "${COMPILE_FLAGS} -DUSB_VID=${${BOARD_ID}.build.vid}")
         endif()
         if(DEFINED ${BOARD_ID}.build.pid)
             set(COMPILE_FLAGS "${COMPILE_FLAGS} -DUSB_PID=${${BOARD_ID}.build.pid}")
         endif()
+        if(DEFINED TEENSY_USB_MODE)
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} -D${${BOARD_ID}.menu.usb.${TEENSY_USB_MODE}.build.usbtype}")
+        endif()
         if(NOT MANUAL)
             set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${BOARD_CORE}.path}\" -I\"${ARDUINO_LIBRARIES_PATH}\"")
         endif()
-        set(LINK_FLAGS "-mmcu=${${BOARD_ID}.build.mcu}")
+        set(LINK_FLAGS "${${BOARD_ID}.build.flags.cpu} ${${BOARD_ID}.build.flags.ld}")
+        string(REPLACE "{build.core.path}" "${${${BOARD_ID}.build.core}.path}" LINK_FLAGS ${LINK_FLAGS})
+        if(NOT DEFINED TEENSY)
+            set(LINK_FLAGS "-mmcu=${${BOARD_ID}.build.mcu} ${LINK_FLAGS}")
+        endif()
         if(ARDUINO_SDK_VERSION VERSION_GREATER 1.0 OR ARDUINO_SDK_VERSION VERSION_EQUAL 1.0)
             if(NOT MANUAL)
                 set(PIN_HEADER ${${${BOARD_ID}.build.variant}.path})
@@ -832,6 +895,33 @@ function(get_arduino_flags COMPILE_FLAGS_VAR LINK_FLAGS_VAR BOARD_ID MANUAL)
     else()
         message(FATAL_ERROR "Invalid Arduino board ID (${BOARD_ID}), aborting.")
     endif()
+endfunction()
+
+#=============================================================================#
+# [PRIVATE/INTERNAL]
+#
+# get_lib_flags(LIB_FLAGS BOARD_ID)
+#
+#       LIB_FLAGS_VAR -Variable holding library flags
+#       BOARD_ID - The board id name
+#
+# Configures the the build settings for the specified Arduino Board.
+#
+#=============================================================================#
+function(get_lib_flags LIB_FLAGS_VAR BOARD_ID)
+
+    set(BOARD_LIB_FLAGS)
+    if(DEFINED ${BOARD_ID}.build.flags.libs)
+        set(BOARD_LIB_FLAGS "${${BOARD_ID}.build.flags.libs}")
+        if(DEFINED TEENSY AND EXISTS "${ARDUINO_SDK_PATH}/hardware/tools/arm/arm-none-eabi/lib")
+            set(BOARD_LIB_FLAGS "-L\"${ARDUINO_SDK_PATH}/hardware/tools/arm/arm-none-eabi/lib\" ${BOARD_LIB_FLAGS}")
+        endif()
+    else()
+        set(BOARD_LIB_FLAGS "-lc -lm")
+    endif()
+
+    # output 
+    set(${LIB_FLAGS_VAR} "${BOARD_LIB_FLAGS}" PARENT_SCOPE)
 endfunction()
 
 #=============================================================================#
@@ -1080,7 +1170,8 @@ function(setup_arduino_target TARGET_NAME BOARD_ID ALL_SRCS ALL_LIBS COMPILE_FLA
     set_target_properties(${TARGET_NAME} PROPERTIES
                 COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${COMPILE_FLAGS}"
                 LINK_FLAGS "${ARDUINO_LINK_FLAGS} ${LINK_FLAGS}")
-    target_link_libraries(${TARGET_NAME} ${ALL_LIBS} "-lc -lm")
+    get_lib_flags(TARGET_LIB_FLAGS ${BOARD_ID})
+    target_link_libraries(${TARGET_NAME} ${ALL_LIBS} "${TARGET_LIB_FLAGS}")
 
     if(NOT EXECUTABLE_OUTPUT_PATH)
       set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
@@ -1502,6 +1593,41 @@ endfunction()
 #=============================================================================#
 # [PRIVATE/INTERNAL]
 #
+# detect_teensyduino_version(VAR_NAME)
+#
+#       VAR_NAME - Variable name where the detected version will be saved
+#
+# Detects the Teensyduino Version based on the teensyduino.txt file. The
+# following variables will be generated:
+#
+#    ${VAR_NAME}         -> the full version (major.minor.patch)
+#    ${VAR_NAME}_MAJOR   -> the major version
+#    ${VAR_NAME}_MINOR   -> the minor version
+#
+#=============================================================================#
+function(detect_teensyduino_version VAR_NAME)
+    if(TEENSYDUINO_VERSION_PATH)
+        file(READ ${TEENSYDUINO_VERSION_PATH} RAW_VERSION)
+        if("${RAW_VERSION}" MATCHES "[ ]*([0-9]+[.][0-9]+)")
+            set(PARSED_VERSION ${CMAKE_MATCH_1})
+        endif()
+
+        if(NOT PARSED_VERSION STREQUAL "")
+            string(REPLACE "." ";" SPLIT_VERSION ${PARSED_VERSION})
+            list(GET SPLIT_VERSION 0 SPLIT_VERSION_MAJOR)
+            list(GET SPLIT_VERSION 1 SPLIT_VERSION_MINOR)
+
+            set(${VAR_NAME}       "${PARSED_VERSION}"      PARENT_SCOPE)
+            set(${VAR_NAME}_MAJOR "${SPLIT_VERSION_MAJOR}" PARENT_SCOPE)
+            set(${VAR_NAME}_MINOR "${SPLIT_VERSION_MINOR}" PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
+
+#=============================================================================#
+# [PRIVATE/INTERNAL]
+#
 # load_arduino_style_settings(SETTINGS_LIST SETTINGS_PATH)
 #
 #      SETTINGS_LIST - Variable name of settings list
@@ -1514,9 +1640,9 @@ endfunction()
 #
 # Settings have to following format:
 #
-#      entry.setting[.subsetting] = value
+#      entry.setting[[.subsetting].subsubsetting] = value
 #
-# where [.subsetting] is optional
+# where [[.subsetting].subsubsetting] is optional
 #
 # For example, the following settings:
 #
@@ -1539,8 +1665,9 @@ endfunction()
 #      set(uno.build.SUBSETTINGS mcu core)               # List of sub-settings for uno.build
 # 
 #  The ${ENTRY_NAME}.SETTINGS variable lists all settings for the entry, while
-# ${ENTRY_NAME}.SUBSETTINGS variables lists all settings for a sub-setting of
-# a entry setting pair.
+# ${ENTRY_NAME}.${ENTRY_SETTING}.SUBSETTINGS variables list all settings for a
+# sub-setting of an entry setting pair. Entries with sub-sub-settings will generate
+# ${ENTRY_NAME}.${ENTRY_SETTING}.${ENTRY_SUBSETTING}.SUBSUBSETTINGS lists as well.
 #
 #  These variables are generated in order to be able to  programatically traverse
 # all settings (for a example see print_board_settings() function).
@@ -1552,16 +1679,16 @@ function(LOAD_ARDUINO_STYLE_SETTINGS SETTINGS_LIST SETTINGS_PATH)
     file(STRINGS ${SETTINGS_PATH} FILE_ENTRIES)  # Settings file split into lines
 
     foreach(FILE_ENTRY ${FILE_ENTRIES})
-        if("${FILE_ENTRY}" MATCHES "^[^#]+=.*")
-            string(REGEX MATCH "^[^=]+" SETTING_NAME  ${FILE_ENTRY})
-            string(REGEX MATCH "[^=]+$" SETTING_VALUE ${FILE_ENTRY})
+        if("${FILE_ENTRY}" MATCHES "^([^#=]+)=(.*)")
+            set(SETTING_NAME ${CMAKE_MATCH_1})
+            set(SETTING_VALUE ${CMAKE_MATCH_2})
             string(REPLACE "." ";" ENTRY_NAME_TOKENS ${SETTING_NAME})
             string(STRIP "${SETTING_VALUE}" SETTING_VALUE)
 
             list(LENGTH ENTRY_NAME_TOKENS ENTRY_NAME_TOKENS_LEN)
 
             # Add entry to settings list if it does not exist
-            list(GET ENTRY_NAME_TOKENS 0 ENTRY_NAME)
+            list(POP_FRONT ENTRY_NAME_TOKENS ENTRY_NAME)
             list(FIND ${SETTINGS_LIST} ${ENTRY_NAME} ENTRY_NAME_INDEX)
             if(ENTRY_NAME_INDEX LESS 0)
                 # Add entry to main list
@@ -1570,7 +1697,7 @@ function(LOAD_ARDUINO_STYLE_SETTINGS SETTINGS_LIST SETTINGS_PATH)
 
             # Add entry setting to entry settings list if it does not exist
             set(ENTRY_SETTING_LIST ${ENTRY_NAME}.SETTINGS)
-            list(GET ENTRY_NAME_TOKENS 1 ENTRY_SETTING)
+            list(POP_FRONT ENTRY_NAME_TOKENS ENTRY_SETTING)
             list(FIND ${ENTRY_SETTING_LIST} ${ENTRY_SETTING} ENTRY_SETTING_INDEX)
             if(ENTRY_SETTING_INDEX LESS 0)
                 # Add setting to entry
@@ -1581,10 +1708,10 @@ function(LOAD_ARDUINO_STYLE_SETTINGS SETTINGS_LIST SETTINGS_PATH)
 
             set(FULL_SETTING_NAME ${ENTRY_NAME}.${ENTRY_SETTING})
 
-            # Add entry sub-setting to entry sub-settings list if it does not exists
+            # Add entry sub-setting to entry sub-settings list if it does not exist
             if(ENTRY_NAME_TOKENS_LEN GREATER 2)
                 set(ENTRY_SUBSETTING_LIST ${ENTRY_NAME}.${ENTRY_SETTING}.SUBSETTINGS)
-                list(GET ENTRY_NAME_TOKENS 2 ENTRY_SUBSETTING)
+                list(POP_FRONT ENTRY_NAME_TOKENS ENTRY_SUBSETTING)
                 list(FIND ${ENTRY_SUBSETTING_LIST} ${ENTRY_SUBSETTING} ENTRY_SUBSETTING_INDEX)
                 if(ENTRY_SUBSETTING_INDEX LESS 0)
                     list(APPEND ${ENTRY_SUBSETTING_LIST} ${ENTRY_SUBSETTING})
@@ -1592,6 +1719,19 @@ function(LOAD_ARDUINO_STYLE_SETTINGS SETTINGS_LIST SETTINGS_PATH)
                         CACHE INTERNAL "Arduino ${ENTRY_NAME} Board sub-settings list")
                 endif()
                 set(FULL_SETTING_NAME ${FULL_SETTING_NAME}.${ENTRY_SUBSETTING})
+            endif()
+
+            # Add entry sub-sub-setting to entry sub-sub-settings list if it does not exist
+            if(ENTRY_NAME_TOKENS_LEN GREATER 3)
+                set(ENTRY_SUBSUBSETTING_LIST ${ENTRY_NAME}.${ENTRY_SETTING}.${ENTRY_SUBSETTING}.SUBSUBSETTINGS)
+                list(JOIN ENTRY_NAME_TOKENS "." ENTRY_SUBSUBSETTING)
+                list(FIND ${ENTRY_SUBSUBSETTING_LIST} ${ENTRY_SUBSUBSETTING} ENTRY_SUBSUBSETTING_INDEX)
+                if(ENTRY_SUBSUBSETTING_INDEX LESS 0)
+                    list(APPEND ${ENTRY_SUBSUBSETTING_LIST} ${ENTRY_SUBSUBSETTING})
+                    set(${ENTRY_SUBSUBSETTING_LIST}  ${${ENTRY_SUBSUBSETTING_LIST}}
+                        CACHE INTERNAL "Arduino ${ENTRY_NAME} Board sub-sub-settings list")
+                endif()
+                set(FULL_SETTING_NAME ${FULL_SETTING_NAME}.${ENTRY_SUBSUBSETTING})
             endif()
 
             # Save setting value
@@ -2080,16 +2220,23 @@ endfunction()
 
 
 #=============================================================================#
+#                        Optimization Flags                                   
+#=============================================================================#
+if (NOT DEFINED ARDUINO_OPT_FLAGS)
+    set(ARDUINO_OPT_FLAGS "-Os")
+endif (NOT DEFINED ARDUINO_OPT_FLAGS)
+
+#=============================================================================#
 #                              C Flags                                        
 #=============================================================================#
 if (NOT DEFINED ARDUINO_C_FLAGS)
     set(ARDUINO_C_FLAGS "-mcall-prologues -ffunction-sections -fdata-sections")
 endif (NOT DEFINED ARDUINO_C_FLAGS)
-set(CMAKE_C_FLAGS                "-g -Os       ${ARDUINO_C_FLAGS}"    CACHE STRING "")
-set(CMAKE_C_FLAGS_DEBUG          "-g           ${ARDUINO_C_FLAGS}"    CACHE STRING "")
-set(CMAKE_C_FLAGS_MINSIZEREL     "-Os -DNDEBUG ${ARDUINO_C_FLAGS}"    CACHE STRING "")
-set(CMAKE_C_FLAGS_RELEASE        "-Os -DNDEBUG -w ${ARDUINO_C_FLAGS}" CACHE STRING "")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -g       -w ${ARDUINO_C_FLAGS}" CACHE STRING "")
+set(CMAKE_C_FLAGS                "${ARDUINO_OPT_FLAGS} -g       ${ARDUINO_C_FLAGS}"    CACHE STRING "")
+set(CMAKE_C_FLAGS_DEBUG          "-Og                  -g       ${ARDUINO_C_FLAGS}"    CACHE STRING "")
+set(CMAKE_C_FLAGS_MINSIZEREL     "${ARDUINO_OPT_FLAGS} -DNDEBUG ${ARDUINO_C_FLAGS}"    CACHE STRING "")
+set(CMAKE_C_FLAGS_RELEASE        "${ARDUINO_OPT_FLAGS} -DNDEBUG -w ${ARDUINO_C_FLAGS}" CACHE STRING "")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${ARDUINO_OPT_FLAGS} -g       -w ${ARDUINO_C_FLAGS}" CACHE STRING "")
 
 #=============================================================================#
 #                             C++ Flags                                       
@@ -2097,11 +2244,11 @@ set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -g       -w ${ARDUINO_C_FLAGS}" CACHE STRI
 if (NOT DEFINED ARDUINO_CXX_FLAGS)
     set(ARDUINO_CXX_FLAGS "${ARDUINO_C_FLAGS} -fno-exceptions")
 endif (NOT DEFINED ARDUINO_CXX_FLAGS)
-set(CMAKE_CXX_FLAGS                "-g -Os       ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_DEBUG          "-g           ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELEASE        "-Os -DNDEBUG ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os -g       ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS                "${ARDUINO_OPT_FLAGS} -g       ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG          "-Og                  -g       ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_MINSIZEREL     "${ARDUINO_OPT_FLAGS} -DNDEBUG ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELEASE        "${ARDUINO_OPT_FLAGS} -DNDEBUG ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${ARDUINO_OPT_FLAGS} -g       ${ARDUINO_CXX_FLAGS}" CACHE STRING "")
 
 #=============================================================================#
 #                       Executable Linker Flags                               #
@@ -2237,3 +2384,69 @@ if(NOT ARDUINO_FOUND AND ARDUINO_SDK_PATH)
         AVRSIZE_PROGRAM)
 endif()
 
+if(DEFINED TEENSY)
+    register_hardware_platform(${ARDUINO_SDK_PATH}/hardware/teensy/)
+
+    find_file(TEENSY_LIBRARIES_PATH
+        NAMES libraries
+        PATHS ${TEENSY_PLATFORM_PATH}
+        DOC "Path to directory containing the Teensy libraries.")
+
+    find_file(TEENSYDUINO_VERSION_PATH
+        NAMES lib/teensyduino.txt
+        PATHS ${ARDUINO_SDK_PATH}
+        DOC "Path to Teensyduino version file.")
+
+    # TODO: actually use this or maybe hardware/tools/teensy_size
+    # TODO: also allow upload
+    find_program(ARMSIZE_PROGRAM
+        NAMES arm-none-eabi-size)
+
+    if(NOT CMAKE_OBJCOPY)
+        find_program(ARMOBJCOPY_PROGRAM
+                     arm-none-eabi-objcopy)
+        set(ADDITIONAL_REQUIRED_VARS ARMOBJCOPY_PROGRAM)
+        set(CMAKE_OBJCOPY ${ARMOBJCOPY_PROGRAM})
+    endif(NOT CMAKE_OBJCOPY)
+
+    # Ensure that all required paths are found
+    required_variables(VARS
+        TEENSY_PLATFORM_PATH
+        TEENSY_CORES_PATH
+        TEENSY_LIBRARIES_PATH
+        TEENSY_BOARDS_PATH
+        TEENSYDUINO_VERSION_PATH
+        ARMSIZE_PROGRAM
+        ${ADDITIONAL_REQUIRED_VARS}
+        MSG "Invalid Arduino SDK path (${ARDUINO_SDK_PATH}).\n")
+
+    detect_teensyduino_version(TEENSYDUINO_VERSION)
+    set(TEENSYDUINO_VERSION       ${TEENSYDUINO_VERSION}       CACHE STRING "Teensyduino Version")
+    set(TEENSYDUINO_VERSION_MAJOR ${TEENSYDUINO_VERSION_MAJOR} CACHE STRING "Teensyduino Major Version")
+    set(TEENSYDUINO_VERSION_MINOR ${TEENSYDUINO_VERSION_MINOR} CACHE STRING "Teensyduino Minor Version")
+
+    message(STATUS "Teensyduino version ${TEENSYDUINO_VERSION}: ${ARDUINO_SDK_PATH}")
+
+    # TODO update
+    setup_arduino_size_script(ARDUINO_SIZE_SCRIPT)
+    set(ARDUINO_SIZE_SCRIPT ${ARDUINO_SIZE_SCRIPT} CACHE INTERNAL "Arduino Size Script")
+
+    #print_board_list()
+    #print_programmer_list()
+
+    if(NOT DEFINED TEENSY_USB_MODE)
+        set(TEENSY_USB_MODE "SERIAL")
+    endif()
+    string(REPLACE "_" "" TEENSY_USB_MODE ${TEENSY_USB_MODE})
+    string(TOLOWER ${TEENSY_USB_MODE} TEENSY_USB_MODE)
+    set(TEENSY_USB_MODE "${TEENSY_USB_MODE}" CACHE STRING "What kind of USB device the Teensy should emulate")
+    #set_property(CACHE TEENSY_USB_MODE PROPERTY STRINGS serial hid serialhid midi rawhid flightsim)
+
+    mark_as_advanced(
+        TEENSY_PLATFORM_PATH
+        TEENSY_CORES_PATH
+        TEENSY_LIBRARIES_PATH
+        TEENSY_BOARDS_PATH
+        TEENSYDUINO_VERSION_PATH
+        ARMSIZE_PROGRAM)
+endif()
