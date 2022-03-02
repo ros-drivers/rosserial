@@ -51,11 +51,11 @@ public:
     nh.advertise(publisher_);
   }
 
-  void sendTransform(geometry_msgs::TransformStamped &transform)
+  int sendTransform(geometry_msgs::TransformStamped &transform)
   {
     internal_msg.transforms_length = 1;
     internal_msg.transforms = &transform;
-    publisher_.publish(&internal_msg);
+    return publisher_.publish(&internal_msg);
   }
 
 private:
