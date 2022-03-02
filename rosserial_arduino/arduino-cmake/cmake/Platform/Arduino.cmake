@@ -661,34 +661,39 @@ function(REGISTER_HARDWARE_PLATFORM PLATFORM_PATH)
             find_file(${PLATFORM}_CORES_PATH
                   NAMES cores
                   PATHS ${PLATFORM_PATH}
+                  PATH_SUFFIXES avr
                   DOC "Path to directory containing the Arduino core sources.")
 
             find_file(${PLATFORM}_VARIANTS_PATH
                   NAMES variants
                   PATHS ${PLATFORM_PATH}
+                  PATH_SUFFIXES avr
                   DOC "Path to directory containing the Arduino variant sources.")
 
             find_file(${PLATFORM}_BOOTLOADERS_PATH
                   NAMES bootloaders
                   PATHS ${PLATFORM_PATH}
+                  PATH_SUFFIXES avr
                   DOC "Path to directory containing the Arduino bootloader images and sources.")
 
             find_file(${PLATFORM}_PROGRAMMERS_PATH
                 NAMES programmers.txt
                 PATHS ${PLATFORM_PATH}
+                PATH_SUFFIXES avr
                 DOC "Path to Arduino programmers definition file.")
 
             find_file(${PLATFORM}_BOARDS_PATH
                 NAMES boards.txt
                 PATHS ${PLATFORM_PATH}
+                PATH_SUFFIXES avr
                 DOC "Path to Arduino boards definition file.")
 
             if(${PLATFORM}_BOARDS_PATH)
-                load_arduino_style_settings(${PLATFORM}_BOARDS "${PLATFORM_PATH}/boards.txt")
+                load_arduino_style_settings(${PLATFORM}_BOARDS "${${PLATFORM}_BOARDS_PATH}")
             endif()
 
             if(${PLATFORM}_PROGRAMMERS_PATH)
-                load_arduino_style_settings(${PLATFORM}_PROGRAMMERS "${ARDUINO_PROGRAMMERS_PATH}")
+                load_arduino_style_settings(${PLATFORM}_PROGRAMMERS "${${PLATFORM}_PROGRAMMERS_PATH}")
             endif()
 
             if(${PLATFORM}_VARIANTS_PATH)
@@ -1260,7 +1265,11 @@ function(setup_arduino_bootloader_upload TARGET_NAME BOARD_ID PORT AVRDUDE_FLAGS
     set(UPLOAD_TARGET ${TARGET_NAME}-upload)
     set(AVRDUDE_ARGS)
 
-    setup_arduino_bootloader_args(${BOARD_ID} ${TARGET_NAME} ${PORT} "${AVRDUDE_FLAGS}" AVRDUDE_ARGS)
+    if(NOT DEFINED TEENSY)
+        setup_arduino_bootloader_args(${BOARD_ID} ${TARGET_NAME} ${PORT} "${AVRDUDE_FLAGS}" AVRDUDE_ARGS)
+    else()
+        set(AVRDUDE_ARGS "--mcu=${${BOARD_ID}.build.mcu}" ${AVRDUDE_FLAGS})
+    endif()
 
     if(NOT AVRDUDE_ARGS)
         message("Could not generate default avrdude bootloader args, aborting!")
@@ -1272,12 +1281,20 @@ function(setup_arduino_bootloader_upload TARGET_NAME BOARD_ID PORT AVRDUDE_FLAGS
     endif()
     set(TARGET_PATH ${EXECUTABLE_OUTPUT_PATH}/${TARGET_NAME})
 
-    list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex")
-    list(APPEND AVRDUDE_ARGS "-Ueeprom:w:${TARGET_PATH}.eep:i")
-    add_custom_target(${UPLOAD_TARGET}
-                     ${ARDUINO_AVRDUDE_PROGRAM} 
-                     ${AVRDUDE_ARGS}
-                     DEPENDS ${TARGET_NAME})
+    if(DEFINED TEENSY)
+        list(APPEND AVRDUDE_ARGS "${TARGET_PATH}.hex")
+        add_custom_target(${UPLOAD_TARGET}
+                         ${TEENSY_LOADER_CLI_PROGRAM} 
+                         ${AVRDUDE_ARGS}
+                         DEPENDS ${TARGET_NAME})
+    else()
+        list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex")
+        list(APPEND AVRDUDE_ARGS "-Ueeprom:w:${TARGET_PATH}.eep:i")
+        add_custom_target(${UPLOAD_TARGET}
+                         ${ARDUINO_AVRDUDE_PROGRAM} 
+                         ${AVRDUDE_ARGS}
+                         DEPENDS ${TARGET_NAME})
+    endif()
 
     # Global upload target
     if(NOT TARGET upload)
@@ -2012,6 +2029,21 @@ endfunction()
 function(SETUP_ARDUINO_SIZE_SCRIPT OUTPUT_VAR)
     set(ARDUINO_SIZE_SCRIPT_PATH ${CMAKE_BINARY_DIR}/CMakeFiles/FirmwareSize.cmake)
 
+    if(DEFINED TEENSY)
+
+    file(WRITE ${ARDUINO_SIZE_SCRIPT_PATH} "
+        set(TEENSYSIZE_PROGRAM ${TEENSYSIZE_PROGRAM})
+ 
+        execute_process(COMMAND \${TEENSYSIZE_PROGRAM} \${FIRMWARE_IMAGE}
+                        OUTPUT_VARIABLE SIZE_OUTPUT)
+
+
+        string(STRIP \"\${SIZE_OUTPUT}\" RAW_SIZE_OUTPUT)
+        message(\"\${RAW_SIZE_OUTPUT}\\n\")
+    ")
+
+    else()
+
     file(WRITE ${ARDUINO_SIZE_SCRIPT_PATH} "
         set(AVRSIZE_PROGRAM ${AVRSIZE_PROGRAM})
         set(AVRSIZE_FLAGS -C --mcu=\${MCU})
@@ -2088,6 +2120,8 @@ function(SETUP_ARDUINO_SIZE_SCRIPT OUTPUT_VAR)
             message(\"\${RAW_SIZE_OUTPUT}\")
         endif()
     ")
+
+    endif(DEFINED TEENSY)
 
     set(${OUTPUT_VAR} ${ARDUINO_SIZE_SCRIPT_PATH} PARENT_SCOPE)
 endfunction()
@@ -2194,6 +2228,8 @@ function(REQUIRED_VARIABLES)
     foreach(VAR ${INPUT_VARS})
         if ("${${VAR}}" STREQUAL "")
             message(FATAL_ERROR "${VAR} not set: ${INPUT_MSG}")
+        elseif("${${VAR}}" STREQUAL "${VAR}-NOTFOUND")
+            message(FATAL_ERROR "${VAR} file not found: ${INPUT_MSG}")
         endif()
     endforeach()
 endfunction()
@@ -2390,6 +2426,7 @@ if(DEFINED TEENSY)
     find_file(TEENSY_LIBRARIES_PATH
         NAMES libraries
         PATHS ${TEENSY_PLATFORM_PATH}
+        PATH_SUFFIXES avr
         DOC "Path to directory containing the Teensy libraries.")
 
     find_file(TEENSYDUINO_VERSION_PATH
@@ -2397,10 +2434,19 @@ if(DEFINED TEENSY)
         PATHS ${ARDUINO_SDK_PATH}
         DOC "Path to Teensyduino version file.")
 
-    # TODO: actually use this or maybe hardware/tools/teensy_size
-    # TODO: also allow upload
-    find_program(ARMSIZE_PROGRAM
-        NAMES arm-none-eabi-size)
+    find_file(TEENSY_TOOLS_PATH
+        NAMES hardware/tools
+        PATHS ${ARDUINO_SDK_PATH}
+        DOC "Path to Teensy tools.")
+
+    find_program(TEENSY_LOADER_CLI_PROGRAM
+        NAMES teensy_loader_cli
+        PATHS ${TEENSY_TOOLS_PATH}
+        DOC "Path to teensy_loader_cli programmer binary.")
+
+    find_program(TEENSYSIZE_PROGRAM
+        NAMES teensy_size
+        PATHS ${TEENSY_TOOLS_PATH})
 
     if(NOT CMAKE_OBJCOPY)
         find_program(ARMOBJCOPY_PROGRAM
@@ -2416,7 +2462,9 @@ if(DEFINED TEENSY)
         TEENSY_LIBRARIES_PATH
         TEENSY_BOARDS_PATH
         TEENSYDUINO_VERSION_PATH
-        ARMSIZE_PROGRAM
+        TEENSY_TOOLS_PATH
+        TEENSY_LOADER_CLI_PROGRAM
+        TEENSYSIZE_PROGRAM
         ${ADDITIONAL_REQUIRED_VARS}
         MSG "Invalid Arduino SDK path (${ARDUINO_SDK_PATH}).\n")
 
@@ -2427,7 +2475,6 @@ if(DEFINED TEENSY)
 
     message(STATUS "Teensyduino version ${TEENSYDUINO_VERSION}: ${ARDUINO_SDK_PATH}")
 
-    # TODO update
     setup_arduino_size_script(ARDUINO_SIZE_SCRIPT)
     set(ARDUINO_SIZE_SCRIPT ${ARDUINO_SIZE_SCRIPT} CACHE INTERNAL "Arduino Size Script")
 
@@ -2448,5 +2495,7 @@ if(DEFINED TEENSY)
         TEENSY_LIBRARIES_PATH
         TEENSY_BOARDS_PATH
         TEENSYDUINO_VERSION_PATH
-        ARMSIZE_PROGRAM)
+        TEENSY_TOOLS_PATH
+        TEENSY_LOADER_CLI_PROGRAM
+        TEENSYSIZE_PROGRAM)
 endif()

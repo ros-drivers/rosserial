@@ -4,6 +4,10 @@ if(EXISTS  ${CMAKE_CURRENT_LIST_DIR}/Platform/Arduino.cmake)
 endif()
  
 include(ArduinoToolchain)
+
+list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${ARDUINO_SDK_PATH}/hardware/tools/arm)
+list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${ARDUINO_SDK_PATH}/hardware/tools/arm/arm-none-eabi)
+
 set(TEENSY "" CACHE STRING "Using one of the Teensy boards")
 set(CMAKE_SYSTEM_NAME Arduino)
 set(CMAKE_SYSTEM_PROCESSOR arm)
