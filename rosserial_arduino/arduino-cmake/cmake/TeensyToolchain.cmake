@@ -9,7 +9,6 @@ list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${ARDUINO_SDK_PATH}/hardware/tools/arm)
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${ARDUINO_SDK_PATH}/hardware/tools/arm/arm-none-eabi)
 
 set(TEENSY "" CACHE STRING "Using one of the Teensy boards")
-set(CMAKE_SYSTEM_NAME Arduino)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_CROSSCOMPILING 1)
 
@@ -27,6 +26,3 @@ set(CMAKE_EXE_LINKER_FLAGS "--specs=nosys.specs" CACHE INTERNAL "")
 
 set(ARDUINO_C_FLAGS "-ffunction-sections -fdata-sections")
 set(ARDUINO_CXX_FLAGS "-std=gnu++14 -fno-exceptions -fpermissive -fno-rtti -fno-threadsafe-statics -felide-constructors -Wno-error=narrowing")
-set(ARDUINO_OPT_FLAGS "-O2")
-
-include(Platform/Arduino)
