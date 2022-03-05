@@ -54,6 +54,16 @@ if __name__=="__main__":
     # TIOCM_DTR_str) line, which causes an IOError, when using simulated port
     fix_pyserial_for_test = rospy.get_param('~fix_pyserial_for_test', False)
 
+    # for cases where waiting for data and/or callbacks is problematic
+    # e.g. when using high speed USB with specific timing constraints
+    fast_read = rospy.get_param('~fast_read', False)
+    if fast_read:
+        read_wait = False
+        callback_wait = False
+    else:
+        read_wait = rospy.get_param('~read_wait', True)
+        callback_wait = rospy.get_param('~callback_wait', True)
+
     # Allows for assigning local parameters for tcp_port and fork_server with
     # global parameters as fallback to prevent breaking changes 
     if(rospy.has_param('~tcp_port')):
@@ -93,7 +103,7 @@ if __name__=="__main__":
             rospy.loginfo("Connecting to %s at %d baud" % (port_name,baud) )
             try:
                 client = SerialClient(port_name, baud, fix_pyserial_for_test=fix_pyserial_for_test)
-                client.run()
+                client.run(read_wait, callback_wait)
             except KeyboardInterrupt:
                 break
             except SerialException:

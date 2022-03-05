@@ -371,14 +371,34 @@ public:
     last_sync_receive_time = hardware_.time();
   }
 
+  Time then(Time time)
+  {
+    time.sec += sec_offset;
+    time.nsec += nsec_offset;
+    normalizeSecNSec(time.sec, time.nsec);
+    return time;
+  }
+
+  Time then(uint32_t sec, uint32_t nsec)
+  {
+    return then(Time(sec, nsec));
+  }
+
+  Time then(uint32_t ms)
+  {
+    return then(ms / 1000, (ms % 1000) * 1000000UL);
+  }
+
+  Time then(double sec)
+  {
+    Time time;
+    time.fromSec(sec);
+    return then(time);
+  }
+
   Time now()
   {
-    uint32_t ms = hardware_.time();
-    Time current_time;
-    current_time.sec = ms / 1000 + sec_offset;
-    current_time.nsec = (ms % 1000) * 1000000UL + nsec_offset;
-    normalizeSecNSec(current_time.sec, current_time.nsec);
-    return current_time;
+    return then(hardware_.time());
   }
 
   void setNow(const Time & new_now)
