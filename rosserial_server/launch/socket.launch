@@ -1,3 +1,6 @@
 <launch>
-  <node pkg="rosserial_server" type="socket_node" name="rosserial_server" />
+  <arg name="port" default="11411" />
+  <node pkg="rosserial_server" type="socket_node" name="rosserial_server">
+    <param name="port" value="$(arg port)" />
+  </node>
 </launch>
