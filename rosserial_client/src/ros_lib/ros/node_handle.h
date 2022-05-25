@@ -572,7 +572,7 @@ protected:
   }
 
 public:
-  bool getParam(const char* name, int* param, int length = 1, int timeout = 1000)
+  bool getParam(const char* name, int32_t* param, int length = 1, int timeout = 1000)
   {
     if (requestParam(name, timeout))
     {
