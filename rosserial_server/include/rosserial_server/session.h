@@ -485,7 +485,7 @@ private:
       service_servers_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceServer::response_handle, srv, _1);
     }
-    if (service_servers_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
+    if (service_servers_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
       ROS_WARN("Service server setup: Request message MD5 mismatch between rosserial server and ROS");
     } else {
       ROS_DEBUG("Service server %s: request message MD5 successfully validated as %s",
@@ -506,7 +506,7 @@ private:
     }
     // see above comment regarding the service server callback for why we set topic_id here
     service_servers_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
-    if (service_servers_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
+    if (service_servers_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
       ROS_WARN("Service server setup: Response message MD5 mismatch between rosserial server and ROS");
     } else {
       ROS_DEBUG("Service server %s: response message MD5 successfully validated as %s",
