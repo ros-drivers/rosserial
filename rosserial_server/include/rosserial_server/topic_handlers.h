@@ -194,8 +194,8 @@ typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
 class ServiceServer {
 public:
   ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info, size_t capacity,
-      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn)
-    : write_fn_(write_fn) {
+      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn, double timeout = 10)
+    : write_fn_(write_fn), timeout_(timeout) {
     response_buffer_.resize(capacity);
     topic_id_ = -1;
     get_response_ = false;
@@ -244,7 +244,7 @@ public:
   bool request_handle(topic_tools::ShapeShifter& request_message, topic_tools::ShapeShifter& response_message) {
 
     get_response_ = false;
-    ROS_ERROR_STREAM("service receive " << service_server_.getService() << " request");
+    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " request");
 
     size_t length = ros::serialization::serializationLength(request_message);
     std::vector<uint8_t> buffer(length);
@@ -254,14 +254,14 @@ public:
     write_fn_(buffer,topic_id_);
 
     //wait for the response
-    int cnt = 0;
+    ros::Time start_t = ros::Time::now();
     while(!get_response_)
       {
         ros::Duration(0.01).sleep();
 
-        if (cnt++ > 500) // hard-coding
+        if (ros::Time::now().toSec() - start_t.toSec() > timeout_)
           {
-            ROS_WARN_STREAM(service_server_.getService() << ": no response!!");
+            ROS_WARN_STREAM(service_server_.getService() << ": no response for " << timeout_ << ", give up.");
             return false;
           }
       }
@@ -269,14 +269,13 @@ public:
     ros::serialization::IStream response_stream(&response_buffer_[0], buffer_len_);
     ros::serialization::Serializer<topic_tools::ShapeShifter>::read(response_stream, response_message);
 
-    ROS_ERROR_STREAM("OK!!");
     return true;
   }
 
   void response_handle(ros::serialization::IStream stream) {
     buffer_len_ = stream.getLength();
     std::memcpy(&response_buffer_[0], stream.getData(),stream.getLength());
-    std::cout << "service receive " << service_server_.getService() << " response" << std::endl;
+    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " response");
     get_response_ = true;
   }
 
@@ -289,6 +288,7 @@ private:
   std::string request_message_md5_;
   std::string response_message_md5_;
   uint16_t topic_id_;
+  double timeout_;
 
   bool get_response_;
 };
