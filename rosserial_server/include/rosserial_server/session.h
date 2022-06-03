@@ -65,7 +65,7 @@ public:
       socket_(io_service),
       sync_timer_(io_service),
       require_check_timer_(io_service),
-      spinner_(2),
+      sub_spinner_(1), srv_spinner_(1, &ros_srv_callback_queue_),
       async_read_buffer_(socket_, buffer_max,
                          boost::bind(&Session::read_failed, this,
                                      boost::asio::placeholders::error))
@@ -110,13 +110,15 @@ public:
     attempt_sync();
     read_sync_header();
 
-    spinner_.start();
+    sub_spinner_.start();
+    srv_spinner_.start();
   }
 
   void stop()
   {
     // Stop the ros::AsyncSpinner
-    spinner_.stop();
+    sub_spinner_.stop();
+    srv_spinner_.stop();
 
     // Abort active session timer callbacks, if present.
     sync_timer_.cancel();
@@ -481,7 +483,7 @@ private:
 
     if (!service_servers_.count(topic_info.topic_name)) {
       ROS_INFO("Creating service server for topic %s",topic_info.topic_name.c_str());
-      ServiceServerPtr srv(new ServiceServer(nh_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
+      ServiceServerPtr srv(new ServiceServer(nh_, ros_srv_callback_queue_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
       service_servers_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceServer::response_handle, srv, _1);
     }
@@ -500,7 +502,7 @@ private:
 
     if (!service_servers_.count(topic_info.topic_name)) {
       ROS_INFO("Creating service server for topic %s",topic_info.topic_name.c_str());
-      ServiceServerPtr srv(new ServiceServer(nh_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
+      ServiceServerPtr srv(new ServiceServer(nh_, ros_srv_callback_queue_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
       service_servers_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceServer::response_handle, srv, _1);
     }
@@ -549,7 +551,9 @@ private:
   bool active_;
 
   ros::NodeHandle nh_;
-  ros::AsyncSpinner spinner_; // Use 2 threads
+  ros::AsyncSpinner sub_spinner_; // For sub topics
+  ros::AsyncSpinner srv_spinner_; // For service server
+  ros::CallbackQueue ros_srv_callback_queue_;
 
   boost::posix_time::time_duration timeout_interval_;
   boost::posix_time::time_duration attempt_interval_;

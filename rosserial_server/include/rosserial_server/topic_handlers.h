@@ -193,7 +193,7 @@ typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
 
 class ServiceServer {
 public:
-  ServiceServer(ros::NodeHandle& nh, rosserial_msgs::TopicInfo& topic_info, size_t capacity,
+  ServiceServer(ros::NodeHandle& nh, ros::CallbackQueue& service_queue, rosserial_msgs::TopicInfo& topic_info, size_t capacity,
       boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn, double timeout = 10)
     : write_fn_(write_fn), timeout_(timeout) {
     response_buffer_.resize(capacity);
@@ -219,6 +219,7 @@ public:
     response_message_md5_ = respinfo.md5sum;
 
     ros::AdvertiseServiceOptions opts;
+    opts.callback_queue = &service_queue;
     opts.service = topic_info.topic_name;
     opts.md5sum = service_md5_;
     opts.datatype = topic_info.message_type;
