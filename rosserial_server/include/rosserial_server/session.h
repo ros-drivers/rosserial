@@ -132,6 +132,10 @@ public:
     service_clients_.clear();
     service_servers_.clear();
 
+    // Send disconnection message
+    std::vector<uint8_t> message(1);
+    write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
+
     // Close the socket.
     socket_.close();
     active_ = false;
