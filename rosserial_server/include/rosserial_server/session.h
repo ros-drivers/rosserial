@@ -39,6 +39,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
+#include <boost/version.hpp>
 
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -290,7 +291,11 @@ private:
 
     // Will call immediately if we are already on the io_service thread. Otherwise,
     // the request is queued up and executed on that thread.
+#if BOOST_VERSION >= 107000
+    boost::asio::dispatch(socket_.get_executor(), boost::bind(&Session::write_buffer, this, buffer_ptr));
+#else
     socket_.get_io_service().dispatch(boost::bind(&Session::write_buffer, this, buffer_ptr));
+#endif
   }
 
   void write_buffer(BufferPtr buffer_ptr) {
