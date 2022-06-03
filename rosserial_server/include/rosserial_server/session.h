@@ -329,7 +329,7 @@ private:
 
   void sync_timeout(const boost::system::error_code& error) {
     if (error != boost::asio::error::operation_aborted) {
-      ROS_DEBUG("Sync with device lost.");
+      ROS_WARN("Sync with device lost.");
       stop();
     }
   }
