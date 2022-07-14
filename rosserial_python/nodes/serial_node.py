@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #####################################################################
 # Software License Agreement (BSD License)
@@ -49,6 +49,7 @@ if __name__=="__main__":
 
     port_name = rospy.get_param('~port','/dev/ttyUSB0')
     baud = int(rospy.get_param('~baud','57600'))
+    service_timeout = float(rospy.get_param('~service_timeout','5.0'))
 
     # for systems where pyserial yields errors in the fcntl.ioctl(self.fd, TIOCMBIS, \
     # TIOCM_DTR_str) line, which causes an IOError, when using simulated port
