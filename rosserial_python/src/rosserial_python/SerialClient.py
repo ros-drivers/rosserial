@@ -397,7 +397,11 @@ class SerialClient(object):
         self.requestTopics()
         self.lastsync = rospy.Time.now()
 
-        signal.signal(signal.SIGINT, self.txStopRequest)
+        def shutdown():
+            self.txStopRequest()
+            rospy.loginfo('shutdown hook activated')
+        rospy.on_shutdown(shutdown)
+
 
     def requestTopics(self):
         """ Determine topics to subscribe/publish. """
@@ -411,7 +415,7 @@ class SerialClient(object):
         # request topic sync
         self.write_queue.put("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
-    def txStopRequest(self, signal, frame):
+    def txStopRequest(self):
         """ send stop tx request to arduino when receive SIGINT(Ctrl-c)"""
         if not self.fix_pyserial_for_test:
             with self.read_lock:
@@ -421,7 +425,6 @@ class SerialClient(object):
 
         # tx_stop_request is x0b
         rospy.loginfo("Send tx stop request")
-        sys.exit(0)
 
     def tryRead(self, length):
         try:
