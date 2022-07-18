@@ -335,6 +335,7 @@ class SerialClient(object):
 
         self.write_lock = threading.RLock()
         self.write_queue = queue.Queue()
+        self.write_alive = False
         self.write_thread = None
 
         self.lastsync = rospy.Time(0)
@@ -449,6 +450,7 @@ class SerialClient(object):
 
         # Launch write thread.
         if self.write_thread is None:
+            self.write_alive = True
             self.write_thread = threading.Thread(target=self.processWriteQueue)
             self.write_thread.daemon = True
             self.write_thread.start()
@@ -554,6 +556,11 @@ class SerialClient(object):
                 with self.write_lock:
                     self.port.flushOutput()
                 self.requestTopics()
+        self.write_thread.join()
+
+    def stopWriteThread(self):
+        # stop self.write_thread
+        self.write_alive = False
         self.write_thread.join()
 
     def setPublishSize(self, size):
@@ -774,7 +781,7 @@ class SerialClient(object):
         """
         Main loop for the thread that processes outgoing data to write to the serial port.
         """
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and self.write_alive:
             if self.write_queue.empty():
                 time.sleep(0.01)
             else:
