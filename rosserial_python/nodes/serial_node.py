@@ -98,6 +98,7 @@ if __name__=="__main__":
             except:
                 rospy.logwarn("Unexpected Error.%s", sys.exc_info()[0])
                 client.port.close()
+                client.stopWriteThread()
                 sleep(1.0)
                 continue
 
