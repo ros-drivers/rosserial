@@ -459,7 +459,8 @@ class SerialClient(object):
         while self.write_thread.is_alive() and not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if self.synced:
-                    rospy.logerr("Lost sync with device, restarting...")
+                    rospy.logerr("Lost sync with device, restarting NOW...")
+                    return
                 else:
                     rospy.logerr("Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino")
                 self.lastsync_lost = rospy.Time.now()
@@ -471,10 +472,15 @@ class SerialClient(object):
             # an IOError if there's a serial problem or timeout. In that scenario, a single handler at the
             # bottom attempts to reconfigure the topics.
             try:
-                with self.read_lock:
-                    if self.port.inWaiting() < 1:
+                res = self.read_lock.acquire(timeout=1)
+                if res:
+                    is_empty = self.port.inWaiting() < 1
+                    self.read_lock.release()
+                    if is_empty:
                         time.sleep(0.001)
                         continue
+                else:
+                    continue
 
                 # Find sync flag.
                 flag = [0, 0]
@@ -549,10 +555,16 @@ class SerialClient(object):
                 rospy.logwarn('Run loop error: %s' % exc)
                 # One of the read calls had an issue. Just to be safe, request that the client
                 # reinitialize their topics.
-                with self.read_lock:
+                res = self.read_lock.acquire(timeout=1)
+                if res:
                     self.port.flushInput()
-                with self.write_lock:
+                    self.read_lock.release()
+
+                res = self.write_lock.acquire(timeout=1)
+                if res:
                     self.port.flushOutput()
+                    self.write_lock.release()
+                    
                 self.requestTopics()
         self.write_thread.join()
 
