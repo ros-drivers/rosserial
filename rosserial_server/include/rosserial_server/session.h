@@ -73,7 +73,7 @@ public:
   {
     active_ = false;
 
-    timeout_interval_ = boost::posix_time::milliseconds(5000);
+    timeout_interval_ = boost::posix_time::milliseconds(15000); // rosserial_python has 5s timeout, but sync timeout check multiplies it by three
     attempt_interval_ = boost::posix_time::milliseconds(1000);
     require_check_interval_ = boost::posix_time::milliseconds(1000);
     require_param_name_ = "~require";
