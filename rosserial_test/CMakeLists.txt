@@ -3,7 +3,6 @@ project(rosserial_test)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  rosserial_arduino
   rosserial_client
   rosserial_msgs
   rosserial_python
