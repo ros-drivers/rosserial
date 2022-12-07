@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.7.2)
 project(rosserial_rp2040)
 
-find_package(catkin REQUIRED COMPONENTS
-  message_generation
-)
+find_package(catkin REQUIRED)
 
 catkin_python_setup()
-
-generate_messages()
 
 catkin_package(
   CATKIN_DEPENDS message_runtime
