@@ -40,6 +40,11 @@ make_libraries.py generates the rosserial library files.  It
 requires the location of your libraries folder.
 
 rosrun rosserial_rp2040 make_libraries.py <output_path>
+
+If PICO_SDK_PATH is set properly then <output_path> can be 
+omitted to install ros_lib in the pico-sdk library folder.
+
+rosrun rosserial_rp2040 make_libraries.py
 """
 
 import rospkg
@@ -48,6 +53,9 @@ from rosserial_client.make_library import *
 
 # for copying files
 import shutil
+import subprocess
+import sys
+import os
 import os.path
 
 ROS_TO_EMBEDDED_TYPES = {
@@ -70,14 +78,21 @@ ROS_TO_EMBEDDED_TYPES = {
     'Header'  :   ('std_msgs::Header',  0, MessageDataType, ['std_msgs/Header'])
 }
 
-# need correct inputs
-if (len(sys.argv) < 2):
+path = ""
+
+# get output path
+if (len(sys.argv) > 1): # use argument path
+    path = sys.argv[1]
+elif (os.environ.get('PICO_SDK_PATH')): # use pico sdk lib path
+    path = os.path.join(os.environ.get('PICO_SDK_PATH'), "lib")
+    print("\nNo export path specified. Using default pico lib path which is %s" % path)
+    if (not os.access(path, os.W_OK)):
+        subprocess.call(['sudo', 'chmod', '-R', '777', path])
+else: # no path
     print(__usage__)
     exit()
 
-# get output path
-path = sys.argv[1]
-output_path = os.path.join(sys.argv[1], "ros_lib")
+output_path = os.path.join(path, "ros_lib")
 print("\nExporting to %s" % output_path)
 
 rospack = rospkg.RosPack()
