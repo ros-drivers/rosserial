@@ -41,14 +41,16 @@
   #include <WProgram.h>  // Arduino 0022
 #endif
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__) || defined(__MKL26Z64__) || defined(__IMXRT1062__)
+#if defined(ARDUINO_DUE)
+  #define SERIAL_CLASS Serial_
+#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__) || defined(__MKL26Z64__) || defined(__IMXRT1062__)
   #if defined(USE_TEENSY_HW_SERIAL)
     #define SERIAL_CLASS HardwareSerial // Teensy HW Serial
   #else
     #include <usb_serial.h>  // Teensy 3.0 and 3.1
     #define SERIAL_CLASS usb_serial_class
   #endif
-#elif defined(_SAM3XA_)
+#elif defined(_SAM3XA_) 
   #include <UARTClass.h>  // Arduino Due
   #define SERIAL_CLASS UARTClass
 #elif defined(USE_USBCON)
@@ -70,7 +72,9 @@ class ArduinoHardware {
     }
     ArduinoHardware()
     {
-#if defined(USBCON) and !(defined(USE_USBCON))
+#if defined(ARDUINO_DUE)
+      iostream = &SerialUSB; // Arduino Due Native Port
+#elif defined(USBCON) and !(defined(USE_USBCON))
       /* Leonardo support */
       iostream = &Serial1;
 #elif defined(USE_TEENSY_HW_SERIAL) or defined(USE_STM32_HW_SERIAL)
@@ -96,7 +100,7 @@ class ArduinoHardware {
     int getBaud(){return baud_;}
 
     void init(){
-#if defined(USE_USBCON)
+#if defined(USE_USBCON) or defined(ARDUINO_DUE)
       // Startup delay as a fail-safe to upload a new sketch
       delay(3000); 
 #endif
