@@ -50,6 +50,14 @@ public:
   }
   RP2040_Hardware(long baud) : RP2040_Hardware(uart0, 0, 1, baud) {}
   RP2040_Hardware() : RP2040_Hardware(uart0, 0, 1, 57600) {}
+  
+  void custom_config(uart_inst_t* uart, int tx, int rx, long baud)
+  {
+    uart_ = uart;
+    tx_ = tx;
+    rx_ = rx;
+    baud_ = baud;
+  }
 
   // any initialization code necessary to use the serial port
   void init() 
