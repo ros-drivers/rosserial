@@ -6,8 +6,12 @@
 #define _ROS_H_
 
 #include "ros/node_handle.h"
-#include "RP2040_Hardware.h"
+
+#ifdef USE_USBCON
 #include "RP2040_Hardware_USB.h"
+#else
+#include "RP2040_Hardware.h"
+#endif
 
 namespace ros
 {
