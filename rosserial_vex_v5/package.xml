@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosserial_vex_v5</name>
   <version>0.9.2</version>
   <description>
@@ -10,8 +10,10 @@
   <!--<url>http://ros.org/wiki/rosserial_arduino</url>-->
 
   <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 2">python-setuptools</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 3">python3-setuptools</buildtool_depend>
 
-  <run_depend>rospy</run_depend>
-  <run_depend>rosserial_client</run_depend>
-  <run_depend>rosserial_python</run_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rosserial_client</exec_depend>
+  <exec_depend>rosserial_python</exec_depend>
 </package>

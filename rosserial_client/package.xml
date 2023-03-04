@@ -1,4 +1,4 @@
-<package format="2">
+<package format="3">
   <name>rosserial_client</name>
   <version>0.9.2</version>
   <description>
@@ -12,6 +12,8 @@
   <url>http://ros.org/wiki/rosserial_client</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 2">python-setuptools</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 3">python3-setuptools</buildtool_depend>
   <build_export_depend>rosbash</build_export_depend>
 
   <exec_depend>rosserial_msgs</exec_depend>

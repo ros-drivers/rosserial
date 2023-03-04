@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosserial</name>
   <version>0.9.2</version>
   <description>
@@ -12,9 +12,9 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>rosserial_msgs</run_depend>
-  <run_depend>rosserial_client</run_depend>
-  <run_depend>rosserial_python</run_depend>
+  <exec_depend>rosserial_msgs</exec_depend>
+  <exec_depend>rosserial_client</exec_depend>
+  <exec_depend>rosserial_python</exec_depend>
 
   <export>
    <metapackage/>
