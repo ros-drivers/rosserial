@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosserial_vex_v5</name>
   <version>0.9.2</version>
   <description>
@@ -11,7 +11,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>rospy</run_depend>
-  <run_depend>rosserial_client</run_depend>
-  <run_depend>rosserial_python</run_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rosserial_client</exec_depend>
+  <exec_depend>rosserial_python</exec_depend>
 </package>

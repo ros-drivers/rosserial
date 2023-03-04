@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosserial_xbee</name>
   <version>0.9.2</version>
   <description>
@@ -18,10 +18,10 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>rospy</run_depend>
-  <run_depend>rosserial_msgs</run_depend>
-  <run_depend>diagnostic_msgs</run_depend>
-  <run_depend>python3-serial</run_depend>
-  <run_depend>rosserial_python</run_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rosserial_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>python3-serial</exec_depend>
+  <exec_depend>rosserial_python</exec_depend>
 </package>
 

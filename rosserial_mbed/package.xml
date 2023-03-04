@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>rosserial_mbed</name>
   <version>0.9.2</version>
   <description>
@@ -13,10 +13,10 @@
 
   <build_depend>message_generation</build_depend>
 
-  <run_depend>rospy</run_depend>
-  <run_depend>rosserial_msgs</run_depend>
-  <run_depend>rosserial_client</run_depend>
-  <run_depend>message_runtime</run_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rosserial_msgs</exec_depend>
+  <exec_depend>rosserial_client</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
 </package>
 
 

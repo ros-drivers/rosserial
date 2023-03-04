@@ -1,4 +1,4 @@
-<package format="2">
+<package format="3">
   <name>rosserial_client</name>
   <version>0.9.2</version>
   <description>
