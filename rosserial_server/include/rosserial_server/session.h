@@ -39,6 +39,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
+#include <boost/version.hpp>
 
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -65,29 +66,19 @@ public:
       socket_(io_service),
       sync_timer_(io_service),
       require_check_timer_(io_service),
-      ros_spin_timer_(io_service),
+      sub_spinner_(1), srv_spinner_(1, &ros_srv_callback_queue_),
       async_read_buffer_(socket_, buffer_max,
                          boost::bind(&Session::read_failed, this,
                                      boost::asio::placeholders::error))
   {
     active_ = false;
 
-    timeout_interval_ = boost::posix_time::milliseconds(5000);
+    timeout_interval_ = boost::posix_time::milliseconds(15000); // rosserial_python has 5s timeout, but sync timeout check multiplies it by three
     attempt_interval_ = boost::posix_time::milliseconds(1000);
     require_check_interval_ = boost::posix_time::milliseconds(1000);
-    ros_spin_interval_ = boost::posix_time::milliseconds(10);
     require_param_name_ = "~require";
 
     unrecognised_topic_retry_threshold_ = ros::param::param("~unrecognised_topic_retry_threshold", 0);
-
-    nh_.setCallbackQueue(&ros_callback_queue_);
-
-    // Intermittent callback to service ROS callbacks. To avoid polling like this,
-    // CallbackQueue could in the future be extended with a scheme to monitor for
-    // callbacks on another thread, and then queue them up to be executed on this one.
-    ros_spin_timer_.expires_from_now(ros_spin_interval_);
-    ros_spin_timer_.async_wait(boost::bind(&Session::ros_spin_timeout, this,
-                                           boost::asio::placeholders::error));
   }
 
   Socket& socket()
@@ -103,6 +94,10 @@ public:
         = boost::bind(&Session::setup_publisher, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
         = boost::bind(&Session::setup_subscriber, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_PUBLISHER]
+        = boost::bind(&Session::setup_service_server_publisher, this, _1);
+    callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_SERVER+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
+        = boost::bind(&Session::setup_service_server_subscriber, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT+rosserial_msgs::TopicInfo::ID_PUBLISHER]
         = boost::bind(&Session::setup_service_client_publisher, this, _1);
     callbacks_[rosserial_msgs::TopicInfo::ID_SERVICE_CLIENT+rosserial_msgs::TopicInfo::ID_SUBSCRIBER]
@@ -115,12 +110,16 @@ public:
     active_ = true;
     attempt_sync();
     read_sync_header();
+
+    sub_spinner_.start();
+    srv_spinner_.start();
   }
 
   void stop()
   {
-    // Abort any pending ROS callbacks.
-    ros_callback_queue_.clear();
+    // Stop the ros::AsyncSpinner
+    sub_spinner_.stop();
+    srv_spinner_.stop();
 
     // Abort active session timer callbacks, if present.
     sync_timer_.cancel();
@@ -131,7 +130,12 @@ public:
     callbacks_.clear();
     subscribers_.clear();
     publishers_.clear();
-    services_.clear();
+    service_clients_.clear();
+    service_servers_.clear();
+
+    // Send disconnection message
+    std::vector<uint8_t> message(1);
+    write_message(message, rosserial_msgs::TopicInfo::ID_TX_STOP);
 
     // Close the socket.
     socket_.close();
@@ -164,26 +168,6 @@ public:
   }
 
 private:
-  /**
-   * Periodic function which handles calling ROS callbacks, executed on the same
-   * io_service thread to avoid a concurrency nightmare.
-   */
-  void ros_spin_timeout(const boost::system::error_code& error) {
-    ros_callback_queue_.callAvailable();
-
-    if (ros::ok())
-    {
-      // Call again next interval.
-      ros_spin_timer_.expires_from_now(ros_spin_interval_);
-      ros_spin_timer_.async_wait(boost::bind(&Session::ros_spin_timeout, this,
-                                             boost::asio::placeholders::error));
-    }
-    else
-    {
-      shutdown();
-    }
-  }
-
   //// RECEIVING MESSAGES ////
   // TODO: Total message timeout, implement primarily in ReadBuffer.
 
@@ -304,6 +288,17 @@ private:
     stream << msg_checksum;
 
     ROS_DEBUG_NAMED("async_write", "Sending buffer of %d bytes to client.", length);
+
+    // Will call immediately if we are already on the io_service thread. Otherwise,
+    // the request is queued up and executed on that thread.
+#if BOOST_VERSION >= 107000
+    boost::asio::dispatch(socket_.get_executor(), boost::bind(&Session::write_buffer, this, buffer_ptr));
+#else
+    socket_.get_io_service().dispatch(boost::bind(&Session::write_buffer, this, buffer_ptr));
+#endif
+  }
+
+  void write_buffer(BufferPtr buffer_ptr) {
     boost::asio::async_write(socket_, boost::asio::buffer(*buffer_ptr),
           boost::bind(&Session::write_completion_cb, this, boost::asio::placeholders::error, buffer_ptr));
   }
@@ -345,7 +340,7 @@ private:
 
   void sync_timeout(const boost::system::error_code& error) {
     if (error != boost::asio::error::operation_aborted) {
-      ROS_DEBUG("Sync with device lost.");
+      ROS_WARN("Sync with device lost.");
       stop();
     }
   }
@@ -424,6 +419,8 @@ private:
     publishers_[topic_info.topic_id] = pub;
 
     set_sync_timeout(timeout_interval_);
+
+    ROS_INFO("publisher name: %s, type: %s, id: %d", topic_info.topic_name.c_str(), topic_info.message_type.c_str(), topic_info.topic_id);
   }
 
   void setup_subscriber(ros::serialization::IStream& stream) {
@@ -435,6 +432,8 @@ private:
     subscribers_[topic_info.topic_id] = sub;
 
     set_sync_timeout(timeout_interval_);
+
+    ROS_INFO("subscriber name: %s, type: %s, id: %d", topic_info.topic_name.c_str(), topic_info.message_type.c_str(), topic_info.topic_id);
   }
 
   // When the rosserial client creates a ServiceClient object (and/or when it registers that object with the NodeHandle)
@@ -447,14 +446,14 @@ private:
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-    if (!services_.count(topic_info.topic_name)) {
-      ROS_DEBUG("Creating service client for topic %s",topic_info.topic_name.c_str());
+    if (!service_clients_.count(topic_info.topic_name)) {
+      ROS_INFO("Creating service client for topic %s",topic_info.topic_name.c_str());
       ServiceClientPtr srv(new ServiceClient(
         nh_,topic_info,boost::bind(&Session::write_message, this, _1, _2)));
-      services_[topic_info.topic_name] = srv;
+      service_clients_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceClient::handle, srv, _1);
     }
-    if (services_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
+    if (service_clients_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
       ROS_WARN("Service client setup: Request message MD5 mismatch between rosserial client and ROS");
     } else {
       ROS_DEBUG("Service client %s: request message MD5 successfully validated as %s",
@@ -467,20 +466,62 @@ private:
     rosserial_msgs::TopicInfo topic_info;
     ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
 
-    if (!services_.count(topic_info.topic_name)) {
-      ROS_DEBUG("Creating service client for topic %s",topic_info.topic_name.c_str());
+    if (!service_clients_.count(topic_info.topic_name)) {
+      ROS_INFO("Creating service client for topic %s",topic_info.topic_name.c_str());
       ServiceClientPtr srv(new ServiceClient(
         nh_,topic_info,boost::bind(&Session::write_message, this, _1, _2)));
-      services_[topic_info.topic_name] = srv;
+      service_clients_[topic_info.topic_name] = srv;
       callbacks_[topic_info.topic_id] = boost::bind(&ServiceClient::handle, srv, _1);
     }
     // see above comment regarding the service client callback for why we set topic_id here
-    services_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
-    if (services_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
+    service_clients_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
+    if (service_clients_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
       ROS_WARN("Service client setup: Response message MD5 mismatch between rosserial client and ROS");
     } else {
       ROS_DEBUG("Service client %s: response message MD5 successfully validated as %s",
         topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
+    }
+    set_sync_timeout(timeout_interval_);
+  }
+
+  // When the rosserial client creates a ServiceServer object (and/or when it registers that object with the NodeHandle)
+  // it creates a "proxy" service server
+  void setup_service_server_publisher(ros::serialization::IStream& stream) {
+    rosserial_msgs::TopicInfo topic_info;
+    ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
+
+    if (!service_servers_.count(topic_info.topic_name)) {
+      ROS_INFO("Creating service server for topic %s",topic_info.topic_name.c_str());
+      ServiceServerPtr srv(new ServiceServer(nh_, ros_srv_callback_queue_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
+      service_servers_[topic_info.topic_name] = srv;
+      callbacks_[topic_info.topic_id] = boost::bind(&ServiceServer::response_handle, srv, _1);
+    }
+    if (service_servers_[topic_info.topic_name]->getResponseMessageMD5() != topic_info.md5sum) {
+      ROS_WARN("Service server setup: Request message MD5 mismatch between rosserial server and ROS");
+    } else {
+      ROS_DEBUG("Service server %s: request message MD5 successfully validated as %s",
+               topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
+    }
+    set_sync_timeout(timeout_interval_);
+  }
+
+  void setup_service_server_subscriber(ros::serialization::IStream& stream) {
+    rosserial_msgs::TopicInfo topic_info;
+    ros::serialization::Serializer<rosserial_msgs::TopicInfo>::read(stream, topic_info);
+
+    if (!service_servers_.count(topic_info.topic_name)) {
+      ROS_INFO("Creating service server for topic %s",topic_info.topic_name.c_str());
+      ServiceServerPtr srv(new ServiceServer(nh_, ros_srv_callback_queue_, topic_info, buffer_max, boost::bind(&Session::write_message, this, _1, _2)));
+      service_servers_[topic_info.topic_name] = srv;
+      callbacks_[topic_info.topic_id] = boost::bind(&ServiceServer::response_handle, srv, _1);
+    }
+    // see above comment regarding the service server callback for why we set topic_id here
+    service_servers_[topic_info.topic_name]->setTopicId(topic_info.topic_id);
+    if (service_servers_[topic_info.topic_name]->getRequestMessageMD5() != topic_info.md5sum) {
+      ROS_WARN("Service server setup: Response message MD5 mismatch between rosserial server and ROS");
+    } else {
+      ROS_DEBUG("Service server %s: response message MD5 successfully validated as %s",
+               topic_info.topic_name.c_str(),topic_info.md5sum.c_str());
     }
     set_sync_timeout(timeout_interval_);
   }
@@ -519,15 +560,15 @@ private:
   bool active_;
 
   ros::NodeHandle nh_;
-  ros::CallbackQueue ros_callback_queue_;
+  ros::AsyncSpinner sub_spinner_; // For sub topics
+  ros::AsyncSpinner srv_spinner_; // For service server
+  ros::CallbackQueue ros_srv_callback_queue_;
 
   boost::posix_time::time_duration timeout_interval_;
   boost::posix_time::time_duration attempt_interval_;
   boost::posix_time::time_duration require_check_interval_;
-  boost::posix_time::time_duration ros_spin_interval_;
   boost::asio::deadline_timer sync_timer_;
   boost::asio::deadline_timer require_check_timer_;
-  boost::asio::deadline_timer ros_spin_timer_;
   std::string require_param_name_;
   int unrecognised_topic_retry_threshold_{ 0 };
   int unrecognised_topics_{ 0 };
@@ -535,7 +576,8 @@ private:
   std::map<uint16_t, boost::function<void(ros::serialization::IStream&)> > callbacks_;
   std::map<uint16_t, PublisherPtr> publishers_;
   std::map<uint16_t, SubscriberPtr> subscribers_;
-  std::map<std::string, ServiceClientPtr> services_;
+  std::map<std::string, ServiceClientPtr> service_clients_;
+  std::map<std::string, ServiceServerPtr> service_servers_;
 };
 
 }  // namespace

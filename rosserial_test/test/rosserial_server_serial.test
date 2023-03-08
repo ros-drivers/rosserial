@@ -1,11 +1,21 @@
 <launch>
+  <arg name="mode" default="serial" />
+  <arg name="port" default="/tmp/rosserial_pty" />
+
   <include file="$(find rosserial_server)/launch/serial.launch">
-    <arg name="port" value="/tmp/rosserial_pty" />
+    <arg name="port" value="$(arg port)" />
   </include>
 
   <test test-name="rosserial_server_serial_test_publish_subscribe" pkg="rosserial_test"
         type="rosserial_test_publish_subscribe" time-limit="10.0">
-    <param name="mode" value="serial" />
-    <param name="port" value="/tmp/rosserial_pty" />
+    <param name="mode" value="$(arg mode)" />
+    <param name="port" value="$(arg port)" />
   </test>
+
+  <test test-name="rosserial_server_serial_test_service_server" pkg="rosserial_test"
+        type="rosserial_test_service_server" time-limit="10.0">
+    <param name="mode" value="$(arg mode)" />
+    <param name="port" value="$(arg port)" />
+  </test>
+
 </launch>

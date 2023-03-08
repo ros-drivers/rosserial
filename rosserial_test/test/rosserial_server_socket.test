@@ -1,11 +1,21 @@
 <launch>
+  <arg name="mode" default="socket" />
+  <arg name="port" default="11413" />
+
   <node pkg="rosserial_server" type="socket_node" name="rosserial_server">
-    <param name="port" value="11413" />
+    <param name="port" value="$(arg port)" />
   </node>
 
   <test test-name="rosserial_server_socket_test_publish_subscribe" pkg="rosserial_test"
         type="rosserial_test_publish_subscribe" time-limit="10.0">
-    <param name="mode" value="socket" />
-    <param name="tcp_port" value="11413" />
+    <param name="mode" value="$(arg mode)" />
+    <param name="tcp_port" value="$(arg port)" />
   </test>
+
+  <test test-name="rosserial_server_socket_test_service_server" pkg="rosserial_test"
+        type="rosserial_test_service_server" time-limit="10.0">
+    <param name="mode" value="$(arg mode)" />
+    <param name="tcp_port" value="$(arg port)" />
+  </test>
+
 </launch>
