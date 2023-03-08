@@ -73,7 +73,7 @@ public:
   {
     active_ = false;
 
-    timeout_interval_ = boost::posix_time::milliseconds(5000);
+    timeout_interval_ = boost::posix_time::milliseconds(15000); // rosserial_python has 5s timeout, but sync timeout check multiplies it by three
     attempt_interval_ = boost::posix_time::milliseconds(1000);
     require_check_interval_ = boost::posix_time::milliseconds(1000);
     require_param_name_ = "~require";
@@ -433,7 +433,7 @@ private:
 
     set_sync_timeout(timeout_interval_);
 
-    ROS_INFO("subscirber name: %s, type: %s, id: %d", topic_info.topic_name.c_str(), topic_info.message_type.c_str(), topic_info.topic_id);
+    ROS_INFO("subscriber name: %s, type: %s, id: %d", topic_info.topic_name.c_str(), topic_info.message_type.c_str(), topic_info.topic_id);
   }
 
   // When the rosserial client creates a ServiceClient object (and/or when it registers that object with the NodeHandle)
