@@ -59,7 +59,15 @@
   #define SERIAL_CLASS USBSerial
 #else 
   #include <HardwareSerial.h>  // Arduino AVR
-  #define SERIAL_CLASS HardwareSerial
+  #if defined(USE_USBCDC)
+    // ESP32-S2 ESP32-C3
+    #define SERIAL_CLASS USBCDC
+  #elif defined(USE_HWCDC)
+    // ESP32-S3
+    #define SERIAL_CLASS HWCDC
+  #else
+    #define SERIAL_CLASS HardwareSerial
+  #endif
 #endif
 
 class ArduinoHardware {
