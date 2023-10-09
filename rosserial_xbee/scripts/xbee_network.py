@@ -47,7 +47,7 @@ import struct
 client_ports=  {}
 clients = {}
 
-debug = False;
+debug = False
 
 import threading
 
@@ -90,8 +90,8 @@ class FakeSerial():
 		self.rxdata = ''
 
 	# Returns the number of bytes available to be read
-        def inWaiting(self):
-            return len(self.rxdata)
+	def inWaiting(self):
+		return len(self.rxdata)
 
 if __name__== '__main__':
 	print("RosSerial Xbee Network")

@@ -55,7 +55,7 @@ import rosserial_client
 from rosserial_client.make_library import *
 
 # for copying files
-import shutil
+import sys
 import os.path
 
 ROS_TO_EMBEDDED_TYPES = {

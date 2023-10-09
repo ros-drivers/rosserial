@@ -48,6 +48,7 @@ from rosserial_client.make_library import *
 # for copying files
 import shutil
 import os.path
+import sys
 
 ROS_TO_EMBEDDED_TYPES = {
     'bool'    :   ('bool',              1, PrimitiveDataType, []),

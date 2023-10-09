@@ -7,9 +7,9 @@ rosserial_test CMake setup.
 
 import rospkg
 from rosserial_client.make_library import *
-from shutil import copytree
 from os import path, sep, walk
 import re
+import sys
 
 ROS_TO_EMBEDDED_TYPES = {
     'bool'    :   ('bool',              1, PrimitiveDataType, []),
@@ -49,7 +49,7 @@ rosserial_generate(rospack, path, ROS_TO_EMBEDDED_TYPES)
 # the same name.
 for dname, dirs, files in walk(path):
     for fname in files:
-        fpath = os.path.join(dname, fname)
+        fpath = path.join([dname, fname])
         with open(fpath) as f:
             s = f.read()
         with open(fpath, "w") as f:
