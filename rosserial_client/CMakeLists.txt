@@ -22,6 +22,6 @@ install(
 )
 
 catkin_install_python(
-  PROGRAMS scripts/make_libraries src/${PROJECT_NAME}/make_library.py
+  PROGRAMS scripts/make_libraries.py src/${PROJECT_NAME}/make_library.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
