@@ -165,9 +165,8 @@ public:
     ros::serialization::Serializer<topic_tools::ShapeShifter>::read(stream, request_message_);
 
     // perform service call
-    // note that at present, at least for rosserial-windows a service call returns nothing,
-    // so we discard the return value of this call() invocation.
-    service_client_.call(request_message_, response_message_, service_md5_);
+    if (!service_client_.call(request_message_, response_message_, service_md5_))
+      return;
 
     // write service response over the wire
     size_t length = ros::serialization::serializationLength(response_message_);
