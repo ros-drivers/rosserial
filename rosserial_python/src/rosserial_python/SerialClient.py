@@ -226,6 +226,14 @@ class RosSerialServer:
     def listen(self):
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # get buffer size
+        rospy.loginfo("Getting socket buffer size")
+        bufsize = self.serversocket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        rospy.loginfo("Socket buffer size: %d bytes" % bufsize)
+        # increase socket buffer size to 500KB
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 512000)
+        newbufsize = self.serversocket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        rospy.loginfo("New Socket buffer size: %d bytes" % newbufsize)
         #bind the socket to a public host, and a well-known port
         self.serversocket.bind(("", self.tcp_portnum)) #become a server socket
         self.serversocket.listen(1)
@@ -526,10 +534,11 @@ class SerialClient(object):
                 read_step = 'data'
                 try:
                     msg = self.tryRead(msg_length)
-                except IOError:
+                except IOError as e:
                     self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, ERROR_PACKET_FAILED)
                     rospy.loginfo("Packet Failed :  Failed to read msg data")
                     rospy.loginfo("expected msg length is %d", msg_length)
+                    rospy.loginfo(e)
                     raise
 
                 # Reada checksum for topic id and msg
@@ -584,10 +593,11 @@ class SerialClient(object):
             msg = TopicInfo()
             msg.deserialize(data)
             pub = Publisher(msg)
-            self.publishers[msg.topic_id] = pub
-            self.callbacks[msg.topic_id] = pub.handlePacket
-            self.setPublishSize(msg.buffer_size)
-            rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
+            if msg.topic_id not in self.publishers:
+                self.publishers[msg.topic_id] = pub
+                self.callbacks[msg.topic_id] = pub.handlePacket
+                self.setPublishSize(msg.buffer_size)
+                rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
         except Exception as e:
             rospy.logerr("Creation of publisher failed: %s", e)
 
