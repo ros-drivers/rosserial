@@ -249,14 +249,31 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      %s_lengthT |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2); \n' % self.name)
             f.write('      %s_lengthT |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3); \n' % self.name)
             f.write('      offset += sizeof(this->%s_length);\n' % self.name)
-            f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
+            f.write('      if(%s_lengthT > %s_length){\n' % (self.name, self.name))
             f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
-            f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
-            # copy to array
-            f.write('      for( uint32_t i = 0; i < %s_length; i++){\n' % (self.name) )
-            c.deserialize(f)
-            f.write('        memcpy( &(this->%s[i]), &(this->st_%s), sizeof(%s));\n' % (self.name, self.name, self.type))
+
+            if self.cls is MessageDataType:
+                # array of message. Initialize new slot as 0 and directly deserialize
+                f.write('        for (uint32_t i = %s_length; i < %s_lengthT; ++i) {\n' % (self.name, self.name))
+                f.write('          %s zero{};\n' % (self.type))
+                f.write('          memcpy(&(this->%s[i]), &zero, sizeof(%s));\n' % (self.name, self.type))
+                f.write('        }\n')
+
             f.write('      }\n')
+            f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
+
+            if self.cls is MessageDataType:
+                # array of message. directory deserializ
+                f.write('      for (uint32_t i = 0; i < %s_length; ++i) {\n' % (self.name))
+                f.write('        offset += this->%s[i].deserialize(inbuffer + offset);\n' % self.name)
+                f.write('      }\n')
+            else:
+                # primitive
+                f.write('      for (uint32_t i = 0; i < %s_length; ++i) {\n' % (self.name))
+                c.deserialize(f)  # use st_<name>
+                f.write('        memcpy(&(this->%s[i]), &(this->st_%s), sizeof(%s));\n'
+                        % (self.name, self.name, self.type))
+                f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
             f.write('      for( uint32_t i = 0; i < %d; i++){\n' % (self.size) )
