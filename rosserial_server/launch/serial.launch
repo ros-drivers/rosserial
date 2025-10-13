@@ -1,6 +1,8 @@
 <launch>
   <arg name="port" default="/dev/ttyACM0" />
-  <node pkg="rosserial_server" type="serial_node" name="rosserial_server">
+  <arg name="baud" default="57600" />
+  <node pkg="rosserial_server" type="serial_node" name="rosserial_server" output="screen">
     <param name="port" value="$(arg port)" />
+    <param name="baud" value="$(arg baud)" />
   </node>
 </launch>

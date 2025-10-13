@@ -30,7 +30,6 @@ TEST_F(SingleClientFixture, single_publish) {
   for(int attempt = 0; attempt < 50; attempt++) {
     client_pub.publish(&string_msg);
     client_nh.spinOnce();
-    ros::spinOnce();
     if (str_callback.times_called > 0) break;
     ros::Duration(0.1).sleep();
   }
@@ -62,7 +61,6 @@ TEST_F(SingleClientFixture, single_subscribe) {
   string_msg.data = "to-rosserial-client";
   for(int attempt = 0; attempt < 50; attempt++) {
     pub.publish(string_msg);
-    ros::spinOnce();
     client_nh.spinOnce();
     if (rosserial_string_cb_count > 0) break;
     ros::Duration(0.1).sleep();

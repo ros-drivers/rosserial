@@ -40,6 +40,10 @@
 #include <topic_tools/shape_shifter.h>
 #include <rosserial_server/msg_lookup.h>
 
+#include <chrono>
+#include <thread>
+#include <condition_variable>
+
 namespace rosserial_server
 {
 
@@ -189,6 +193,112 @@ private:
 };
 
 typedef boost::shared_ptr<ServiceClient> ServiceClientPtr;
+
+
+class ServiceServer {
+public:
+  ServiceServer(ros::NodeHandle& nh, ros::CallbackQueue& service_queue, rosserial_msgs::TopicInfo& topic_info, size_t capacity,
+      boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn, double timeout = 10)
+    : write_fn_(write_fn), timeout_(timeout) {
+    response_buffer_.resize(capacity);
+    topic_id_ = -1;
+    get_response_ = false;
+
+    rosserial_server::MsgInfo srvinfo;
+    rosserial_server::MsgInfo reqinfo;
+    rosserial_server::MsgInfo respinfo;
+    try
+    {
+      srvinfo = lookupMessage(topic_info.message_type, "srv");
+      reqinfo = lookupMessage(topic_info.message_type + "Request", "srv");
+      respinfo = lookupMessage(topic_info.message_type + "Response", "srv");
+    }
+    catch (const std::exception& e)
+    {
+      ROS_WARN_STREAM("Unable to look up service definition: " << e.what());
+    }
+
+    service_md5_ = srvinfo.md5sum;
+    request_message_md5_ = reqinfo.md5sum;
+    response_message_md5_ = respinfo.md5sum;
+
+    ros::AdvertiseServiceOptions opts;
+    opts.callback_queue = &service_queue;
+    opts.service = topic_info.topic_name;
+    opts.md5sum = service_md5_;
+    opts.datatype = topic_info.message_type;
+    opts.req_datatype = topic_info.message_type + "Request";
+    opts.res_datatype = topic_info.message_type + "Response";
+    opts.helper = boost::make_shared<ros::ServiceCallbackHelperT<ros::ServiceSpec<topic_tools::ShapeShifter,topic_tools::ShapeShifter> > >(boost::bind(&ServiceServer::request_handle, this, _1, _2));
+
+    service_server_ = nh.advertiseService(opts);
+  }
+  void setTopicId(uint16_t topic_id) {
+    topic_id_ = topic_id;
+  }
+  std::string getServiceMD5() {
+    return service_md5_;
+  }
+  std::string getRequestMessageMD5() {
+    return request_message_md5_;
+  }
+  std::string getResponseMessageMD5() {
+    return response_message_md5_;
+  }
+
+  bool request_handle(topic_tools::ShapeShifter& request_message, topic_tools::ShapeShifter& response_message) {
+
+    get_response_ = false;
+    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " request");
+
+    size_t length = ros::serialization::serializationLength(request_message);
+    std::vector<uint8_t> buffer(length);
+
+    ros::serialization::OStream ostream(&buffer[0], length);
+    ros::serialization::Serializer<topic_tools::ShapeShifter>::write(ostream, request_message);
+    write_fn_(buffer,topic_id_);
+
+    //wait for the response
+    std::unique_lock<std::mutex> lk(service_mutex_);
+    if(cv_.wait_for(lk, std::chrono::milliseconds((int)(timeout_*1000)), [this]{ return get_response_; }))
+    {
+      ros::serialization::IStream response_stream(&response_buffer_[0], buffer_len_);
+      ros::serialization::Serializer<topic_tools::ShapeShifter>::read(response_stream, response_message);
+      service_mutex_.unlock();
+      return true;
+	}
+    else
+    {
+      ROS_WARN_STREAM(service_server_.getService() << ": no response for " << timeout_ << ", give up.");
+      service_mutex_.unlock();
+      return false;
+    }
+  }
+
+  void response_handle(ros::serialization::IStream stream) {
+    buffer_len_ = stream.getLength();
+    std::memcpy(&response_buffer_[0], stream.getData(),stream.getLength());
+    ROS_DEBUG_STREAM("service receive " << service_server_.getService() << " response");
+    get_response_ = true;
+    cv_.notify_one();
+  }
+
+private:
+  std::vector<uint8_t> response_buffer_;
+  size_t buffer_len_;
+  ros::ServiceServer service_server_;
+  boost::function<void(std::vector<uint8_t>& buffer, const uint16_t topic_id)> write_fn_;
+  std::string service_md5_;
+  std::string request_message_md5_;
+  std::string response_message_md5_;
+  uint16_t topic_id_;
+  double timeout_;
+  std::condition_variable cv_;
+  std::mutex service_mutex_;
+  bool get_response_;
+};
+
+typedef boost::shared_ptr<ServiceServer> ServiceServerPtr;
 
 }  // namespace
 
